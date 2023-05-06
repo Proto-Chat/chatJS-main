@@ -1,0 +1,23 @@
+CHANGE FROM STORING BY USERNAME TO SOTRING BY USERID
+
+types:
+0 - normal
+1 - error
+
+codes (server --> client):
+0 - new connection
+1 - resume session
+5 - message sent
+
+
+codes (client --> server):
+0 - new connection
+1 - resume session
+2 - logout
+3 - get user
+4 - 
+5 - message recieved
+
+DM FORMAT
+DMs are stored in the format uid1|uid2 sorted by userID
+    - ex if uid1 = 02 and uid2 = 01 then the DM would be 01|02

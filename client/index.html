@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" type="text/css" href="/client/CSS/index.css">
+    <script src="/client/scripts/messages.js"></script>    
+    <script src="/client/scripts/send.js"></script>
+    <script src="/client/scripts/initialize.js"></script>
+    <script src="/client/scripts/login.js"></script>
+
+    <script>
+        const getUidFromSid = (sid) => atob(sid.split("?")[1], 'base64');
+        
+        function requestDM(uid) {
+            ws.send(JSON.stringify({sid: localStorage.getItem('sessionid'), code: 3, uid: uid}));
+        }
+    </script>
+
+    <script>
+        const ws = new WebSocket('ws://localhost:8080');
+
+        //MUST BE DECLAIRED GLOBALLY!
+        const loadingAnimInterval = setInterval(() => {
+            const element = document.getElementById('loadingdiv').firstElementChild;
+            element.style.color = '#'+(0x1000000+Math.random()*0xffffff).toString(16).substr(1,6)
+        }, 1000);
+        
+
+        window.onload = () => {
+            ws.addEventListener('error', (err) => {
+                const content = document.getElementById('loadingdiv');
+                content.style.display = "block";
+                document.getElementById('maincontent').style.display = 'none';
+
+                clearInterval(loadingAnimInterval);
+                if (err.target instanceof WebSocket) {
+                    content.innerHTML = "<h1>WEBSOCKET FAILED TO CONNECT</h1>";
+                } else content.innerHTML = "<h1>E R R O R</h1>";
+                
+                console.error(err);
+            });
+
+            ws.addEventListener('open', () => {
+                if (localStorage.getItem('sessionid') && localStorage.getItem('sessionid') != "undefined") {
+                    ws.send(JSON.stringify({ code: 1, sid: localStorage.getItem('sessionid') }));
+                } else {
+                    showLogin();
+                }
+            });
+
+            ws.addEventListener('message', (message) => {
+                const response = JSON.parse(message.data);
+
+                switch (response.code) {
+                    case 0: localStorage.setItem('sessionid', response.sessionid);
+                    window.location.reload();
+                    break;
+
+                    case 1: initializeLayout(ws, response);
+                    break;
+
+                    case 2: localStorage.removeItem('sessionid');
+                        window.location.reload();
+                    break;
+                    
+                    case 3: setupDM(response);
+                    break;
+
+                    case 5: addMessage(response.data);
+                    break;
+
+                    default: console.log("UNKNOWN RESPONSE ", response);
+                }
+            });
+
+            ws.addEventListener('close', (ev) => {
+                console.log(`WEBSOCKET CLOSED WITH CODE ${ev.code}`);
+            });
+        }
+    </script>
+    <title>proto-chat</title>
+</head>
+<body>
+    <div id="loadingdiv">
+        <h1>L O A D I N G . . .</h1>
+    </div>
+    <div id="maincontent" style="display: none">
+        <div id="dms" class="sidenav">
+            <!-- <a href="#about">About</a> -->
+        </div>
+        <div class="main">
+            <div id="chatMain" style="display: none;"></div>
+        </div>
+    </div>
+</body>
+</html>
