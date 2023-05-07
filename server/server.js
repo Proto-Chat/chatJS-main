@@ -4,7 +4,7 @@ import config from '../config.json' assert { type: 'json' };
 import { resumeSesion, createSession } from './initializations.js';
 import { getMessages } from './getMessgaes.js';
 import { getUidFromSid } from './utils/decodesid.js';
-import { newMessage } from './database/newMessage.js';
+import { handleMessage, newMessage } from './database/newMessage.js';
 import { logout } from './database/logout.js';
 
 //Stores clients by userId
@@ -48,10 +48,8 @@ wss.on('connection', async function connection(ws) {
                 break;
 
                 case 5:
-                    // Send the other people in the DM (seperated by "|") the message
-                    // and add it to the db
-                    newMessage(mongoconnection, webSocketClients, data.data);
-                        // ws.send(JSON.stringify({code: 5, data: {message: {author: 'OTHER', content: 'reply!', timestamp: new Date().toISOString()}}}));
+                    handleMessage(mongoconnection, webSocketClients, data.data, data.op);
+                    // ws.send(JSON.stringify({code: 5, data: {message: {author: 'OTHER', content: 'reply!', timestamp: new Date().toISOString()}}}));
                 break;
 
                 default: ws.send(403);

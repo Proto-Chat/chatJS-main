@@ -16,7 +16,8 @@ export function getMessages(mongoconnection, sid, other_id) {
         //         $lt:  '2023-05-06 00:00:00'
         //     }
         // }).toArray();
-        const doc = await dbo.find().toArray();
+
+        const doc = await dbo.find({$or: [{deleted : { $exists : false }}, {deleted: false}]}).toArray();
         doc.map((msg) => {
             delete msg._id;
             return msg

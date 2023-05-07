@@ -4,8 +4,8 @@ function send() {
     const authorID = getUidFromSid(localStorage.getItem('sessionid'));
     const username = JSON.parse(localStorage.getItem('user')).username;
     const channelID = localStorage.getItem('currentChatID');
-    const msg = {author: {username: username, uid: authorID}, channelID: channelID, content: element.value, timestamp: (new Date()).toISOString()}
+    const msg = {author: {username: username, uid: authorID}, id: crypto.randomUUID(), channelID: channelID, content: element.value, timestamp: (new Date()).toISOString()}
 
-    ws.send(JSON.stringify({code: 5, data: msg}));
+    ws.send(JSON.stringify({code: 5, op: 0, data: msg}));
     element.value = "";
 }

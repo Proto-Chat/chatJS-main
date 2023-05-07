@@ -23,8 +23,14 @@ function initializeLayout(ws, response) {
 
 function setupDM(response) {
     const data = response.data;
-    //Set who the other user is
-    const other = data.other;
+
+    // highlight the current one and make all others not active
+    var currentlyActive = document.getElementsByClassName('activechat')[0];
+    if (currentlyActive) currentlyActive.classList.remove('activechat');
+    
+    currentlyActive = document.getElementById(data.other);
+    currentlyActive.classList.add('activechat');
+    
     localStorage.setItem('currentChatID', data.chatID);
 
     const element = document.getElementById('chatMain');

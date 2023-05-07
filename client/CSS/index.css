@@ -6,6 +6,8 @@
     top: 0;
     left: 0;
     background-color: #111;
+    /* border-right: #111;
+    border-right-style: solid; */
     overflow-x: hidden;
     padding-top: 20px;
     color: white;
@@ -17,6 +19,7 @@
     font-size: 25px;
     color: #818181;
     display: block;
+    cursor: pointer;
 }
 
 .sidenav a:hover {
@@ -31,6 +34,36 @@
 
 .msginp {
     margin: 10px;
+}
+
+.msg {
+    color: red;
+    margin: 10px;
+}
+
+.activechat {
+    color: white;
+    background-color: lightgrey;
+}
+
+.msgdropdown {
+    background-color: #111;
+    position: absolute;
+    width: auto;
+    height: auto;
+    border-radius: 5px;
+}
+
+.msgdropdown a {
+    color: white;
+    font-size: 20px;
+    margin-top: 4px;
+    margin-bottom: 4px;
+    cursor: pointer;
+}
+
+.msgdropdown a:hover {
+    background-color: #818181;
 }
 
 @media screen and (max-height: 450px) {
