@@ -57,6 +57,8 @@ function initializeSocialLayout(ws, response) {
             }
         }
     }
+
+    setUpUser(JSON.parse(localStorage.getItem('user')));
 }
 
 
