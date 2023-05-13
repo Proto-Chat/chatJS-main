@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>proto-chat</title>
+
+    <script src="/client/scripts/socialsPage.js"></script>
+    <link rel="stylesheet" type="text/css" href="/client/CSS/socials.css">
+    <link rel="stylesheet" type="text/css" href="/client/CSS/index.css">
+
+    <script>
+        const ws = new WebSocket('ws://localhost:8080');
+        const divs = {};
+
+        function switchDiv(did) {
+            if (!(did in divs)) return;
+            for (const k in divs) {
+                if (k == did) divs[k].style.display = 'block';
+                else divs[k].style.display = 'none';
+            }
+        }
+
+
+        window.onload = () => {
+            divs.friends = document.getElementById('friends');
+            divs.connect = document.getElementById('connect');
+            divs.accept = document.getElementById('accept');
+            switchDiv('friends');
+
+            ws.addEventListener('error', (err) => {
+                alert('Uh oh!\nAn error occured!');
+                window.location.href = 'index.html';
+                
+                console.error(err);
+            });
+
+            ws.addEventListener('open', () => {
+                if (localStorage.getItem('sessionid') && localStorage.getItem('sessionid') != "undefined") {
+                    ws.send(JSON.stringify({ code: 4, op: 0, sid: localStorage.getItem('sessionid') }));
+                } else {
+                    window.location.href = 'index.html';
+                }
+            });
+
+            ws.addEventListener('message', (message) => {
+                const response = JSON.parse(message.data);
+                if (response == "401") return alert('401 UNAUTHORIZED');
+
+                switch (response.code) {
+                    case 0: window.location.href = 'index.html';
+                    break;
+
+                    case 4:
+                        const FRops = [2,3,4];
+                        if (response.op == 0) initializeSocialLayout(ws, response);
+                        else if (response.op == 1) recieveNewFriendRequest(ws, response);
+                        else if (FRops.includes(response.op)) getFriendRequestResponse(ws, response);
+                        else if (response.op == 5) createPendingResponseBar({username: response.data.username, uid: response.data.uid});
+                        else console.log(`UNKNOWN RESPONSE ${response.op}`);
+                    break;
+
+                    default: console.log(`Unknown code: ${response.code}`);
+                }
+            });
+        }
+    </script>
+</head>
+<body class="unselectable">
+    <div id="dms" class="sidenav">
+        <a href="index.html">HOME</a>
+    </div>
+    <div class="main">
+        <div class="toolbar">
+            <a onclick="switchDiv('friends')">Friends</a>
+            <a onclick="switchDiv('connect')">Add Friend</a>
+        </div>
+        <div id="friends">
+        
+        </div>
+        
+        <div id="connect">
+            <input class="addfriendinp" onkeydown="getAddFriendInp(event)">
+        </div>
+
+        <div id="accept">
+        
+        </div>
+    </div>
+    <div class="userprofile">
+        
+    </div>
+</body>
+</html>

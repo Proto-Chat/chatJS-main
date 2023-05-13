@@ -6,6 +6,15 @@ import { getMessages } from './getMessgaes.js';
 import { getUidFromSid } from './utils/decodesid.js';
 import { handleMessage, newMessage } from './database/newMessage.js';
 import { logout } from './database/logout.js';
+import { handleSocials } from './socials.js';
+import { wasabiManager } from './database/media/init.js';
+
+import express from 'express';
+import cors from 'cors';
+import { validateSession } from './database/getConnection.js';
+import { getPFP, uploadPFP } from './database/media/upload.js';
+import bodyParser from 'body-parser';
+
 
 //Stores clients by userId
 const webSocketClients = new Map();
@@ -14,7 +23,51 @@ const webSocketClients = new Map();
 const client = new MongoClient(config.mongouri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 client.on('error', (err) => { console.log(err); throw "N O" });
 const mongoconnection = client.connect();
-const wss = new WebSocketServer({ port: 8080 });
+
+const port = 8080;
+const wss = new WebSocketServer({ port: port });
+const CDNManager = new wasabiManager(config.accessKeyID, config.accesskeySecret, mongoconnection);
+
+//Recieve 
+const app = express();
+app.use(cors());
+app.use(bodyParser.raw({type: 'application/octet-stream', limit: '10mb'}));
+
+
+app.post('/updatepfp', async(request, response) => {
+    const { headers } = request;
+    const { sessionid, code, op, filename } = headers;
+
+    if (!sessionid || !code || !op || !filename) return response.send({code: 400, message: 'missing parameters'});
+    if (!validateSession(mongoconnection, sessionid)) return response.send({code: 404, message: 'session not found'});
+
+    const imgBufRaw = request.body;
+    const imgBuf = Buffer.from(imgBufRaw);
+
+    const res = await uploadPFP(mongoconnection, CDNManager, sessionid, filename, imgBuf);
+    
+    if (res == true) response.sendStatus(201);
+    else if (res == false) response.sendStatus(500);
+    else response.send(res);
+});
+
+
+app.get('/getpfp', async (req, res) => {
+    const{ headers } = req;
+    const { sessionid } = headers;
+    const isValidSession = await validateSession(mongoconnection, sessionid);
+    if (!isValidSession) return res.send({type: 1, code: 404, message: "session id not found"});
+
+    const pfpData = await getPFP(mongoconnection, CDNManager, sessionid);
+    if (!pfpData) return res.send(null);
+
+    const buffer = Buffer.concat([pfpData]);
+    res.setHeader('Content-Type', 'application/octet-stream');
+    res.send(buffer);
+});
+
+app.listen(port + 1, () => console.log(`App listening on port ${port + 1}`));
+
 
 
 wss.on('connection', async function connection(ws) {
@@ -33,8 +86,7 @@ wss.on('connection', async function connection(ws) {
                 break;
 
                 case 1:
-                    const uid = getUidFromSid(data.sid);
-                    const response = await resumeSesion(ws, mongoconnection, data, uid);
+                    const response = await resumeSesion(ws, mongoconnection, data, getUidFromSid(data.sid));
                     if (response) webSocketClients.set(data.sid, ws);
                 break;
 
@@ -43,8 +95,14 @@ wss.on('connection', async function connection(ws) {
                     logout(webSocketClients, ws, mongoconnection, data.data.sid);
                 break;
                 
-                case 3: const messages = await getMessages(mongoconnection, data.sid, data.uid);
+                case 3:
+                    const messages = await getMessages(mongoconnection, data.sid, data.uid);
                     ws.send(JSON.stringify({code: 3, data: messages}));
+                break;
+
+                case 4:
+                    handleSocials(ws, mongoconnection, data, webSocketClients);
+                    webSocketClients.set(data.sid, ws);
                 break;
 
                 case 5:

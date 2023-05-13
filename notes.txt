@@ -7,15 +7,36 @@ types:
 codes (server --> client):
 0 - new connection
 1 - resume session
+    op:
+        0: send everything except images
+4 - socials
+    op:
+        0: recieve main socials data
+        1: recieve new friend request
+        2: friend request accepted
+        3: friend request rejected
+        4: cancel friend request
+        5: friend request submitted (response to client --> server {code: 4, op: 1})
+        6: respond to profile edit request
+
 5 - message sent
 
 
 codes (client --> server):
 0 - new connection
 1 - resume session
+    op:
+        0: request everything except images
 2 - logout
-3 - get user
-4 - 
+3 - get messages with a user
+4 - socials
+    op:
+        0: get socials
+        1: send friend request
+        2: friend request accepted
+        3: friend request rejected
+        4: friend request cancelled
+        5: send profile edit request
 5 - message
     op:
         0: recieved
@@ -25,3 +46,32 @@ codes (client --> server):
 DM FORMAT
 DMs are stored in the format uid1|uid2 sorted by userID
     - ex if uid1 = 02 and uid2 = 01 then the DM would be 01|02
+
+
+USER
+1 - stored in db labeled with uid
+    dm_keys:
+        uid: String
+        username: String
+        notetoself: Boolean
+        open: Boolean
+    sessions:
+        sid: String
+
+2 - stored in db labeled "main" in a collection labeled "accounts"
+        username: String
+        Password: String
+        uid: String
+        sids: String[]
+
+3 - things stored in db labeled "social" have the following vars
+    types:
+        0: open friend request
+    other (js object):
+        username: String
+        uid: String
+
+
+USER NOTES:
+when first creating a user, open a DM with the user to
+itself with "notetoself = true";

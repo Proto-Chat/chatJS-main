@@ -1,0 +1,98 @@
+body {
+    --offwite: rgb(233, 233, 233);
+}
+
+.friendlist {
+    font-size: 20px;
+}
+
+.friendlist div {
+    border-top-style: solid;
+    border-width: 1px;
+    padding: 10px;
+    width: 90%;
+    margin: auto;
+    margin-left: 0px;
+    cursor: pointer;
+    color: var(--offwite);
+}
+
+.friendlist div:hover {
+    background-color: #414040;
+}
+
+.toolbar {
+    margin-bottom: 5px;
+    margin-left: 5px;
+    font-size: 25px;
+}
+
+.toolbar a {
+    color: white;
+    background-color: rgb(11, 71, 51);
+    padding: 5px;
+    border-radius: 10px;
+    margin: 5px;
+    cursor: pointer;
+}
+
+
+#connect {
+    margin: 10px;
+}
+
+.addfriendinp {
+    width: 222px;
+    box-sizing: border-box;
+    border: 2px solid #ccc;
+    border-radius: 4px;
+    font-size: 16px;
+    background-color: white;
+    background-image: url('/client/assets/searchicon.png');
+    background-size: contain;
+    background-repeat: no-repeat;
+    padding: 12px 20px 12px 55px;
+    transition: width 0.4s ease-in-out;
+}
+
+.addfriendinp:focus {
+    width: 100%;
+}
+
+.ufriendRequest {
+    border-top-style: solid;
+    border-width: 1px;
+    padding: 10px;
+    width: 90%;
+    margin: auto;
+    margin-left: 0px;
+    color: var(--offwite);
+}
+
+.ufriendRequest a {
+    float: right;
+    cursor: pointer;
+}
+
+.ufriendRequest:hover {
+    background-color: #414040;
+}
+
+.accptbtn {
+    color: rgb(9, 189, 9);
+    margin-right: 5px;
+}
+
+.rejctbtn {
+    color: rgb(218, 12, 12);
+    margin-left: 5px;
+}
+
+.cancelbtn {
+    color: rgb(180, 180, 180);
+    margin-left: 5px;
+}
+
+.cancelbtn:hover {
+    color: red;
+}

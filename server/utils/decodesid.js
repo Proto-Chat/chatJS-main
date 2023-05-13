@@ -1,9 +1,15 @@
 
-export const getUidFromSid = (sid) => Buffer.from(sid.split("?")[1], 'base64').toString();
+export const getUidFromSid = (sid) => {
+    try {
+        return Buffer.from(sid.split("?")[1], 'base64').toString();
+    } catch (err) {
+        return {type: 1, message: err.toString()}
+    }
+}
 
 export const getUIDFromUsername = (client, username) => {
     return new Promise(async (resolve) => {
-        const dbo = client.db('accounts').collection(username);
+        const dbo = client.db('main').collection('accounts');
         const doc = await dbo.findOne({username: username});
         if (!doc) return resolve(null);
 

@@ -2,25 +2,17 @@ function showLogin() {
     clearInterval(loadingAnimInterval);
     const element = document.getElementById('loadingdiv');
     for (const k of element.children) { element.removeChild(k); }
+    element.style.textAlign = 'center';
     
     const uinp = document.createElement('input');
     uinp.placeholder = "username";
-    uinp.style.marginLeft = '10px';
+    uinp.className = 'uinp';
 
     const upass = document.createElement('input');
     upass.placeholder = "password";
     upass.style.margin = '10px';
     upass.type = 'password';
-
-    const showPassBtn = document.createElement('input');
-    showPassBtn.type = 'checkbox';
-    showPassBtn.onclick = () => {
-        if (upass.type === "password") {
-            upass.type = "text";
-          } else {
-            upass.type = "password";
-          }
-    }
+    upass.className = 'uinp';
     
     const submitbtn = document.createElement('button');
     submitbtn.innerText = "login";
@@ -32,13 +24,19 @@ function showLogin() {
         ws.send(JSON.stringify({code: 0, username: username, password: password }));
     }
     submitbtn.style.marginLeft = '10px';
+    submitbtn.className = 'loginbtn';
     
+    const d1 = document.createElement('div');
+    d1.appendChild(uinp);
     element.appendChild(uinp);
-    element.appendChild(document.createElement('br'));
-    element.appendChild(upass);
-    element.appendChild(showPassBtn);
-    element.appendChild(document.createElement('br'));
-    element.appendChild(submitbtn);
+
+    const d2 = document.createElement('div');
+    d2.appendChild(upass)
+    element.appendChild(d2);
+    
+    const d3 = document.createElement('div');
+    d3.appendChild(submitbtn);
+    element.appendChild(d3);
 }
 
 

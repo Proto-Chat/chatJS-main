@@ -1,14 +1,21 @@
+export async function broadcastToSessions(client, connectionMap, others, toSend) {
+    try {
+        for (const k of others) {
+            const dbo = client.db(k).collection('sessions');
+            const docs = await dbo.find().toArray();
 
-async function broadcastToSessions(client, connectionMap, others, toSend) {
-    for (const k of others) {
-        const dbo = client.db(k).collection('sessions');
-        const docs = await dbo.find().toArray();
-        for (const doc of docs) {
-            if (connectionMap.has(doc.sid)) {
-                const ws = connectionMap.get(doc.sid);
-                ws.send(JSON.stringify(toSend));
-            }
-        }        
+            for (const doc of docs) {
+                if (connectionMap.has(doc.sid)) {
+                    const ws = connectionMap.get(doc.sid);
+                    ws.send(JSON.stringify(toSend));
+                }
+            }        
+        }
+
+        return true;
+    } catch (err) {
+        console.log(err);
+        return false;
     }
 }
 
@@ -52,12 +59,42 @@ async function deleteMessage(mongoconnection, connectionMap, data) {
 }
 
 
+async function editMessage(mongoconnection, connectionMap, data) {
+    if (!data || !data.chatid || !data.content) return; //Maybe make it a "bad request"?
+
+    const client = await mongoconnection;
+    const mbo = client.db('dms').collection(data.chatid);
+    const doc = await mbo.findOne({id: data.msgid});
+    const others = data.chatid.split("|").filter((o) => (o && o.length > 0));
+
+    if (!doc || data.user.uid != doc.author.uid) return;
+    // if (doc.content != data.content) return;
+
+    mbo.updateOne({id: data.msgid}, {$set: {content: data.content}});
+
+    broadcastToSessions(client, connectionMap, others, {
+        type: 0,
+        code: 5,
+        op: 2,
+        data: {
+            channelID: data.chatid,
+            msgid: data.msgid,
+            content: data.content,
+            author: data.user
+        }
+    });
+}
+
+
 export function handleMessage(mongoconnection, connectionMap, data, op) {
     switch (op) {
         case 0: newMessage(mongoconnection, connectionMap, data);
         break;
 
         case 1: deleteMessage(mongoconnection, connectionMap, data);
+        break;
+
+        case 2: editMessage(mongoconnection, connectionMap, data);
         break;
 
         default: return false;
