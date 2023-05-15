@@ -1,3 +1,23 @@
+function createPageMenu() {
+    const e = document.createElement('div');
+
+    const toHome = document.createElement('a');
+    toHome.href = '/client/index.html';
+    toHome.className = 'pageSwitchLink';
+    toHome.innerText = 'HOME';
+    e.appendChild(toHome);
+
+    const toSocials = document.createElement('a');
+    toSocials.href = '/client/social.html';
+    toSocials.className = 'pageSwitchLink';
+    toSocials.innerText = 'SOCIALS';
+    e.appendChild(toSocials);
+
+    e.className = 'pageSwitchContainer';
+    return e;
+}
+
+
 function initializeLayout(response) {
     clearInterval(loadingAnimInterval);
     const data = response.data;
@@ -5,6 +25,8 @@ function initializeLayout(response) {
     for (const k of element.childNodes) { k.remove(); }
 
     localStorage.setItem("user", JSON.stringify(data.user));
+
+    element.appendChild(createPageMenu());
 
     for (const i of data.dms) {
         const a = document.createElement('a');

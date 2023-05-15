@@ -56,7 +56,10 @@
 
                     case 4:
                         const FRops = [2,3,4];
-                        if (response.op == 0) initializeSocialLayout(ws, response);
+                        if (response.op == 0) {
+                            getPFP();
+                            initializeSocialLayout(ws, response);
+                        }
                         else if (response.op == 1) recieveNewFriendRequest(ws, response);
                         else if (FRops.includes(response.op)) getFriendRequestResponse(ws, response);
                         else if (response.op == 5) createPendingResponseBar({username: response.data.username, uid: response.data.uid});
@@ -71,7 +74,8 @@
 </head>
 <body class="unselectable">
     <div id="dms" class="sidenav">
-        <a href="index.html">HOME</a>
+        <a class="pageSwitchLink" href="index.html">HOME</a>
+        <a class="pageSwitchLink" href="social.html" aria-disabled="true">SOCIALS</a>
     </div>
     <div class="main">
         <div class="toolbar">

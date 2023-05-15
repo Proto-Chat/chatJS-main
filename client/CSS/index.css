@@ -308,6 +308,18 @@ input[type="file"] {
     float: left;
 }
 
+
+.pageSwitchContainer {
+    margin-top: -10px;
+    margin-bottom: 20px;
+}
+
+
+.pageSwitchLink {
+    border-bottom: solid #383737 1px;
+}
+
+
 @media screen and (max-height: 450px) {
     .sidenav {padding-top: 15px;}
     .sidenav a {font-size: 18px;}
