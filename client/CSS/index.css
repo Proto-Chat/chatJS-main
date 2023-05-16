@@ -226,9 +226,21 @@ body {
     padding: 5px 10px 5px 10px;
 }
 
-
 .loginbtn:hover {
     background-color: rgb(3, 170, 3);
+}
+
+.signupbtn {
+    background-color: rgb(3, 170, 3);
+    color: white;
+    font-size: 20px;
+    border: none;
+    cursor: pointer;
+    padding: 5px 10px 5px 10px;
+}
+
+.signupbtn:hover {
+    background-color: #0e3dbd;
 }
 
 

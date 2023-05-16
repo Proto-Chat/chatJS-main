@@ -86,7 +86,7 @@ export async function createNewUser(mongoconnection, ws, data) {
         client.db('dms').createCollection(`${doc.uid}|${doc.uid}`);
         
         //SEND CONFIRMTION OF ACCOUNT CREATION
-        // ws.send({})
+        ws.send(JSON.stringify({code: 0, op: 2, type: 0}));
     } catch (err) {
         console.log(err);
     }

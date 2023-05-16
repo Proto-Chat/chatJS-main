@@ -1,0 +1,88 @@
+body {
+    background-color: rgb(61, 60, 68);
+}
+
+
+.signupdiv {
+    width: 400px;
+    margin: auto;
+    margin-top: 10vh;
+    border-style: solid;
+    border-radius: 10px;
+    padding: 20px;
+    padding-top: 0px;
+    background-color: rgb(131, 131, 131);
+}
+
+.inputField {
+    width: 380px;
+    background-color: rgb(66, 66, 66);
+    height: 30px;
+    border: none;
+    color: white;
+    padding-left: 10px;
+    border-radius: 6px;
+    margin-top: 5px;
+}
+
+.inputField:focus {
+    outline: none;
+}
+
+.signupdiv label {
+    color: white;
+    font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+    font-size: 20px;
+}
+
+.inputDiv {
+    margin-top: 20px;
+}
+
+.submitBtn {
+    cursor: pointer;
+    background-color: #333;
+    color: #fff;
+    border: none;
+    padding: 10px 20px;
+    font-size: 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.submitBtn:hover {
+    background-color: #555;
+}
+
+.backBtn {
+    margin: auto;
+    text-decoration: none;
+    background-color: #4CAF50;
+    color: #fff;
+    border: none;
+    padding: 12px 24px;
+    font-size: 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.backBtn:hover {
+    background-color: #39833c;
+  }
+
+.backBtn:after {
+    color: white;
+    text-decoration: none;
+}
+
+.unselectable {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -webkit-user-drag: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}

@@ -21,10 +21,16 @@ function showLogin() {
         const password = upass.value;
 
         if (!username || !password) return;
-        ws.send(JSON.stringify({code: 0, username: username, password: password }));
+        ws.send(JSON.stringify({code: 0, op: 0, username: username, password: password }));
     }
     submitbtn.style.marginLeft = '10px';
-    submitbtn.className = 'loginbtn';
+    submitbtn.className = 'loginbtn'; 
+    
+    const signupbtn = document.createElement('button');
+    signupbtn.innerText = "sign up";
+    signupbtn.onclick = () => { window.location.href = '/client/join.html'; }
+    signupbtn.style.marginLeft = '10px';
+    signupbtn.className = 'signupbtn';
     
     const d1 = document.createElement('div');
     d1.appendChild(uinp);
@@ -37,6 +43,11 @@ function showLogin() {
     const d3 = document.createElement('div');
     d3.appendChild(submitbtn);
     element.appendChild(d3);
+    
+    const d4 = document.createElement('div');
+    d4.style.marginTop = '10px';
+    d4.appendChild(signupbtn);
+    element.appendChild(d4);
 }
 
 

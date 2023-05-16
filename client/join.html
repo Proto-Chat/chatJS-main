@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" type="text/css" href="/client/CSS/login.css">
+
+    <script>
+        const ws = new WebSocket('ws://localhost:8080');
+
+        window.onload = () => {
+            // ws.addEventListener('error', (err) => {
+            //     alert('Uh oh!\nAn error occured!');
+            //     window.location.href = 'index.html';
+                
+            //     console.error(err);
+            // });
+
+            ws.addEventListener('message', (message) => {
+                const data = JSON.parse(message.data);
+                console.log(data);
+                if (data.code != 0) return;
+                else if (data.op == 1) recieveCode(data);
+                else if (data.op == 2) recieveCodeResponse(data);
+            });
+        }
+
+        function createConfcodeRequest() {
+            const username = document.getElementById('unameinp').value;
+            const password = document.getElementById('upassinp').value;
+            const email = document.getElementById('uemailinp').value;
+            if (!username || !password || !email) return;
+
+            ws.send(JSON.stringify({
+                code: 0,
+                op: 1,
+                data: {
+                    username: username,
+                    password: password,
+                    email: email
+                }
+            }));
+        }
+    </script>
+
+    <script>
+        function recieveCode(data) {
+            if (data.type == 1) return alert('email already exists!');
+            if (data.type == 2) return alert('username already exists!');
+
+            const element = document.getElementById('signupInpWrapper');
+            element.style.display = 'none';
+
+            const confEl = document.getElementById('confCodeInpWrapper');
+            confEl.style.display = 'block';
+        }
+
+        function sendConfCode() {
+            const code = document.getElementById('confCode').value;
+            if (code) {
+                ws.send(JSON.stringify({
+                    code: 0,
+                    op: 2,
+                    data: {
+                        confCode: code
+                    }
+                }));
+            }
+        }
+
+        function recieveCodeResponse(data) {
+            if (data.type == 1) return alert('incorrect code!');
+            else if (data.type == 2) return alert('code expired!\nplease refresh the page and try again!');
+            window.location.href = '/client';
+        }
+    </script>
+</head>
+<body class="unselectable">
+    <div id="signupInpWrapper">
+        <div class="signupdiv">
+            <h1 style="text-align: center;">Create an account</h1>
+            <div>
+                <label for="uemailinp">email</label>
+                <input type="email" class="inputField" id="uemailinp">
+            </div>
+            
+            <div class="inputDiv">
+                <label for="unameinp">username</label>
+                <input type="text" class="inputField" id="unameinp">
+            </div>
+            
+            <div class="inputDiv">
+                <label for="upassinp">password</label>
+                <input type="password" class="inputField" id="upassinp">
+            </div>
+
+            <div style="margin-top: 20px; text-align: center;">
+                <a class="submitBtn" onclick="createConfcodeRequest()">SUBMIT</a>
+            </div>
+        </div>
+
+        <div style="text-align: center; margin-top: 20px;">
+            <a class="backBtn" href="/client/index.html">HOME</a>
+        </div>
+    </div>
+
+    <div id="confCodeInpWrapper" class="signupdiv" style="display: none;">
+        <h1>Confirmation email sent!</h1>
+        <label for="confCode">Confirmation Code</label>
+        <input type="text" class="inputField" id="confCode">
+        <div style="margin-top: 20px; text-align: center;">
+            <a class="submitBtn" onclick="sendConfCode()">SUBMIT</a>
+        </div>
+    </div>
+</body>
+</html>

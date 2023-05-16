@@ -6,6 +6,22 @@ types:
 
 codes (server --> client):
 0 - new connection
+    op:
+        0: successful login
+        1: send confirmation code or error
+            type:
+                0 - success (conf code sent)
+                1 - email already exists
+                2 - username already exists
+                3? - need stronger password?
+        2: response to confirmation code input:
+            type:
+                0 - success (account created) -- note delete all user's conf codes here?
+                1 - failiure (incorrect code)
+                2 - failiure (code expired)
+        401: incorrect password
+        403: invalid session id
+        404: incorrect username
 1 - resume session
     op:
         0: send everything except images
@@ -24,6 +40,10 @@ codes (server --> client):
 
 codes (client --> server):
 0 - new connection
+    op:
+        0: initial login request
+        1: account creation request
+        2: confirmation code submition
 1 - resume session
     op:
         0: request everything except images

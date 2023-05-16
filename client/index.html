@@ -33,7 +33,6 @@
         
 
         window.onload = () => {
-            getPFP();
             ws.addEventListener('error', (err) => {
                 const content = document.getElementById('loadingdiv');
                 content.style.display = "block";
@@ -50,6 +49,7 @@
             ws.addEventListener('open', () => {
                 if (localStorage.getItem('sessionid') && localStorage.getItem('sessionid') != "undefined") {
                     ws.send(JSON.stringify({ code: 1, op: 0, sid: localStorage.getItem('sessionid') }));
+                    getPFP();
                 } else {
                     showLogin();
                 }
