@@ -198,6 +198,7 @@ body {
     line-height: 5px;
     width: 179px;
     z-index: 1;
+    margin-left: 10px;
 }
 
 .msgdropdowngif {

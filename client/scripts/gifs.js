@@ -49,6 +49,10 @@ function createGIF(srcObj) {
     element.style.display = 'flex';
     element.style.marginTop = '3px';
 
+    element.addEventListener('contextmenu', (e) => {
+        e.target.parentElement.dispatchEvent(new Event('contextmenu'));
+    })
+
     return element;
 }
 

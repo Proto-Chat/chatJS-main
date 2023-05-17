@@ -2,13 +2,13 @@ function createPageMenu() {
     const e = document.createElement('div');
 
     const toHome = document.createElement('a');
-    toHome.href = '/client/index.html';
+    toHome.href = '/index.html';
     toHome.className = 'pageSwitchLink';
     toHome.innerText = 'HOME';
     e.appendChild(toHome);
 
     const toSocials = document.createElement('a');
-    toSocials.href = '/client/social.html';
+    toSocials.href = '/social.html';
     toSocials.className = 'pageSwitchLink';
     toSocials.innerText = 'SOCIALS';
     e.appendChild(toSocials);

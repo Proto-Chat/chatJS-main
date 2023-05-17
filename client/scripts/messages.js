@@ -33,7 +33,7 @@ function edit(data) {
 
 
 async function createContextMenu(e, editable = true) {
-    const target = e.target;
+    const target = (e.target.tagName == 'VIDEO') ? e.target.parentElement : e.target;
     const dropdown = document.createElement('div');
     dropdown.className = "msgdropdown";
 
