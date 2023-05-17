@@ -61,7 +61,11 @@ body {
     height: 25px;
     margin-top: -3px;
     cursor: grab;
+    display: inline;
+    margin-right: 20px;
 }
+
+.nopointer { cursor: default; }
 
 .editbtn {
     display: inline;
@@ -87,6 +91,7 @@ body {
 
 .msg {
     color: inherit;
+    position: relative;
 }
 
 .unselectable {
@@ -188,10 +193,15 @@ body {
 .msgdropdown {
     background-color: #111;
     position: absolute;
-    width: auto;
     height: auto;
     border-radius: 5px;
     line-height: 5px;
+    width: 179px;
+    z-index: 1;
+}
+
+.msgdropdowngif {
+    bottom: 10px;
 }
 
 .msgdropdown a {
@@ -205,7 +215,6 @@ body {
 .msgdropdown a:hover {
     background-color: #818181;
 }
-
 
 .uinp{
     padding: 6px;

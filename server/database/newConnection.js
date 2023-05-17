@@ -44,6 +44,7 @@ export async function createNewUser(mongoconnection, ws, data) {
         const res = await dbo.insertOne({
             username: data.username,
             password: passEncrypted,
+            email: data.email,
             sids: []
         });
         

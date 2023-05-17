@@ -1,0 +1,44 @@
+.gifpopup {
+    position: absolute;
+    right: 20px;
+    bottom: 55px;
+    background-color: rgb(46, 46, 46);
+    width: 400px;
+    height: 350px;
+    text-align: center;
+}
+
+.gifpopup input {
+    width: 375px;
+    height: 20px;
+    margin: auto;
+    background-color: gray;
+    border: solid;
+    border-radius: 10px;
+    padding: 5px;
+    color: white;
+    border-color: black;
+}
+
+.gifpopup .maincontent {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem 1rem;
+    padding: 0.5rem;
+    overflow-y: scroll;
+    height: 290px;
+    margin-left: 20px;
+}
+
+.gifpopup .maincontent img {
+    float: left;
+    background-color: rgb(0, 0, 0);
+    opacity: 0.6;
+}
+
+.giftxtoverlay {
+    position: absolute;
+    top: 15%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}

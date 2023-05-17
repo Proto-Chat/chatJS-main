@@ -31,10 +31,13 @@ const port = 8080;
 const wss = new WebSocketServer({ port: port });
 const CDNManager = new wasabiManager(config.accessKeyID, config.accesskeySecret, mongoconnection);
 
-//Recieve 
+
 const app = express();
 app.use(cors());
 app.use(bodyParser.raw({type: 'application/octet-stream', limit: '10mb'}));
+app.use('/assets', express.static('../assets'));
+app.use('/CSS', express.static('../CSS'));
+app.use('/scripts', express.static('../scripts'));
 
 
 app.post('/updatepfp', async(request, response) => {
@@ -74,8 +77,17 @@ app.get('/getpfp', async (req, res) => {
     }
 });
 
-app.listen(port + 1, () => console.log(`App listening on port ${port + 1}`));
 
+app.get('/*', async (req, res) => {    
+    if (req.path == '/favicon.ico') {
+        res.sendFile('favicon.ico', {root: './client/assets'});
+    } else {
+        res.sendFile(`${req.path}`, {root: './client'});
+    }
+});
+
+
+app.listen(port + 1, () => console.log(`App listening on port ${port + 1}`));
 
 
 wss.on('connection', async function connection(ws) {
@@ -119,11 +131,9 @@ wss.on('connection', async function connection(ws) {
 
                 case 5:
                     handleMessage(mongoconnection, webSocketClients, data.data, data.op);
-                    // ws.send(JSON.stringify({code: 5, data: {message: {author: 'OTHER', content: 'reply!', timestamp: new Date().toISOString()}}}));
                 break;
 
                 default: ws.send(403);
-
             }
         } catch (err) {
             console.log(err);

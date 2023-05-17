@@ -62,6 +62,10 @@ function setUpUser(user) {
     const settingsTrigger = document.createElement('p');
     settingsTrigger.innerText = '⚙';
     settingsTrigger.className = 'settingsTrigger';
+    
+    const logoutTrigger = document.createElement('p');
+    logoutTrigger.innerText = '🛑';
+    logoutTrigger.className = 'settingsTrigger';
 
     const profileConfigs = {
         username: "",
@@ -79,18 +83,23 @@ function setUpUser(user) {
     profileConfigs.icon = localConfigs?.icon || "";
 
     element.onclick = () => {
-        if (!settingsTrigger.matches(":hover")) {
-            // initialShow(user);
-            initialShow(profileConfigs);
-        } else {
+        if (settingsTrigger.matches(":hover")) {
             profileConfigs.editing = true;
+            initialShow(profileConfigs);
+        }
+        else if (logoutTrigger.matches(':hover')) {
+            logout();
+        } else {
+            // initialShow(user);
             initialShow(profileConfigs);
         }
     }
 
     const optbar = document.createElement('div');
     optbar.style.paddingLeft = '10px';
+    optbar.className = 'nopointer';
     optbar.appendChild(settingsTrigger);
+    optbar.appendChild(logoutTrigger);
 
     element.appendChild(optbar);
 }
@@ -147,6 +156,18 @@ function setupDM(response) {
         inpelement.style.border = "none";
     }
 
+    const gifBtn = document.createElement('button');
+    gifBtn.innerText = "GIF";
+    gifBtn.onclick = (e) => {
+        e.preventDefault();
+        if (document.getElementsByClassName('gifpopup').length > 0) return;
+        const gifpopup = createGifPopup();
+        gifpopup.style.right = e.target.style.right;
+        e.target.parentElement.appendChild(gifpopup);
+    }
+    gifBtn.className = 'msgbtnsend';
+    gifBtn.style.marginRight = '5px';
+
     const inpbtn = document.createElement('button');
     inpbtn.onclick = (e) => {
         e.preventDefault();
@@ -162,6 +183,7 @@ function setupDM(response) {
     const inpdiv = document.createElement('form');
     inpdiv.className = 'msginp';
     inpdiv.appendChild(inpelement);
+    inpdiv.appendChild(gifBtn);
     inpdiv.appendChild(inpbtn);
     inpwrapper.appendChild(inpdiv);
     

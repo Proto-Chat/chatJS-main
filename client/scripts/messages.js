@@ -32,13 +32,20 @@ function edit(data) {
 }
 
 
-function createContextMenu(e) {
+async function createContextMenu(e, editable = true) {
     const target = e.target;
     const dropdown = document.createElement('div');
     dropdown.className = "msgdropdown";
 
     //#region COMPONENTS
-    const currentString = String(target.innerText.substring(target.innerText.indexOf(':') + 1));
+    var currentString;
+    const isGif = (target.firstChild.tagName == 'VIDEO');
+
+    if (!isGif) {
+        currentString = String(target.innerText.substring(target.innerText.indexOf(':') + 1));
+    } else {
+        currentString = String(target.firstChild.src);
+    }
     
     const copyid = document.createElement('a');
     copyid.onclick = () => {
@@ -66,59 +73,77 @@ function createContextMenu(e) {
     deletemsg.innerText = "delete message";
     dropdown.appendChild(deletemsg);
 
-    const editmsg = document.createElement('a');
-    editmsg.innerText = "edit message";
-    editmsg.onclick = () => {
-        const newinpdiv = document.createElement('textarea');
-        newinpdiv.className = 'editingdiv';
-        newinpdiv.value = currentString;
-
-        //Set initial height
-        newinpdiv.style.height = (newinpdiv.rows * 25)+"px";
-        
-        const oldMsg = target;
-        var keys = {};
-        newinpdiv.onkeydown = (e) => {
-            const switchBackFromInp = () => {
-                if (newinpdiv.nextSibling.nodeName == "BR") newinpdiv.nextSibling.remove();
-                newinpdiv.replaceWith(oldMsg);
-            }
-
-            let { which, type } = e || Event; // to deal with IE
-            let isKeyDown = (type == 'keydown');
-            keys[which] = isKeyDown;
+    if (editable) {
+        const editmsg = document.createElement('a');
+        editmsg.innerText = "edit message";
+        editmsg.onclick = () => {
+            const newinpdiv = document.createElement('textarea');
+            newinpdiv.className = 'editingdiv';
+            newinpdiv.value = currentString;
     
-            if(isKeyDown && keys[13] && !keys[16]) {
-                if (newinpdiv.value == oldMsg.innerText) return switchBackFromInp();
+            //Set initial height
+            newinpdiv.style.height = (newinpdiv.rows * 25)+"px";
+            
+            const oldMsg = target;
+            var keys = {};
+            newinpdiv.onkeydown = (e) => {
+                const switchBackFromInp = () => {
+                    if (newinpdiv.nextSibling.nodeName == "BR") newinpdiv.nextSibling.remove();
 
-                ws.send(JSON.stringify({
-                    code: 5,
-                    op: 2,
-                    data: {
-                        content: newinpdiv.value,
-                        user: JSON.parse(userRaw),
-                        chatid: localStorage.getItem('currentChatID'),
-                        msgid: target.id
+                    //Video autoplay stuff
+                    if (oldMsg.firstChild.tagName == 'VIDEO') {
+                        oldMsg.firstChild.play();
                     }
-                }));
-            } else if (e.code == 'Escape') {
-                switchBackFromInp();
+                    newinpdiv.replaceWith(oldMsg);
+                }
+    
+                let { which, type } = e || Event; // to deal with IE
+                let isKeyDown = (type == 'keydown');
+                keys[which] = isKeyDown;
+        
+                if(isKeyDown && keys[13] && !keys[16]) {
+                    if (newinpdiv.value == oldMsg.innerText) return switchBackFromInp();
+    
+                    ws.send(JSON.stringify({
+                        code: 5,
+                        op: 2,
+                        data: {
+                            content: newinpdiv.value,
+                            user: JSON.parse(userRaw),
+                            chatid: localStorage.getItem('currentChatID'),
+                            msgid: target.id
+                        }
+                    }));
+                } else if (e.code == 'Escape') {
+                    switchBackFromInp();
+                }
             }
+    
+            newinpdiv.onkeyup = (e) => {
+                let { which, type } = e || Event; // to deal with IE
+                let isKeyDown = (type == 'keydown');
+                keys[which] = isKeyDown;
+    
+                e.target.style.height = "1px";
+                e.target.style.height = (e.target.scrollHeight)+"px";
+            }
+    
+            newinpdiv.id = String(target.id);
+            target.replaceWith(newinpdiv, document.createElement('br'));
         }
-
-        newinpdiv.onkeyup = (e) => {
-            let { which, type } = e || Event; // to deal with IE
-            let isKeyDown = (type == 'keydown');
-            keys[which] = isKeyDown;
-
-            e.target.style.height = "1px";
-            e.target.style.height = (e.target.scrollHeight)+"px";
-        }
-
-        newinpdiv.id = String(target.id);
-        target.replaceWith(newinpdiv, document.createElement('br'));
+        dropdown.appendChild(editmsg);
     }
-    dropdown.appendChild(editmsg);
+
+    if (isGif) {
+        dropdown.classList.add('msgdropdowngif');
+        const copyGiflink = document.createElement('a');
+        copyGiflink.innerText = "copy GiF link";
+        copyGiflink.onclick = async () => {
+            const url = await getGif(null, target.firstChild.id, false);
+            navigator.clipboard.writeText(url.url);
+        }
+        dropdown.appendChild(copyGiflink);
+    }
 
     //#endregion
 
@@ -132,8 +157,19 @@ function createContextMenu(e) {
     target.appendChild(dropdown);
 }
 
+function isValidUrl(str) {
+    let url;
+    try {
+        url = new URL(str);
+        return url.protocol === "http:" || url.protocol === "https:";
+    } catch (_) {
+        return false;
+    }
+}
+
 
 function createNewMessage(msg) {
+    const container = document.createElement('div');
     const msgContentContainer = document.createElement('span');
     msgContentContainer.className = 'msg';
     msgContentContainer.id = msg.id;
@@ -145,16 +181,20 @@ function createNewMessage(msg) {
         e.preventDefault();
         createContextMenu(e);
     });
-    msgContentContainer.innerText = `${msg.content}`;
 
     const userDisplay = document.createElement('a');
     userDisplay.innerText = `${msg.author.username}`;
     userDisplay.className = 'msgauthor';
 
-    const container = document.createElement('div');
     container.className = 'messageContainer';
     container.appendChild(userDisplay);
     container.appendChild(document.createElement('br'));
+    
+    if (msg.content.url && isValidUrl(msg.content.url) && msg.content.url.indexOf('media.tenor.com') != -1) {
+        msgContentContainer.appendChild(createGIF(msg.content));
+        msgContentContainer.style.height = '200px';
+    } else msgContentContainer.innerText = `${msg.content}`;
+
     container.appendChild(msgContentContainer);
     
     return container;
