@@ -208,8 +208,3 @@ function addMessage(msg, author = null) {
     if (author) msg.author = author;
     element.appendChild(createNewMessage(msg));
 }
-
-
-// function removeMessage(data) {
-//     ws.send(JSON.stringify(data));
-// }
