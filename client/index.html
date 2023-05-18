@@ -26,6 +26,7 @@
 
     <script>
         const ws = new WebSocket(createWSPath());
+        setInterval(() => { ws.send(JSON.stringify({code: 10})); }, 30000);
 
         //MUST BE DECLAIRED GLOBALLY!
         const loadingAnimInterval = setInterval(() => {
@@ -103,6 +104,8 @@
                     case 5: messageRecieved(response);
                     break;
 
+                    case 10: break;
+                    
                     default: console.log("UNKNOWN RESPONSE ", response);
                 }
             });

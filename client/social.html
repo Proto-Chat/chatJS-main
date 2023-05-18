@@ -15,6 +15,7 @@
 
     <script>
         const ws = new WebSocket(createWSPath());
+        setInterval(() => { ws.send(JSON.stringify({code: 10})); }, 30000);
         const divs = {};
 
         function switchDiv(did) {
@@ -67,6 +68,8 @@
                         else console.log(`UNKNOWN RESPONSE ${response.op}`);
                     break;
 
+                    case 10: break;
+                    
                     default: console.log(`Unknown code: ${response.code}`);
                 }
             });

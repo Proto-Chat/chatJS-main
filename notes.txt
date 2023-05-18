@@ -36,6 +36,7 @@ codes (server --> client):
         6: respond to profile edit request
 
 5 - message sent
+10 - pong
 
 
 codes (client --> server):
@@ -62,6 +63,7 @@ codes (client --> server):
         0: recieved
         1: deleted
         2: edited
+10 - ping
 
 DM FORMAT
 DMs are stored in the format uid1|uid2 sorted by userID

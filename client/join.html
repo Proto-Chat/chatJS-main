@@ -10,6 +10,7 @@
 
     <script>
         const ws = new WebSocket(createWSPath());
+        setInterval(() => { ws.send(JSON.stringify({code: 10})); }, 30000);
 
         window.onload = () => {
             ws.addEventListener('error', (err) => {
@@ -23,7 +24,6 @@
 
             ws.addEventListener('message', (message) => {
                 const data = JSON.parse(message.data);
-                console.log(data);
                 if (data.code != 0) return;
                 else if (data.op == 1) recieveCode(data);
                 else if (data.op == 2) recieveCodeResponse(data);

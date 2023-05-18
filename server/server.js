@@ -171,6 +171,10 @@ app.ws('/websocket', async (ws, req) => {
                     handleMessage(mongoconnection, webSocketClients, data.data, data.op);
                 break;
 
+                case 10:
+                    ws.send(JSON.stringify({code: 10}));
+                break;
+
                 default: ws.send(403);
             }
         } catch (err) {
