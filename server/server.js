@@ -30,7 +30,7 @@ const client = new MongoClient(config.mongouri, { useNewUrlParser: true, useUnif
 client.on('error', (err) => { console.log(err); throw "N O" });
 const mongoconnection = client.connect();
 
-const port = 8080;
+const port = process.env.PORT || 3000;
 // const wss = new WebSocketServer({ port: port, path: '/websocket' });
 const CDNManager = new wasabiManager(config.accessKeyID, config.accesskeySecret, mongoconnection);
 
