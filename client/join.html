@@ -4,19 +4,22 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>proto-chat</title>
     <link rel="stylesheet" type="text/css" href="/CSS/login.css">
+    <script src="/scripts/initialize.js"></script>
 
     <script>
-        const ws = new WebSocket('ws://localhost:8080');
+        const ws = new WebSocket(createWSPath());
 
         window.onload = () => {
-            // ws.addEventListener('error', (err) => {
-            //     alert('Uh oh!\nAn error occured!');
-            //     window.location.href = 'index.html';
+            ws.addEventListener('error', (err) => {
+                alert('Uh oh!\nAn error occured!');
+                window.location.href = 'index';
                 
-            //     console.error(err);
-            // });
+                console.error(err);
+            });
+
+            ws.addEventListener('close', (ev) => console.log(ev));
 
             ws.addEventListener('message', (message) => {
                 const data = JSON.parse(message.data);
@@ -102,7 +105,7 @@
         </div>
 
         <div style="text-align: center; margin-top: 20px;">
-            <a class="backBtn" href="/index.html">HOME</a>
+            <a class="backBtn" href="/">HOME</a>
         </div>
     </div>
 

@@ -1,14 +1,23 @@
+function createWSPath() {
+    const socketProtocol = (window.location.protocol === 'https:' ? 'wss:' : 'ws:')
+    var echoSocketUrl = socketProtocol + `//${window.location.hostname}`;
+    if (window.location.port) echoSocketUrl += `:${window.location.port}`;
+    echoSocketUrl += '/websocket';
+    return echoSocketUrl;
+}
+
+
 function createPageMenu() {
     const e = document.createElement('div');
 
     const toHome = document.createElement('a');
-    toHome.href = '/index.html';
+    toHome.href = '/';
     toHome.className = 'pageSwitchLink';
     toHome.innerText = 'HOME';
     e.appendChild(toHome);
 
     const toSocials = document.createElement('a');
-    toSocials.href = '/social.html';
+    toSocials.href = '/social';
     toSocials.className = 'pageSwitchLink';
     toSocials.innerText = 'SOCIALS';
     e.appendChild(toSocials);
@@ -175,6 +184,8 @@ function setupDM(response) {
     };
     inpbtn.className = 'msgbtnsend';
     inpbtn.innerText = "S E N D";
+    inpbtn.style.minWidth = '60px';
+    inpbtn.style.marginRight = '1px';
     // const i = document.createElement('i');
     // i.className = 'fa-duotone fa-paper-plane-top';
     // inpbtn.appendChild(i);

@@ -1,7 +1,8 @@
+import expressWs from 'express-ws';
 import {
     WebSocketServer,
     MongoClient, ServerApiVersion, GridFSBucket, MongoGridFSChunkError,
-    config,
+    configImp,
     resumeSesion, createSession,
     getMessages,
     getUidFromSid,
@@ -15,9 +16,11 @@ import {
     getPFP, uploadPFP,
     bodyParser,
     createUConf,
-    processUConf
+    processUConf,
+    enableWs
 } from './imports.js';
 
+const config = (configImp) ? configImp : process.env;
 
 //Stores clients by userId
 const webSocketClients = new Map();
@@ -28,7 +31,7 @@ client.on('error', (err) => { console.log(err); throw "N O" });
 const mongoconnection = client.connect();
 
 const port = 8080;
-const wss = new WebSocketServer({ port: port });
+// const wss = new WebSocketServer({ port: port, path: '/websocket' });
 const CDNManager = new wasabiManager(config.accessKeyID, config.accesskeySecret, mongoconnection);
 
 
@@ -38,6 +41,7 @@ app.use(bodyParser.raw({type: 'application/octet-stream', limit: '10mb'}));
 app.use('/assets', express.static('../assets'));
 app.use('/CSS', express.static('../CSS'));
 app.use('/scripts', express.static('../scripts'));
+const wsInstance = expressWs(app);
 
 
 app.post('/updatepfp', async(request, response) => {
@@ -77,24 +81,58 @@ app.get('/getpfp', async (req, res) => {
     }
 });
 
-
-app.get('/*', async (req, res) => {    
+/* THIS WILL BREAK THE WS SERVER
+app.get('/*', async (req, res) => {   
     if (req.path == '/favicon.ico') {
         res.sendFile('favicon.ico', {root: './client/assets'});
     } else {
         res.sendFile(`${req.path}`, {root: './client'});
     }
 });
+*/
+
+app.get('/favicon.ico', (req, res) => {
+    res.sendFile('favicon.ico', {root: './client/assets'});
+});
 
 
-app.listen(port + 1, () => console.log(`App listening on port ${port + 1}`));
+app.get('/', (req, res) => {
+    res.sendFile(`index.html`, {root: './client'});
+});
+
+app.get('/social', (req, res) => {
+    res.sendFile(`social.html`, {root: './client'});
+});
+
+app.get('/join', (req, res) => {
+    res.sendFile(`join.html`, {root: './client'});
+});
+
+app.get('/scripts/*', (req, res) => {
+    res.sendFile(`${req.path}`, {root: './client'});
+});
+
+app.get('/CSS/*', (req, res) => {
+    res.sendFile(`${req.path}`, {root: './client'});
+});
+
+app.get('/assets/*', (req, res) => {
+    res.sendFile(`${req.path}`, {root: './client'});
+});
 
 
-wss.on('connection', async function connection(ws) {
+app.ws('/websocket', async (ws, req) => {
     ws.on('error', console.error);
 
     ws.on('message', async (dataRaw) => {
         try {
+            try {
+                JSON.parse(dataRaw);
+            }
+            catch (err) {
+                return ws.send(JSON.stringify({type: 1, code: 400, message: "Please use a JSON format"}));
+            }
+            
             const data = JSON.parse(dataRaw);
             const code = data['code'];
 
@@ -142,3 +180,18 @@ wss.on('connection', async function connection(ws) {
     });
 });
 
+// app.ws('/*', (ws, req) => {
+//     // WebSocket connection handling
+//     ws.on('message', (message) => {
+//       // Handle incoming WebSocket messages
+//       console.log('Received message:', message);
+//       ws.send('RESPONSE!');
+//     });
+  
+//     ws.on('close', () => {
+//       // Handle WebSocket connection closure
+//       console.log('WebSocket connection closed');
+//     });
+//   });
+
+app.listen(port, () => console.log(`App listening on port ${port}`));

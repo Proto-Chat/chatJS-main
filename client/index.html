@@ -25,7 +25,7 @@
     </script>
 
     <script>
-        const ws = new WebSocket(`ws://localhost:8080`); // CHANGE LATER
+        const ws = new WebSocket(createWSPath());
 
         //MUST BE DECLAIRED GLOBALLY!
         const loadingAnimInterval = setInterval(() => {
@@ -61,7 +61,6 @@
                 // if (message instanceof Buffer && !sessionStorage.getItem('pfp')) {
                 //     return setPFP(message);
                 // }
-
                 const response = JSON.parse(message.data);
 
                 switch (response.code) {
@@ -109,6 +108,7 @@
             });
 
             ws.addEventListener('close', (ev) => {
+                console.log(ev);
                 console.log(`WEBSOCKET CLOSED WITH CODE ${ev.code}`);
             });
         }

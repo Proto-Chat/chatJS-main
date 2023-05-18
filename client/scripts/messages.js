@@ -202,6 +202,8 @@ function createNewMessage(msg) {
 
 
 function addMessage(msg, author = null) {
+    //Check if the message already exists (deals with "note-to-self")
+    if (document.getElementById(msg.id)) return;
     const element = document.getElementById('messages');
     if (author) msg.author = author;
     element.appendChild(createNewMessage(msg));

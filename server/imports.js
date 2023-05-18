@@ -2,7 +2,6 @@
 
 import { WebSocketServer } from 'ws';
 import { MongoClient, ServerApiVersion, GridFSBucket, MongoGridFSChunkError } from 'mongodb';
-import config from '../config.json' assert { type: 'json' };
 import { resumeSesion, createSession } from './initializations.js';
 import { getMessages } from './getMessgaes.js';
 import { getUidFromSid } from './utils/decodesid.js';
@@ -17,13 +16,15 @@ import { validateSession } from './database/getConnection.js';
 import { getPFP, uploadPFP } from './database/media/upload.js';
 import bodyParser from 'body-parser';
 import { createUConf, processUConf } from './database/uConf.js';
+import enableWs from 'express-ws';
 
-
+import configImp from '../config.json' assert { type: 'json' };
+// var configImp = null;
 
 export {
     WebSocketServer,
     MongoClient, ServerApiVersion, GridFSBucket, MongoGridFSChunkError,
-    config,
+    configImp,
     resumeSesion, createSession,
     getMessages,
     getUidFromSid,
@@ -37,5 +38,6 @@ export {
     getPFP, uploadPFP,
     bodyParser,
     createUConf,
-    processUConf
+    processUConf,
+    enableWs
 }

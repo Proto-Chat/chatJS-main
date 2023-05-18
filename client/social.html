@@ -14,7 +14,7 @@
     <link rel="stylesheet" type="text/css" href="/CSS/gif.css">
 
     <script>
-        const ws = new WebSocket('ws://localhost:8080');
+        const ws = new WebSocket(createWSPath());
         const divs = {};
 
         function switchDiv(did) {
@@ -34,7 +34,7 @@
 
             ws.addEventListener('error', (err) => {
                 alert('Uh oh!\nAn error occured!');
-                window.location.href = 'index.html';
+                window.location.href = '/';
                 
                 console.error(err);
             });
@@ -43,7 +43,7 @@
                 if (localStorage.getItem('sessionid') && localStorage.getItem('sessionid') != "undefined") {
                     ws.send(JSON.stringify({ code: 4, op: 0, sid: localStorage.getItem('sessionid') }));
                 } else {
-                    window.location.href = 'index.html';
+                    window.location.href = '/';
                 }
             });
 
@@ -52,7 +52,7 @@
                 if (response == "401") return alert('401 UNAUTHORIZED');
 
                 switch (response.code) {
-                    case 0: window.location.href = 'index.html';
+                    case 0: window.location.href = '/';
                     break;
 
                     case 4:
@@ -75,8 +75,8 @@
 </head>
 <body class="unselectable">
     <div id="dms" class="sidenav">
-        <a class="pageSwitchLink" href="index.html">HOME</a>
-        <a class="pageSwitchLink" href="social.html" aria-disabled="true">SOCIALS</a>
+        <a class="pageSwitchLink" href="/">HOME</a>
+        <a class="pageSwitchLink" href="social" aria-disabled="true">SOCIALS</a>
     </div>
     <div class="main">
         <div class="toolbar">

@@ -28,7 +28,7 @@ function showLogin() {
     
     const signupbtn = document.createElement('button');
     signupbtn.innerText = "sign up";
-    signupbtn.onclick = () => { window.location.href = '/client/join.html'; }
+    signupbtn.onclick = () => { window.location.href = '/join'; }
     signupbtn.style.marginLeft = '10px';
     signupbtn.className = 'signupbtn';
     
