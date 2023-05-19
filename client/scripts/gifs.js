@@ -48,6 +48,7 @@ function createGIF(srcObj) {
     element.width = '200';
     element.style.display = 'flex';
     element.style.marginTop = '3px';
+    element.playsInline = true;
 
     element.addEventListener('contextmenu', (e) => {
         e.target.parentElement.dispatchEvent(new Event('contextmenu'));
@@ -65,6 +66,7 @@ function createGifForPopup(gifRaw) {
     el.autoplay = true;
     el.loop = true;
     el.muted = true;
+    el.playsInline = true;
 
     el.onclick = (e) => {
         sendGif(e.target);

@@ -341,6 +341,11 @@ input[type="file"] {
     border-bottom: solid #383737 1px;
 }
 
+#errWrapper {
+    display: none;
+    text-align: center;
+    color: rgb(240, 240, 240);
+}
 
 @media screen and (max-height: 450px) {
     .sidenav {padding-top: 15px;}
@@ -348,8 +353,12 @@ input[type="file"] {
 }
 
 @media only screen and (max-width: 500px) {
-    body {
+    #bodyWrapper {
         display: none;
+    }
+
+    #errWrapper {
+        display: block;
     }
 }
 
