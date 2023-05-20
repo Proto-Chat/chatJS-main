@@ -131,11 +131,18 @@ function setupDM(response) {
 
     const messages = document.createElement('div');
     messages.id = 'messages';
+
+    let lastVideo;
     for (const msg of data.messages) {
-        messages.appendChild(createNewMessage(msg));
+        const msgElement = createNewMessage(msg);
+        messages.appendChild(msgElement);
+        
+        if (msgElement.lastChild.lastChild && msgElement.lastChild.lastChild.tagName == 'VIDEO') {
+            lastVideo = msgElement.lastChild.lastChild;
+        }
     }
 
-    messages.scrollTop = messages.scrollHeight - messages.clientHeight;
+
     const inpelement = document.createElement('textarea');
     inpelement.id = 'textinp';
 
@@ -197,7 +204,21 @@ function setupDM(response) {
     inpdiv.appendChild(gifBtn);
     inpdiv.appendChild(inpbtn);
     inpwrapper.appendChild(inpdiv);
-    
+
+    // messages.onchange = () => {messages.lastChild.lastChild.scrollIntoView();}
+
+    if (lastVideo) {
+        lastVideo.addEventListener('playing', () => {
+            lastVideo.scrollIntoView();
+            const lastChild = messages.lastChild.lastChild.lastChild;
+            if (lastChild != lastVideo) messages.lastChild.scrollIntoView();
+        });
+    } else {
+        messages.lastChild.lastChild.scrollIntoView();
+        messages.scrollTop += 1000;
+    }
+
+   
     element.appendChild(messages);
     element.appendChild(inpwrapper);
     element.style = 'display: block;';

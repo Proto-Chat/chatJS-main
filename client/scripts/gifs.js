@@ -52,7 +52,7 @@ function createGIF(srcObj) {
 
     element.addEventListener('contextmenu', (e) => {
         e.target.parentElement.dispatchEvent(new Event('contextmenu'));
-    })
+    });
 
     return element;
 }

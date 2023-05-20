@@ -114,17 +114,33 @@ function handleEnter(e, oldmsg) {
 }
 
 
+const pfpCloseFnct = () => {
+    const outlineDiv = document.getElementsByClassName('profileoutlinediv')[0];
+    const udivCorner = document.getElementsByClassName('userprofile')[0];
+    if (!outlineDiv.matches(":hover") && !udivCorner.matches(":hover")) {
+        // window.location.reload();
+        closeUserPopup(outlineDiv, udivCorner);
+    }
+}
+
+
+function closeUserPopup(outlineDiv) {
+    document.body.style.backgroundColor = "#5c5c5c";
+    document.getElementById('maincontent').style.color = "var(--offwite)";
+    document.getElementById('messages').style.color = "var(--offwite)";
+
+    outlineDiv.remove();
+    window.removeEventListener('mousedown', pfpCloseFnct);
+}
+
+
 async function createProfilePopup(udata) {
     if (document.getElementsByClassName('profileoutlinediv').length > 0) return;
 
     const udivCorner = document.getElementsByClassName('userprofile')[0];
     const outlineDiv = document.createElement('div');
     outlineDiv.className = 'profileoutlinediv';
-    window.addEventListener('mousedown', (e) => {
-        if (!outlineDiv.matches(":hover") && !udivCorner.matches(":hover")) {
-            window.location.reload();
-        }
-    });
+    window.addEventListener('mousedown', pfpCloseFnct);
 
     //#region Title and icon
     const pfptitlediv = document.createElement('div');
@@ -185,7 +201,7 @@ async function createProfilePopup(udata) {
     document.getElementById('messages').style.color = "rgba(0,0,0)";
     udivCorner.style.width = (udivCorner.offsetWidth - 1) + 'px'
     udivCorner.style.borderRight = "solid";
-    udivCorner.style.borderWidth = "1px";    
+    udivCorner.style.borderWidth = "1px";
 }
 
 
@@ -309,10 +325,12 @@ function setPFP(message = undefined, iconElement = undefined) {
         }
     }
     else {
-        if (!iconElement) return;
-
-        const uri = window.sessionStorage.getItem('pfp');
-        iconElement.src = uri;
+        if (!iconElement) {
+            iconElement.src = 'https://github.com/ION606/chatJS/blob/main/client/assets/nopfp.jpg?raw=true';
+        } else {
+            const uri = window.sessionStorage.getItem('pfp');
+            iconElement.src = uri;
+        }
     }
 }
 

@@ -206,5 +206,14 @@ function addMessage(msg, author = null) {
     if (document.getElementById(msg.id)) return;
     const element = document.getElementById('messages');
     if (author) msg.author = author;
-    element.appendChild(createNewMessage(msg));
+    const newMsg = createNewMessage(msg);
+    element.appendChild(newMsg);
+
+    if (isValidUrl(newMsg.innerText)) {
+        console.log(newMsg.lastChild.lastChild.height);
+        element.scrollTop = element.scrollHeight + newMsg.lastChild.lastChild.height;
+    } else {
+        element.scrollTop = element.scrollHeight + newMsg.style.height;
+    }
+    
 }
