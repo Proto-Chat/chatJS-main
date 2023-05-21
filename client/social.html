@@ -9,12 +9,21 @@
     <script src="/scripts/socialsPage.js"></script>
     <script src="/scripts/initialize.js"></script>
     <script src="/scripts/profile.js"></script>
+    <script src="/scripts/messages.js"></script>
     <link rel="stylesheet" type="text/css" href="/CSS/socials.css">
     <link rel="stylesheet" type="text/css" href="/CSS/index.css">
     <link rel="stylesheet" type="text/css" href="/CSS/gif.css">
 
     <script>
         const ws = new WebSocket(createWSPath());
+        ws.addEventListener('open', () => {
+            if (localStorage.getItem('sessionid') && localStorage.getItem('sessionid') != "undefined") {
+                ws.send(JSON.stringify({ code: 4, op: 0, sid: localStorage.getItem('sessionid') }));
+            } else {
+                window.location.href = '/';
+            }
+        });
+
         setInterval(() => { ws.send(JSON.stringify({code: 10})); }, 30000);
         const divs = {};
 
@@ -35,17 +44,8 @@
 
             ws.addEventListener('error', (err) => {
                 alert('Uh oh!\nAn error occured!');
-                window.location.href = '/';
-                
                 console.error(err);
-            });
-
-            ws.addEventListener('open', () => {
-                if (localStorage.getItem('sessionid') && localStorage.getItem('sessionid') != "undefined") {
-                    ws.send(JSON.stringify({ code: 4, op: 0, sid: localStorage.getItem('sessionid') }));
-                } else {
-                    window.location.href = '/';
-                }
+                window.location.href = '/';
             });
 
             ws.addEventListener('message', (message) => {
@@ -54,6 +54,9 @@
 
                 switch (response.code) {
                     case 0: window.location.href = '/';
+                    break;
+
+                    case 3: alert('DM OPENED!');
                     break;
 
                     case 4:

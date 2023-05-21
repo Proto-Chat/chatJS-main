@@ -25,10 +25,39 @@ body {
     color: #999898;
     display: block;
     cursor: pointer;
+    position: relative;
+    
+    white-space: nowrap;
+    overflow: hidden; 
+    text-overflow: ellipsis;
 }
 
 .sidenav a:hover {
     color: #f1f1f1;
+}
+
+.sidenav a:hover .closeBtn {
+    display: block;
+}
+
+.closeBtn {
+    float: right;
+    width: 30px;
+    height: 30px;
+    display: none;
+    clear: both;
+    position: absolute;
+    right: 0px;
+    bottom: 5px;
+    background-color: transparent;
+    border: none;
+    color: rgb(145, 142, 142);
+    font-size: 20px;
+    cursor: pointer;
+}
+
+.closeBtn:hover {
+    color: white;
 }
 
 .userprofile {

@@ -17,6 +17,7 @@ import {
     bodyParser,
     createUConf,
     processUConf,
+    toggleDM,
     enableWs
 } from './imports.js';
 
@@ -158,8 +159,16 @@ app.ws('/websocket', async (ws, req) => {
                 break;
                 
                 case 3:
-                    const messages = await getMessages(mongoconnection, data.sid, data.uid);
-                    ws.send(JSON.stringify({code: 3, data: messages}));
+                    if (data.op == 0) {
+                        const messages = await getMessages(mongoconnection, data.sid, data.uid);
+                        ws.send(JSON.stringify({code: 3, op: 0, data: messages}));
+                    }
+                    else if (data.op == 1 || data.op == 2) {
+                        const isClosing = (data.op == 2);
+                        const response = await toggleDM(mongoconnection, data.data.sid, data.data.other_id, isClosing);
+                        if (response) ws.send(JSON.stringify({code: 3, op: 1, data: {other_id: data.data.other_id}}));
+                        else ws.send(JSON.stringify({type: 1, code: 500, op: 3}));
+                    }
                 break;
 
                 case 4:

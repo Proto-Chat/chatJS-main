@@ -37,14 +37,9 @@ function initializeLayout(response) {
 
     element.appendChild(createPageMenu());
 
-    for (const i of data.dms) {
-        const a = document.createElement('a');
-        a.innerText = i.username;
-        a.id = i.uid;
-        a.onclick = () => {
-            requestDM(a.id);
-        }
-        a.classList.add('unselectable');
+    for (const dmRaw of data.dms) {
+        const a = createDmLink(dmRaw);
+
         element.appendChild(a);
     }
 

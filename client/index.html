@@ -20,7 +20,7 @@
         const getUidFromSid = (sid) => atob(sid.split("?")[1], 'base64');
         
         function requestDM(uid) {
-            ws.send(JSON.stringify({sid: localStorage.getItem('sessionid'), code: 3, uid: uid}));
+            ws.send(JSON.stringify({sid: localStorage.getItem('sessionid'), code: 3, op: 0, uid: uid}));
         }
     </script>
 
@@ -94,7 +94,10 @@
                         window.location.reload();
                     break;
                     
-                    case 3: setupDM(response);
+                    case 3:
+                        if (response.op == 0) setupDM(response);
+                        else if (response.op == 1) closeDM(response);
+                        else if (response.op == 2) 
                     break;
 
                     case 4: if (response.op != 6) return;

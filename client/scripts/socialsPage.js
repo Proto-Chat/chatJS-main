@@ -69,6 +69,9 @@ function addToFriendsList(friend, element) {
     const div = document.createElement('div');
     div.innerText = friend.username;
     div.id = friend.uid;
+    div.onclick = (e) => {
+        openDM(e.target.id)
+    }
     friendElem.appendChild(div);
     element.appendChild(friendElem);
 }

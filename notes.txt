@@ -49,7 +49,11 @@ codes (client --> server):
     op:
         0: request everything except images
 2 - logout
-3 - get messages with a user
+3 - messages with a user
+        op:
+            0: get messages with a user
+            1: close DM
+            2: open DM
 4 - socials
     op:
         0: get socials

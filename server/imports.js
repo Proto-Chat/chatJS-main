@@ -17,6 +17,7 @@ import { getPFP, uploadPFP } from './database/media/upload.js';
 import bodyParser from 'body-parser';
 import { createUConf, processUConf } from './database/uConf.js';
 import enableWs from 'express-ws';
+import { toggleDM } from './database/logout.js';
 
 // import configImp from '../config.json' assert { type: 'json' };
 var configImp = null;
@@ -39,5 +40,6 @@ export {
     bodyParser,
     createUConf,
     processUConf,
-    enableWs
+    enableWs,
+    toggleDM,
 }

@@ -157,6 +157,7 @@ async function createContextMenu(e, editable = true) {
     target.appendChild(dropdown);
 }
 
+
 function isValidUrl(str) {
     let url;
     try {
@@ -216,4 +217,64 @@ function addMessage(msg, author = null) {
         element.scrollTop = element.scrollHeight + newMsg.style.height;
     }
     
+}
+
+
+function closeDM(response) {
+    try {
+        const dmEl = document.getElementById(response.data.other_id);
+        dmEl.remove();
+    } catch (err) {
+        console.log(err);
+        // window.location.reload();
+    }
+}
+
+
+function openDM(id) {
+    try {
+        const toSend = {
+            code: 3,
+            op: 2,
+            data: {
+                sid: localStorage.getItem('sessionid'),
+                other_id: id
+            }
+        }
+
+        ws.send(JSON.stringify(toSend));
+    } catch (err) {
+        console.log(err);
+        // window.location.reload();
+    }
+}
+
+
+function createDmLink(dmRaw) {
+    const a = document.createElement('a');
+    a.innerText = dmRaw.username;
+    a.id = dmRaw.uid;
+    a.onclick = (e) => {
+        if (!closeDMBtn.contains(e.target))
+            requestDM(a.id);
+        else {
+            const closeDMWSObj = {
+                code: 3,
+                op: 1,
+                data: {
+                    other_id: e.target.parentElement.id,
+                    sid: localStorage.getItem('sessionid')
+                }
+            };
+
+            ws.send(JSON.stringify(closeDMWSObj));
+        }
+    };
+    a.classList.add('unselectable');
+
+    const closeDMBtn = document.createElement('button');
+    closeDMBtn.className = 'closeBtn';
+    closeDMBtn.innerText = "X";
+    a.appendChild(closeDMBtn);
+    return a;
 }
