@@ -1,12 +1,11 @@
 import expressWs from 'express-ws';
 import {
-    WebSocketServer,
-    MongoClient, ServerApiVersion, GridFSBucket, MongoGridFSChunkError,
+    MongoClient, ServerApiVersion,
     configImp,
     resumeSesion, createSession,
     getMessages,
     getUidFromSid,
-    handleMessage, newMessage,
+    handleMessage, markDMAsRead,
     logout,
     handleSocials,
     wasabiManager,
@@ -18,7 +17,6 @@ import {
     createUConf,
     processUConf,
     toggleDM,
-    enableWs
 } from './imports.js';
 
 const config = (configImp) ? configImp : process.env;
@@ -168,6 +166,9 @@ app.ws('/websocket', async (ws, req) => {
                         const response = await toggleDM(mongoconnection, data.data.sid, data.data.other_id, isClosing);
                         if (response) ws.send(JSON.stringify({code: 3, op: 1, data: {other_id: data.data.other_id}}));
                         else ws.send(JSON.stringify({type: 1, code: 500, op: 3}));
+                    }
+                    else if (data.op == 3) {
+                        markDMAsRead(mongoconnection, webSocketClients, data);
                     }
                 break;
 

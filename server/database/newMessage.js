@@ -1,3 +1,5 @@
+import { getUidFromSid } from "../imports.js";
+
 export async function broadcastToSessions(client, connectionMap, others, toSend) {
     try {
         for (const k of others) {
@@ -20,11 +22,23 @@ export async function broadcastToSessions(client, connectionMap, others, toSend)
 }
 
 
+const splitByID = (channelID) => {
+    return channelID.split("|").filter((o) => (o && o.length > 0));
+}
+
+
 export async function newMessage(mongoconnection, connectionMap, data) {
     if (!data || !data.channelID) return; //Maybe make it a "bad request"?
 
     const client = await mongoconnection;
-    const others = data.channelID.split("|").filter((o) => (o && o.length > 0));
+    const others = splitByID(data.channelID);
+
+    //Open the DM for the recipient
+    for (const i of others) {
+        if (i == data.author.uid) continue;
+        const other_dbo = client.db(`${i}`).collection('dm_keys');
+        other_dbo.updateOne({uid: data.author.uid}, {$set: {open: true, unread: true}});
+    }
 
     const channelId = data.channelID;
     const dmsdbo = client.db('dms').collection(data.channelID);
@@ -41,7 +55,7 @@ async function deleteMessage(mongoconnection, connectionMap, data) {
     const client = await mongoconnection;
     const mbo = client.db('dms').collection(data.chatid);
     const doc = await mbo.findOne({id: data.msgid});
-    const others = data.chatid.split("|").filter((o) => (o && o.length > 0));
+    const others = splitByID(data.chatid);
     
     if (data.user.uid != doc.author.uid) return;
 
@@ -65,7 +79,7 @@ async function editMessage(mongoconnection, connectionMap, data) {
     const client = await mongoconnection;
     const mbo = client.db('dms').collection(data.chatid);
     const doc = await mbo.findOne({id: data.msgid});
-    const others = data.chatid.split("|").filter((o) => (o && o.length > 0));
+    const others = splitByID(data.chatid);
 
     if (!doc || data.user.uid != doc.author.uid) return;
     // if (doc.content != data.content) return;
@@ -83,6 +97,19 @@ async function editMessage(mongoconnection, connectionMap, data) {
             author: data.user
         }
     });
+}
+
+
+export async function markDMAsRead(mongoconnection, connectionMap, data) {
+    const uid = String(getUidFromSid(data.data.sid));
+    const client = await mongoconnection;
+    const dbo = client.db(uid).collection('dm_keys');
+
+    const ids = splitByID(data.data.dmid);
+    for (const oid of ids) {
+        if (oid == uid) continue;
+        dbo.updateOne({uid: oid}, {$set: {unread: false}});
+    }
 }
 
 

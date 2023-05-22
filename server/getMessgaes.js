@@ -17,7 +17,7 @@ export function getMessages(mongoconnection, sid, other_id) {
         //     }
         // }).toArray();
 
-        const doc = await dbo.find({$or: [{deleted : { $exists : false }}, {deleted: false}], open: true}).toArray();
+        const doc = await dbo.find({$or: [{deleted : { $exists : false }}, {deleted: false}]}).toArray();
         doc.map((msg) => {
             delete msg._id;
             return msg

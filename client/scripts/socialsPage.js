@@ -59,6 +59,7 @@ function initializeSocialLayout(ws, response) {
     }
 
     setUpUser(JSON.parse(localStorage.getItem('user')));
+    document.getElementById('loadinggif').remove();
 }
 
 

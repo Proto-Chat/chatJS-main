@@ -71,6 +71,10 @@
                         else console.log(`UNKNOWN RESPONSE ${response.op}`);
                     break;
 
+                    case 5:
+                        showNotif(response.data.author.username, response.data.content)
+                    break;
+
                     case 10: break;
                     
                     default: console.log(`Unknown code: ${response.code}`);
@@ -90,7 +94,9 @@
             <a onclick="switchDiv('connect')">Add Friend</a>
         </div>
         <div id="friends">
-        
+            <div id="loadinggif" style="text-align: center;">
+                <img src="https://www.wpfaster.org/wp-content/uploads/2013/06/loading-gif.gif" width="100px">
+            </div>
         </div>
         
         <div id="connect">

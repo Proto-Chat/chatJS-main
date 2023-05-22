@@ -1,5 +1,5 @@
 function messageRecieved(response) {
-    if (response.data.channelID != localStorage.getItem('currentChatID')) return;
+    if (response.op != 0 && response.data.channelID != localStorage.getItem('currentChatID')) return;
 
     switch(response.op) {
         case 0: addMessage(response.data);
@@ -12,6 +12,31 @@ function messageRecieved(response) {
         break;
 
         default: //do nothing
+    }
+}
+
+
+function showNotif(username, content) {
+    if ('Notification' in window) {
+    // Request permission to show notifications
+        Notification.requestPermission().then(function (permission) {
+            if (permission === 'granted') {
+                var notifContent = content;
+                if (!notifContent) return;
+                if (notifContent.length > 20) {
+                    notifContent = notifContent.substring(0, 20) + '. . .';
+                }
+
+                // Create a new notification
+                var notification = new Notification(username, {
+                    body: notifContent,
+                });
+
+                notification.onclick = (e) => {
+                    if (window.location.pathname != '/') window.location.href = '/';
+                }
+            }
+        });
     }
 }
 
@@ -206,12 +231,52 @@ function addMessage(msg, author = null) {
     //Check if the message already exists (deals with "note-to-self")
     if (document.getElementById(msg.id)) return;
     const element = document.getElementById('messages');
+
+    //DM is not open
+    if (!document.getElementById(msg.author.uid)) {
+        const dmLink = createDmLink(msg.author);
+        const dmBar = document.getElementById('dms');
+        dmBar.insertBefore(dmLink, dmBar.childNodes[2]);
+    }
+
+    const uid = JSON.parse(localStorage.getItem('user')).uid;
+    const other_id = msg.channelID.split('|').filter((o) => (o && o != uid)).join("|");
+    if (!other_id) return console.log(`ID "${msg.author.uid}" not found!`);
+
+    //DM is not the current DM
+    if (msg.channelID != localStorage.getItem('currentChatID')) {
+        const dmToHighlight = document.getElementById(other_id);
+        dmToHighlight.classList.add('unread');
+
+        showNotif(msg.author.username, msg.content);
+        return;
+    }
+    //mark it as read
+    ws.send(JSON.stringify({
+        code: 3,
+        op: 3,
+        data: {
+            dmid: other_id,
+            sid: localStorage.getItem('sessionid')
+        }
+    }));
+
+    const dmToDeHighlight = document.getElementById(other_id);
+    dmToDeHighlight.classList.remove('unread');
+
+    //If the user is not on top, say smth
+
+    //FIXME it snaps down anyways, maybe make it so that it only does that for the person sending the message
+    
+    // console.log(element.scrollHeight - element.scrollTop);
+    // if (element.scrollHeight - element.scrollTop) console.log('new message recieved in this DM!');
+
+
     if (author) msg.author = author;
     const newMsg = createNewMessage(msg);
     element.appendChild(newMsg);
 
     if (isValidUrl(newMsg.innerText)) {
-        console.log(newMsg.lastChild.lastChild.height);
         element.scrollTop = element.scrollHeight + newMsg.lastChild.lastChild.height;
     } else {
         element.scrollTop = element.scrollHeight + newMsg.style.height;
@@ -255,8 +320,9 @@ function createDmLink(dmRaw) {
     a.innerText = dmRaw.username;
     a.id = dmRaw.uid;
     a.onclick = (e) => {
-        if (!closeDMBtn.contains(e.target))
+        if (!closeDMBtn.contains(e.target)) {
             requestDM(a.id);
+        }
         else {
             const closeDMWSObj = {
                 code: 3,
@@ -271,6 +337,8 @@ function createDmLink(dmRaw) {
         }
     };
     a.classList.add('unselectable');
+
+    if (dmRaw.unread) a.classList.add('unread');
 
     const closeDMBtn = document.createElement('button');
     closeDMBtn.className = 'closeBtn';

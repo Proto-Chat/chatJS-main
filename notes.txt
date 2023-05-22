@@ -54,6 +54,7 @@ codes (client --> server):
             0: get messages with a user
             1: close DM
             2: open DM
+            3: DM read
 4 - socials
     op:
         0: get socials

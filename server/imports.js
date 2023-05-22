@@ -5,7 +5,7 @@ import { MongoClient, ServerApiVersion, GridFSBucket, MongoGridFSChunkError } fr
 import { resumeSesion, createSession } from './initializations.js';
 import { getMessages } from './getMessgaes.js';
 import { getUidFromSid } from './utils/decodesid.js';
-import { handleMessage, newMessage } from './database/newMessage.js';
+import { handleMessage, markDMAsRead } from './database/newMessage.js';
 import { logout } from './database/logout.js';
 import { handleSocials } from './socials.js';
 import { wasabiManager } from './database/media/init.js';
@@ -29,7 +29,7 @@ export {
     resumeSesion, createSession,
     getMessages,
     getUidFromSid,
-    handleMessage, newMessage,
+    handleMessage, markDMAsRead,
     logout,
     handleSocials,
     wasabiManager,

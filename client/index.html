@@ -36,6 +36,7 @@
         
 
         window.onload = () => {
+            localStorage.removeItem('currentChatID');
             ws.addEventListener('error', (err) => {
                 const content = document.getElementById('loadingdiv');
                 content.style.display = "block";

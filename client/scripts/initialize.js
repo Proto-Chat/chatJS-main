@@ -121,6 +121,19 @@ function setupDM(response) {
     
     localStorage.setItem('currentChatID', data.chatID);
 
+    if (currentlyActive.classList.contains('unread')) {
+        ws.send(JSON.stringify({
+            code: 3,
+            op: 3,
+            data: {
+                dmid: data.chatID,
+                sid: localStorage.getItem('sessionid')
+            }
+        }));
+
+        currentlyActive.classList.remove('unread')
+    }
+
     const element = document.getElementById('chatMain');
     element.innerHTML = "";
 
@@ -128,12 +141,16 @@ function setupDM(response) {
     messages.id = 'messages';
 
     let lastVideo;
+    var counter = 0;
     for (const msg of data.messages) {
         const msgElement = createNewMessage(msg);
         messages.appendChild(msgElement);
         
         if (msgElement.lastChild.lastChild && msgElement.lastChild.lastChild.tagName == 'VIDEO') {
             lastVideo = msgElement.lastChild.lastChild;
+
+            counter++;
+            if (msgElement.children.length > counter) { lastVideo = undefined; }
         }
     }
 
@@ -209,7 +226,7 @@ function setupDM(response) {
             if (lastChild != lastVideo) messages.lastChild.scrollIntoView();
         });
     } else {
-        messages.lastChild.lastChild.scrollIntoView();
+        if (messages.lastChild) messages.lastChild.lastChild.scrollIntoView();
         messages.scrollTop += 1000;
     }
 
