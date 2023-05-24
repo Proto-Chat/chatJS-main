@@ -3,6 +3,7 @@ body {
     --offwite: rgb(233, 233, 233);
     margin-bottom: 0px;
     color: var(--offwite);
+    font-family: monospace;
 }
 
 .sidenav {
@@ -153,7 +154,7 @@ body {
     margin-left: 15px;
     color: inherit;
     font-size: 20px;
-    font-family: Georgia, 'Times New Roman', Times, serif; /* 'Times New Roman', Times, serif; */
+    font-family: 'Roboto', sans-serif;
 }
 
 .msginp {

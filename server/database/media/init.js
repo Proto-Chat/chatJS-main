@@ -38,18 +38,22 @@ export class wasabiManager {
         if (!channelId) return {type: 1, code: 0, message: 'channelid not found'};
         if (!filename) return {type: 1, code: 1, message: 'filename not found'};
         if (!data) return {type: 1, code: 2, message: 'no data'};
-        
-        return this.#s3.putObject({
-            Body: data,
-            Bucket: "ionwebchat",
-            Key: `${channelId}/${filename}`
-        }, (err, data) => {
-            if (err) {
-                console.log(err);
-                return null;
-            }
-            else return data;
+
+        const res = await new Promise((resolve) => {
+            return this.#s3.putObject({
+                Body: data,
+                Bucket: "ionwebchat",
+                Key: `${channelId}/${filename}`
+            }, (err, data) => {
+                if (err) {
+                    console.log(err);
+                    resolve(null);
+                }
+                else resolve(data);
+            });
         });
+
+        return (res) ? res.Body : null;
     }
 
 

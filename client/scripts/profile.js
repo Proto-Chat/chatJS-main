@@ -273,7 +273,7 @@ async function createPFPChangeInp() {
             const image = new Image();
             image.onload = (e) => {
                 var req = new XMLHttpRequest();
-                req.open('POST', `${window.location.origin.replace('5500', '8081')}/updatepfp`, true); //CHANGE THIS LATER
+                req.open('POST', `${window.location.origin}/updatepfp`, true); //CHANGE THIS LATER
                 
                 req.onloadend = () => {
                     URL.revokeObjectURL(file);
@@ -337,7 +337,7 @@ function setPFP(message = undefined, iconElement = undefined) {
 
 async function getPFP() {
     var req = new XMLHttpRequest();
-    req.open('GET', `${window.location.origin.replace('5500', '8081')}/getpfp`, true); //CHANGE THIS LATER
+    req.open('GET', `${window.location.origin}/getpfp`, true);
 
     req.responseType = 'arraybuffer';
 

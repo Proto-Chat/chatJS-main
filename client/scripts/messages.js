@@ -58,20 +58,27 @@ function edit(data) {
 
 
 async function createContextMenu(e, editable = true) {
-    const target = (e.target.tagName == 'VIDEO') ? e.target.parentElement : e.target;
+    var target;
+    if (e.target.tagName == 'VIDEO' || e.target.tagName == 'IMG') { target = e.target.parentElement }
+    else target = e.target;
     const dropdown = document.createElement('div');
     dropdown.className = "msgdropdown";
 
     //#region COMPONENTS
     var currentString;
     const isGif = (target.firstChild.tagName == 'VIDEO');
+    const isImg = (target.firstChild.tagName == 'IMG');
 
-    if (!isGif) {
-        currentString = String(target.innerText.substring(target.innerText.indexOf(':') + 1));
-    } else {
+    if (isGif) {
         currentString = String(target.firstChild.src);
     }
-    
+    else if (isImg) {
+        editable = false;
+    }
+    else {
+        currentString = String(target.innerText.substring(target.innerText.indexOf(':') + 1));
+    }
+
     const copyid = document.createElement('a');
     copyid.onclick = () => {
         navigator.clipboard.writeText(target.id);
@@ -169,6 +176,14 @@ async function createContextMenu(e, editable = true) {
         }
         dropdown.appendChild(copyGiflink);
     }
+    else if (isImg) {
+        dropdown.classList.add('msgdropdowngif');
+        const openImgLink = document.createElement('a');
+        openImgLink.innerText = "open image";
+        openImgLink.onclick = () => {
+            window.open(e.target.src,'Image','resizable=1');}
+        dropdown.appendChild(openImgLink);
+    }
 
     //#endregion
 
@@ -179,6 +194,7 @@ async function createContextMenu(e, editable = true) {
     
     dropdown.offsetLeft = e.offsetLeft;
     dropdown.offsetTop = e.offsetTop;
+
     target.appendChild(dropdown);
 }
 
@@ -219,7 +235,27 @@ function createNewMessage(msg) {
     if (msg.content.url && isValidUrl(msg.content.url) && msg.content.url.indexOf('media.tenor.com') != -1) {
         msgContentContainer.appendChild(createGIF(msg.content));
         msgContentContainer.style.height = '200px';
-    } else msgContentContainer.innerText = `${msg.content}`;
+    }
+    else if (msg.content.filename) {
+        //Get file
+        var req = new XMLHttpRequest();
+        req.open('GET', `${window.location.origin}/msgImg?fname=${msg.content.filename}`, true);
+        req.responseType = 'arraybuffer';
+    
+        req.onloadend = () => {
+            const fileBuf = req.response;
+            if (!fileBuf) return;
+
+            msgContentContainer.appendChild(createImage(fileBuf));
+            msgContentContainer.style.height = '200px';
+        }
+    
+        req.setRequestHeader('sessionid', localStorage.getItem('sessionid'));
+        req.setRequestHeader('channelid', localStorage.getItem('currentChatID'));
+        req.setRequestHeader('username', JSON.parse(localStorage.getItem('user')).username);
+        req.send();
+    }
+    else msgContentContainer.innerText = `${msg.content}`;
 
     container.appendChild(msgContentContainer);
     
@@ -345,4 +381,31 @@ function createDmLink(dmRaw) {
     closeDMBtn.innerText = "X";
     a.appendChild(closeDMBtn);
     return a;
+}
+
+
+/**
+ * @param {File} file 
+ */
+async function handlePastedImage(file) {
+    var req = new XMLHttpRequest();
+    req.open('PUT', `${window.location.origin}/msgImg`, true); //CHANGE THIS LATER
+    // req.responseType = 'arraybuffer';
+    req.responseType = 'text';
+
+    req.onloadend = () => {
+        if (req.response != "OK") alert("request failed!");
+    }
+    
+    var fname = file.name.split(".");
+    if (fname.length === 1 || ( fname[0] === "" && fname.length === 2 ) ) {
+        return alert("please provide a valid file!");
+    }
+
+    req.setRequestHeader('sessionid', localStorage.getItem('sessionid'));
+    req.setRequestHeader('channelid', localStorage.getItem('currentChatID'));
+    req.setRequestHeader('fext', fname.pop());
+    req.setRequestHeader('username', JSON.parse(localStorage.getItem('user')).username);
+    req.setRequestHeader('Content-Type', 'application/octet-stream');
+    req.send(await file.arrayBuffer());
 }

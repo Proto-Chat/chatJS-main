@@ -168,9 +168,11 @@ function setupDM(response) {
             if (!keys[16]) {
                 send();
             }
-        } else if(isKeyDown) {
+        }
+        else if (isKeyDown) {
             e.target.parentElement.style.borderColor = 'black';
-        } else {
+        }
+        else {
             e.target.style.height = "1px";
             e.target.style.height = (e.target.scrollHeight)+"px";
             messages.scrollTop = messages.scrollHeight - messages.clientHeight;
@@ -178,6 +180,15 @@ function setupDM(response) {
     }
     inpelement.onkeydown = handleEnter;
     inpelement.onkeyup = handleEnter;
+
+    inpelement.addEventListener('paste', async (e) => {
+        const cData = e.clipboardData;
+        if (cData.getData('Text')) return;
+        if (cData.files.length == 0) return;
+        for (const file of cData.files) {
+            handlePastedImage(file);
+        }
+    });
 
     
     inpelement.onfocus = () => {
@@ -225,12 +236,17 @@ function setupDM(response) {
             const lastChild = messages.lastChild.lastChild.lastChild;
             if (lastChild != lastVideo) messages.lastChild.scrollIntoView();
         });
+    }
+    else if (messages.lastChild.lastChild.firstChild && messages.lastChild.lastChild.firstChild.tagName == 'IMG') {
+        //#FIXME DOES NOT TRIGGER
+        const lastChild = messages.lastChild.lastChild.firstChild.tagName;
+        lastChild.scrollIntoView();
+        messages.scrollTop += lastChild.height + 1000;
     } else {
         if (messages.lastChild) messages.lastChild.lastChild.scrollIntoView();
         messages.scrollTop += 1000;
     }
 
-   
     element.appendChild(messages);
     element.appendChild(inpwrapper);
     element.style = 'display: block;';

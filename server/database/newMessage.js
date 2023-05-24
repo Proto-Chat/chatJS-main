@@ -1,4 +1,5 @@
-import { getUidFromSid } from "../imports.js";
+import { getUidFromSid, wasabiManager } from "../imports.js";
+import { randomUUID } from 'crypto';
 
 export async function broadcastToSessions(client, connectionMap, others, toSend) {
     try {
@@ -28,7 +29,7 @@ const splitByID = (channelID) => {
 
 
 export async function newMessage(mongoconnection, connectionMap, data) {
-    if (!data || !data.channelID) return; //Maybe make it a "bad request"?
+    if (!data || !data.channelID) return false; //Maybe make it a "bad request"?
 
     const client = await mongoconnection;
     const others = splitByID(data.channelID);
@@ -47,7 +48,7 @@ export async function newMessage(mongoconnection, connectionMap, data) {
     dmsdbo.insertOne(data);
     data.channelID = channelId;
 
-    broadcastToSessions(client, connectionMap, others, { type: 0, code: 5, op: 0, data: data });
+    return await broadcastToSessions(client, connectionMap, others, { type: 0, code: 5, op: 0, data: data });
 }
 
 
@@ -113,7 +114,49 @@ export async function markDMAsRead(mongoconnection, connectionMap, data) {
 }
 
 
-export function handleMessage(mongoconnection, connectionMap, data, op) {
+/**
+ * @param {*} data 
+ * @param {wasabiManager} CDNManager 
+ * @param {*} connectionMap 
+ */
+async function uploadMsgImg(mongoconnection, CDNManager, connectionMap, data) {
+    try {
+        const response = await CDNManager.uploadFile(data.channelid, data.filename, data.buf);
+        if (response && response.type && response.code) return response;
+        const uid = getUidFromSid(data.sid);
+
+        const msg = {
+            author: {
+                uid: uid,
+                username: data.username
+            },
+            channelID: data.channelid,
+            id: randomUUID(),
+            timestamp: (new Date()).toISOString(),
+            content: {
+                filename: data.filename
+            }
+        }
+
+        return await newMessage(mongoconnection, connectionMap, msg);
+    }
+    catch (err) {
+        console.error(err);
+        return false;
+    }
+    
+}
+
+
+/**
+ * @param {*} mongoconnection 
+ * @param {*} connectionMap 
+ * @param {*} data
+ * @param {*} op 
+ * @param {wasabiManager} CDNManager 
+ * @returns 
+ */
+export function handleMessage(mongoconnection, connectionMap, data, op, CDNManager = null) {
     switch (op) {
         case 0: newMessage(mongoconnection, connectionMap, data);
         break;
@@ -123,6 +166,13 @@ export function handleMessage(mongoconnection, connectionMap, data, op) {
 
         case 2: editMessage(mongoconnection, connectionMap, data);
         break;
+
+        case 3: return uploadMsgImg(mongoconnection, CDNManager, connectionMap, data);
+            // import('fs').then((o) => {
+            //     o.writeFile(`./${data.filename}.avif`, data.buf, (err) => {
+            //         console.log(err);
+            //     });
+            // });
 
         default: return false;
     }

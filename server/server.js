@@ -43,6 +43,24 @@ app.use('/scripts', express.static('../scripts'));
 const wsInstance = expressWs(app);
 
 
+app.put('/msgImg', async (req, res) => {
+    const sid = req.headers.sessionid;
+    const channelid = req.headers.channelid;
+    const fext = req.headers.fext;
+    const username = req.headers.username;
+    if (!sid) return res.sendStatus(401);
+    if (!channelid || !username) return res.sendStatus(404);
+    if (!fext) return res.sendStatus(409);
+
+    const buf = Buffer.from(req.body, 'base64');
+    const filename = Math.random().toString(36).slice(2);
+
+    const response = await handleMessage(mongoconnection, webSocketClients, {files: req.body, sid: sid, username: username, channelid: channelid, filename: `${filename}.${fext}`, buf: buf}, 3, CDNManager);
+    if (!response) return res.sendStatus(500);
+    res.sendStatus(200);
+});
+
+
 app.post('/updatepfp', async(request, response) => {
     const { headers } = request;
     const { sessionid, code, op, filename } = headers;
@@ -79,6 +97,25 @@ app.get('/getpfp', async (req, res) => {
         res.sendStatus(500);
     }
 });
+
+
+app.get('/msgImg', async (req, res) => {
+    try {
+        const { sessionid, channelid, username } = req.headers;
+        if (!sessionid) return res.sendStatus(401);
+        if (!channelid || !username) return res.sendStatus(409);
+    
+        const fname = req.query.fname;
+        if (!fname) return res.sendStatus(404);
+    
+        const file = await CDNManager.getFile(channelid, fname);
+        return res.send(file);
+    }
+    catch (err) {
+        console.error(err);
+        res.sendStatus(500);
+    }
+}); 
 
 /* THIS WILL BREAK THE WS SERVER
 app.get('/*', async (req, res) => {   
@@ -194,18 +231,5 @@ app.ws('/websocket', async (ws, req) => {
     });
 });
 
-// app.ws('/*', (ws, req) => {
-//     // WebSocket connection handling
-//     ws.on('message', (message) => {
-//       // Handle incoming WebSocket messages
-//       console.log('Received message:', message);
-//       ws.send('RESPONSE!');
-//     });
-  
-//     ws.on('close', () => {
-//       // Handle WebSocket connection closure
-//       console.log('WebSocket connection closed');
-//     });
-//   });
 
 app.listen(port, () => console.log(`App listening on port ${port}`));

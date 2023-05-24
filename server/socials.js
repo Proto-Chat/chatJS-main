@@ -71,6 +71,12 @@ async function checkAndAddFriend(ws, mongoconnection, data, connectionMap) {
 
     //Send the friend request to their sessions
     const self = udata.friends.find((o) => o.notetoself);
+
+    //Check if there already is an invite to this person
+    const ubo = client.db(self.uid).collection('social');
+    const idoc = await ubo.findOne({"other.uid": doc.id});
+    if (idoc) return;
+
     const success = await broadcastToSessions(client, connectionMap, [doc.uid], {code: 4, op: 1, requester: {username: self.username, uid: self.uid}});
     broadcastToSessions(client, connectionMap, [self.uid], {
         code: 4,
