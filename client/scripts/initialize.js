@@ -219,10 +219,33 @@ function setupDM(response) {
     // const i = document.createElement('i');
     // i.className = 'fa-duotone fa-paper-plane-top';
     // inpbtn.appendChild(i);
+
+    const upload = document.createElement('input');
+    upload.style.display = 'none';
+    upload.type = 'file';
+    upload.id = 'fileuploadinp';
+    upload.accept = 'image/*';
+    upload.addEventListener('change',  (e) => {
+        if (e.target.files.length == 0) return;
+        for (const file of e.target.files) {
+            handlePastedImage(file);
+        }
+    });
+
+    const uploadbtn = document.createElement('button');
+    uploadbtn.className = 'fileUploadBtn';
+    uploadbtn.innerText = "+";
+
+    uploadbtn.onclick = (e) => {
+        e.preventDefault();
+        document.getElementById('fileuploadinp').click();
+    }
     
     const inpwrapper = document.createElement('div');
     const inpdiv = document.createElement('form');
     inpdiv.className = 'msginp';
+    inpdiv.appendChild(upload);
+    inpdiv.appendChild(uploadbtn);
     inpdiv.appendChild(inpelement);
     inpdiv.appendChild(gifBtn);
     inpdiv.appendChild(inpbtn);
@@ -248,7 +271,7 @@ function setupDM(response) {
             messages.scrollTop += 1000;
         }
     }
-    
+
 
     element.appendChild(messages);
     element.appendChild(inpwrapper);

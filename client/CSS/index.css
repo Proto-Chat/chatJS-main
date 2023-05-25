@@ -157,6 +157,20 @@ body {
     font-family: 'Roboto', sans-serif;
 }
 
+.fileUploadBtn {
+    width: 30px;
+    height: 30px;
+    margin-top: 10px;
+    margin-left: 10px;
+    border-radius: 50%;
+    border-style: none;
+    font-size: 30px;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+}
+
 .msginp {
     background-color: #747373;
     border-style: solid;

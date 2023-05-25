@@ -275,8 +275,10 @@ function addMessage(msg, author = null) {
         dmBar.insertBefore(dmLink, dmBar.childNodes[2]);
     }
 
-    const uid = JSON.parse(localStorage.getItem('user')).uid;
-    const other_id = msg.channelID.split('|').filter((o) => (o && o != uid)).join("|");
+    // removed " && o != uid" to account for "not-to-self" dm
+    var other_id = msg.channelID.split('|').filter((o) => (o)).join("|");
+    const otherSplit = other_id.split("|");
+    if (otherSplit[0] == otherSplit[1]) other_id = otherSplit[0];
     if (!other_id) return console.log(`ID "${msg.author.uid}" not found!`);
 
     //DM is not the current DM
@@ -287,6 +289,7 @@ function addMessage(msg, author = null) {
         showNotif(msg.author.username, msg.content);
         return;
     }
+
     //mark it as read
     ws.send(JSON.stringify({
         code: 3,
@@ -298,7 +301,7 @@ function addMessage(msg, author = null) {
     }));
 
     const dmToDeHighlight = document.getElementById(other_id);
-    dmToDeHighlight.classList.remove('unread');
+    if (dmToDeHighlight) dmToDeHighlight.classList.remove('unread');
 
     //If the user is not on top, say smth
 
