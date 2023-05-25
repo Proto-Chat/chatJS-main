@@ -230,22 +230,25 @@ function setupDM(response) {
 
     // messages.onchange = () => {messages.lastChild.lastChild.scrollIntoView();}
 
-    if (lastVideo) {
-        lastVideo.addEventListener('playing', () => {
-            lastVideo.scrollIntoView();
-            const lastChild = messages.lastChild.lastChild.lastChild;
-            if (lastChild != lastVideo) messages.lastChild.scrollIntoView();
-        });
+    if (messages && messages.lastChild) {
+        if (lastVideo) {
+            lastVideo.addEventListener('playing', () => {
+                lastVideo.scrollIntoView();
+                const lastChild = messages.lastChild.lastChild.lastChild;
+                if (lastChild != lastVideo) messages.lastChild.scrollIntoView();
+            });
+        }
+        else if (messages.lastChild.lastChild.firstChild && messages.lastChild.lastChild.firstChild.tagName == 'IMG') {
+            //#FIXME DOES NOT TRIGGER
+            const lastChild = messages.lastChild.lastChild.firstChild.tagName;
+            lastChild.scrollIntoView();
+            messages.scrollTop += lastChild.height + 1000;
+        } else {
+            if (messages.lastChild) messages.lastChild.lastChild.scrollIntoView();
+            messages.scrollTop += 1000;
+        }
     }
-    else if (messages.lastChild.lastChild.firstChild && messages.lastChild.lastChild.firstChild.tagName == 'IMG') {
-        //#FIXME DOES NOT TRIGGER
-        const lastChild = messages.lastChild.lastChild.firstChild.tagName;
-        lastChild.scrollIntoView();
-        messages.scrollTop += lastChild.height + 1000;
-    } else {
-        if (messages.lastChild) messages.lastChild.lastChild.scrollIntoView();
-        messages.scrollTop += 1000;
-    }
+    
 
     element.appendChild(messages);
     element.appendChild(inpwrapper);
