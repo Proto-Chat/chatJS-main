@@ -12,13 +12,15 @@ function createPageMenu() {
 
     const toHome = document.createElement('a');
     toHome.href = '/';
-    toHome.className = 'pageSwitchLink';
+    toHome.classList.add('pageSwitchLink');
+    toHome.classList.add('unselectable');
     toHome.innerText = 'HOME';
     e.appendChild(toHome);
 
     const toSocials = document.createElement('a');
     toSocials.href = '/social';
-    toSocials.className = 'pageSwitchLink';
+    toSocials.classList.add('pageSwitchLink');
+    toSocials.classList.add('unselectable');
     toSocials.innerText = 'SOCIALS';
     e.appendChild(toSocials);
 

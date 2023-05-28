@@ -121,6 +121,8 @@ export async function markDMAsRead(mongoconnection, connectionMap, data) {
  */
 async function uploadMsgImg(mongoconnection, CDNManager, connectionMap, data) {
     try {
+        if (!data || !data.buf || data.buf.byteLength/1000000 > 10) return false;
+        
         const response = await CDNManager.uploadFile(data.channelid, data.filename, data.buf);
         if (response && response.type && response.code) return response;
         const uid = getUidFromSid(data.sid);

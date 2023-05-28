@@ -126,8 +126,12 @@ const pfpCloseFnct = () => {
 
 function closeUserPopup(outlineDiv) {
     document.body.style.backgroundColor = "#5c5c5c";
-    document.getElementById('maincontent').style.color = "var(--offwite)";
-    document.getElementById('messages').style.color = "var(--offwite)";
+    
+    const maincontent = document.getElementById('maincontent');
+    const msgs = document.getElementById('messages');
+
+    if (maincontent) maincontent.style.color = "var(--offwite)";
+    if (msgs) msgs.style.color = "var(--offwite)";
 
     outlineDiv.remove();
     window.removeEventListener('mousedown', pfpCloseFnct);
@@ -197,8 +201,12 @@ async function createProfilePopup(udata) {
     //Deal with the rest
     //Apply "dark shade" filter to the body
     document.body.style.backgroundColor = "rgba(0,0,0,0.8)";
-    document.getElementById('maincontent').style.color = "rgba(0,0,0)";
-    document.getElementById('messages').style.color = "rgba(0,0,0)";
+
+    const maincontent = document.getElementById('maincontent');
+    const msgs = document.getElementById('messages');
+
+    if (maincontent) maincontent.style.color = "rgba(0,0,0)";
+    if (msgs) msgs.style.color = "rgba(0,0,0)";
     udivCorner.style.width = (udivCorner.offsetWidth - 1) + 'px'
     udivCorner.style.borderRight = "solid";
     udivCorner.style.borderWidth = "1px";
