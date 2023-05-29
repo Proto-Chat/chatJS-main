@@ -321,8 +321,7 @@ function addMessage(msg, author = null) {
     if (!other_id) return console.log(`ID "${msg.author.uid}" not found!`);
 
     //DM is not the current DM
-    if (msg.channelID != localStorage.getItem('currentChatID')) {
-
+    if (msg.channelID != localStorage.getItem('currentChatID') || !document.hasFocus()) {
         const dmToHighlight = document.getElementById(other_id);
         dmToHighlight.classList.add('unread');
 
