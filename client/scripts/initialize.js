@@ -217,7 +217,7 @@ function setupDM(response) {
         send();
     };
     inpbtn.className = 'msgbtnsend';
-    inpbtn.innerText = "S E N D";
+    inpbtn.innerText = "SEND";
     inpbtn.style.minWidth = '60px';
     inpbtn.style.marginRight = '1px';
     // const i = document.createElement('i');

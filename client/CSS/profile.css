@@ -132,7 +132,7 @@ input[type="file"] {
 }
 
 .dmBar {
-    
+    margin-top: -75px;
     background-color: #000;
     position: fixed;
     height: 75px;

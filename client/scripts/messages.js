@@ -310,14 +310,19 @@ function addMessage(msg, author = null) {
         dmBar.insertBefore(dmLink, dmBar.childNodes[2]);
     }
 
-    // removed " && o != uid" to account for "not-to-self" dm
-    var other_id = msg.channelID.split('|').filter((o) => (o)).join("|");
+    const uid = JSON.parse(localStorage.getItem('user')).uid;
+    var other_id = msg.channelID.split('|').filter((o) => (o && o != uid)).join("|");
+    
+    //account for "not-to-self" dm
+    if (!other_id && msg.channelID.split('|').indexOf(uid) != -1) other_id = uid;
+    
     const otherSplit = other_id.split("|");
     if (otherSplit[0] == otherSplit[1]) other_id = otherSplit[0];
     if (!other_id) return console.log(`ID "${msg.author.uid}" not found!`);
 
     //DM is not the current DM
     if (msg.channelID != localStorage.getItem('currentChatID')) {
+
         const dmToHighlight = document.getElementById(other_id);
         dmToHighlight.classList.add('unread');
 

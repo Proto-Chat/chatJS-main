@@ -139,9 +139,9 @@ body {
 }
 
 #messages {
-    height: calc(100vh - 80px);
+    height: calc(100vh - 145px);
     overflow-y: scroll;
-    margin-top: -10px;
+    margin-top: 75px;
 }
 
 .msginp textarea {
