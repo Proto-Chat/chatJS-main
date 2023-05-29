@@ -82,11 +82,17 @@ app.post('/updatepfp', async(request, response) => {
 app.get('/getpfp', async (req, res) => {
     try {
         const{ headers } = req;
-        const { sessionid } = headers;
+        const { sessionid, otherid } = headers;
+
+        if (!sessionid && !otherid) return res.send({type: 1, code: 404, message: "please provide a session id and optional username"});
+
         const isValidSession = await validateSession(mongoconnection, sessionid);
         if (!isValidSession) return res.send({type: 1, code: 404, message: "session id not found"});
 
-        const pfpData = await getPFP(mongoconnection, CDNManager, sessionid);
+        const uid = (otherid) ? otherid : getUidFromSid(sessionid);
+        if (!uid) return res.send(null);
+
+        const pfpData = await getPFP(mongoconnection, CDNManager, uid);
         if (!pfpData) return res.send(null);
 
         const buffer = Buffer.concat([pfpData]);

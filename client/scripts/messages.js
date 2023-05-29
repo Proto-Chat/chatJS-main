@@ -57,6 +57,41 @@ function edit(data) {
 }
 
 
+function createDMTopBar(data) {
+    const bar = document.createElement('div');
+    bar.classList.add('dmBar');
+    bar.classList.add('unselectable');
+
+    const pfp = document.createElement('img');
+    pfp.src = document.getElementById(`dmpfp-${data.other.uid}`).src;
+    pfp.className = 'dmbarpfp';
+    bar.appendChild(pfp);
+
+    const unamep = document.createElement('p');
+    unamep.className = 'dmbaruname';
+    unamep.innerText = data.other.username;
+    bar.appendChild(unamep);
+
+    const ustatus = document.createElement('p');
+    ustatus.className = 'dmbarstat';
+    ustatus.innerText = data.other.status;
+    bar.appendChild(ustatus);
+
+    bar.onclick = (e) => {
+        createProfilePopup({
+            icourl: pfp.src,
+            editing: false,
+            username: data.other.username,
+            status: data.other.status,
+            description: data.other.description,
+            icon: true,
+        });
+    }
+
+    return bar;
+}
+
+
 async function createContextMenu(e, editable = true) {
     var target;
     if (e.target.tagName == 'VIDEO' || e.target.tagName == 'IMG') { target = e.target.parentElement }
@@ -376,6 +411,26 @@ function createDmLink(dmRaw) {
         }
     };
     a.classList.add('unselectable');
+
+    //Get the PFP
+    var req = new XMLHttpRequest();
+    req.open('GET', `${window.location.origin}/getpfp`, true);
+
+    req.responseType = 'arraybuffer';
+
+    req.onloadend = () => {
+        const blob = new Blob([req.response]);
+        const img = document.createElement('img');
+        img.src = (blob.size > 0) ? URL.createObjectURL(blob) : 'https://github.com/ION606/chatJS/blob/main/client/assets/nopfp.jpg?raw=true';
+        img.className = 'pfpsmall';
+        img.id = `dmpfp-${dmRaw.uid}`;
+
+        a.prepend(img);
+    }
+    
+    req.setRequestHeader('sessionid', localStorage.getItem('sessionid'));
+    req.setRequestHeader('otherid', dmRaw.uid);
+    req.send();
 
     if (dmRaw.unread) a.classList.add('unread');
 

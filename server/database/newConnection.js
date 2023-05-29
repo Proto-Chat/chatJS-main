@@ -76,7 +76,7 @@ export async function createNewUser(mongoconnection, ws, data) {
         ab.createCollection('social');
 
         const configs = ab.collection('configs');
-        configs.insertOne({_id: 'myprofile', status: "", description: "", icon: ""});
+        configs.insertOne({_id: 'myprofile', status: "", description: "", icon: "", username: data.username});
         
         //Session stuff
         const sid = uuidv4() + "?" + Buffer.from(doc.uid).toString('base64');

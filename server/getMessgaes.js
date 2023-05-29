@@ -8,7 +8,6 @@ export function getMessages(mongoconnection, sid, other_id) {
         arr.sort();
 
         const dbo = client.db('dms').collection(arr.join('|'));
-        // dbo.insertOne({author: userid, timestamp: new Date('2023-05-05T18:37:35.449Z').toISOString()});
 
         // const doc = await dbo.find({
         //     timestamp: {
@@ -17,11 +16,14 @@ export function getMessages(mongoconnection, sid, other_id) {
         //     }
         // }).toArray();
 
+        const configs = await client.db(other_id).collection('configs').findOne({_id: 'myprofile'});
+        configs.uid = other_id;
+
         const doc = await dbo.find({$or: [{deleted : { $exists : false }}, {deleted: false}]}).toArray();
         doc.map((msg) => {
             delete msg._id;
             return msg
         });
-        resolve({other: other_id, messages: doc, chatID: arr.join('|')});
+        resolve({other: configs, messages: doc, chatID: arr.join('|')});
     });
 }

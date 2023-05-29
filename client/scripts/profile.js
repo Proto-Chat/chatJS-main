@@ -56,6 +56,8 @@ function createContentWrapper(udata, titletxt, btnid, fullwrapper = true) {
     const content = document.createElement('p');
     content.innerText = (titletxt.toLowerCase() == 'status') ? udata.status : udata.description;
 
+    if (content.innerText == 'undefined') content.innerText = "";
+
     if (udata.editing) {
         const editbtn = createEditBtn(btnid);
         editbtn.className = 'editbtn';
@@ -120,6 +122,11 @@ const pfpCloseFnct = () => {
     if (!outlineDiv.matches(":hover") && !udivCorner.matches(":hover")) {
         // window.location.reload();
         closeUserPopup(outlineDiv, udivCorner);
+        const uClickable = document.getElementsByClassName('userprofile')[0];
+        if (uClickable) {
+            uClickable.style.borderRight = 'black';
+            uClickable.style.width = '200px';
+        }
     }
 }
 
@@ -152,7 +159,7 @@ async function createProfilePopup(udata) {
     if (udata.icon != undefined) {
         const icon = document.createElement('img');
         icon.className = 'pfp';
-        setPFP(undefined, icon);
+        setPFP(undefined, icon, udata.icourl);
         const iconWrapper = document.createElement('div');
         iconWrapper.className = 'pfpcrop';
         iconWrapper.appendChild(icon);
@@ -189,7 +196,7 @@ async function createProfilePopup(udata) {
     }
 
     //#region Description
-    if (udata.desc != undefined) {
+    if (udata.description != undefined) {
         const descwrapper = createContentWrapper(udata, 'description', 'descedit');
         // descwrapper.id = 'abtmewrapper';
 
@@ -321,7 +328,7 @@ async function createPFPChangeInp() {
 
 //#region PFP
 
-function setPFP(message = undefined, iconElement = undefined) {
+function setPFP(message = undefined, iconElement = undefined, iconURL = undefined) {
     if (message) {
         const element = document.getElementsByClassName('pfp')[0];
 
@@ -336,7 +343,7 @@ function setPFP(message = undefined, iconElement = undefined) {
         if (!iconElement) {
             iconElement.src = 'https://github.com/ION606/chatJS/blob/main/client/assets/nopfp.jpg?raw=true';
         } else {
-            const uri = window.sessionStorage.getItem('pfp');
+            const uri = (iconURL) ? iconURL : window.sessionStorage.getItem('pfp');
             iconElement.src = uri;
         }
     }

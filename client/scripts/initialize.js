@@ -118,7 +118,7 @@ function setupDM(response) {
     var currentlyActive = document.getElementsByClassName('activechat')[0];
     if (currentlyActive) currentlyActive.classList.remove('activechat');
     
-    currentlyActive = document.getElementById(data.other);
+    currentlyActive = document.getElementById(data.other.uid);
     currentlyActive.classList.add('activechat');
     
     localStorage.setItem('currentChatID', data.chatID);
@@ -138,6 +138,8 @@ function setupDM(response) {
 
     const element = document.getElementById('chatMain');
     element.innerHTML = "";
+
+    element.appendChild(createDMTopBar(data));
 
     const messages = document.createElement('div');
     messages.id = 'messages';

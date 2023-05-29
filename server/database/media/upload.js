@@ -31,12 +31,11 @@ export async function uploadPFP(mongoconnection, wm, sid, filename, filedata) {
  * @param {*} sid
  * @returns {Buffer} The PFP in buffer format
  */
-export async function getPFP(mongoconnection, wm, sid) {
+export async function getPFP(mongoconnection, wm, uid) {
     try {
-        if (!sid) return null;
+        if (!uid) return null;
 
         const client = await mongoconnection;
-        const uid = getUidFromSid(sid);
         const dbo = client.db(uid).collection('configs');
         const uprofile = await dbo.findOne({_id: 'myprofile'});
         
