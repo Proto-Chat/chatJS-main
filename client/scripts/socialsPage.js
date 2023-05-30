@@ -70,6 +70,28 @@ function addToFriendsList(friend, element) {
     const div = document.createElement('div');
     div.innerText = friend.username;
     div.id = friend.uid;
+    
+    
+    //Get the PFP
+    var req = new XMLHttpRequest();
+    req.open('GET', `${window.location.origin}/getpfp`, true);
+
+    req.responseType = 'arraybuffer';
+
+    req.onloadend = () => {
+        const blob = new Blob([req.response]);
+        const img = document.createElement('img');
+        img.src = (blob.size > 0) ? URL.createObjectURL(blob) : 'https://github.com/ION606/chatJS/blob/main/client/assets/nopfp.jpg?raw=true';
+        img.className = 'pfpsmall';
+        img.id = `dmpfp-${friend.uid}`;
+
+        div.prepend(img);
+    }
+    
+    req.setRequestHeader('sessionid', localStorage.getItem('sessionid'));
+    req.setRequestHeader('otherid', friend.uid);
+    req.send();
+
     div.onclick = (e) => {
         openDM(e.target.id)
     }
@@ -121,6 +143,8 @@ function getFriendRequestResponse(ws, response) {
     else if (response.op == 3) {
         if (!user) alert("fren request denied ;-;");
     }
+
+    // if ()
 }
 
 

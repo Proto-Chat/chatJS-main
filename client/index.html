@@ -40,6 +40,7 @@
 
         window.onload = () => {
             localStorage.removeItem('currentChatID');
+
             ws.addEventListener('error', (err) => {
                 const content = document.getElementById('loadingdiv');
                 content.style.display = "block";
@@ -91,7 +92,9 @@
                         }
                     break;
 
-                    case 1: initializeLayout(response);
+                    case 1: {
+                        initializeLayout(response, sessionStorage.getItem('waitforDM'));
+                    }
                     break;
 
                     case 2: localStorage.removeItem('sessionid');
@@ -99,9 +102,16 @@
                     break;
                     
                     case 3:
-                        if (response.op == 0) setupDM(response);
+                        if (response.op == 0) {
+                            if (sessionStorage.getItem('waitforDM')) {
+                                document.getElementById('loadingdiv').style.display = 'none';
+                                document.getElementById('maincontent').style.display = 'block';
+                                sessionStorage.removeItem('waitforDM')
+                            }
+                            setupDM(response);
+                        }
                         else if (response.op == 1) closeDM(response);
-                        else if (response.op == 2) 
+                        else if (response.op == 2) console.log(response);
                     break;
 
                     case 4: if (response.op != 6) return;

@@ -21,7 +21,7 @@ export async function toggleDM(mongoconnection, sid, other_id, open) {
         const dbo = client.db(uid).collection('dm_keys');
 
         const doc = await dbo.findOne({uid: other_id});
-        if (doc.open == open) return false;
+        if (doc.open == open) return true;
         
         await dbo.updateOne({uid: other_id}, {$set: {open: open}});
         return true;

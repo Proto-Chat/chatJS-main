@@ -58,8 +58,8 @@
                     case 0: window.location.href = '/';
                     break;
 
-                    case 3: alert('DM OPENED!');
-                        window.location.href = '/';
+                    case 3:
+                        window.location.href = `/?dmid=${response.data.other_id}`;
                     break;
 
                     case 4:
