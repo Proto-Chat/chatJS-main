@@ -40,6 +40,9 @@ async function manageFReqinDB(u1, u2, client, addReq) {
     try {
         const dbo1 = client.db(u1.uid).collection('social');
         const dbo2 = client.db(u2.uid).collection('social');
+
+        if (await dbo1.findOne({uid: u2.uid})) return;
+        if (await dbo2.findOne({uid: u1.uid})) return;
     
         if (addReq) {
             await dbo1.insertOne({type: 0, other: {uid: u2.uid, username: u2.username}, isRequestor: true});
@@ -73,8 +76,9 @@ async function checkAndAddFriend(ws, mongoconnection, data, connectionMap) {
     const self = udata.friends.find((o) => o.notetoself);
 
     //Check if there already is an invite to this person
-    const ubo = client.db(self.uid).collection('social');
-    const idoc = await ubo.findOne({"other.uid": doc.id});
+    const ubo = client.db(self.uid).collection('dm_keys');
+    const idoc = await ubo.findOne({"uid": doc.uid});
+
     if (idoc) return;
 
     const success = await broadcastToSessions(client, connectionMap, [doc.uid], {code: 4, op: 1, requester: {username: self.username, uid: self.uid}});
@@ -118,7 +122,13 @@ async function acceptFIR(ws, mongoconnection, response, connectionMap) {
         const ids = [requestorUobj.uid, acceptorObj.uid];
         ids.sort();
 
-        const client = await mongoconnection;        
+        const client = await mongoconnection;  
+
+        if (await requestorDB.findOne({uid: acceptorObj.uid})) return;
+        if (await acceptorDB.findOne({uid: requestorUobj.uid})) return;
+
+        // return console.log(12);
+
         const dmkey = `${ids[0]}|${ids[1]}`;
         client.db('dms').createCollection(dmkey);
 

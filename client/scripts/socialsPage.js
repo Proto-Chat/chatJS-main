@@ -1,4 +1,5 @@
 function createPendingResponseBar(uobj) {
+    changeCol('#00ce00');
     const element = document.getElementById('accept');
 
     const toolbar = document.getElementsByClassName('toolbar')[0];
@@ -95,13 +96,17 @@ function addToFriendsList(friend, element) {
     div.onclick = (e) => {
         openDM(e.target.id)
     }
+
     friendElem.appendChild(div);
     element.appendChild(friendElem);
 }
 
 
 function getAddFriendInp(e) {
-    if(e.key != 'Enter') return;
+    if(e.key != 'Enter') {
+        e.target.style.borderStyle = 'none';
+        return
+    };
     const val = e.target.value.trim();
 
     if (!val.length) return;
@@ -179,13 +184,15 @@ function recieveNewFriendRequest(ws, response) {
                 otherUid: utoappend.id
             }
         }));
+
+        e.target.onclick = () => {};
     }
     utoappend.appendChild(rejectbtn);
 
     const accptbtn = document.createElement('a');
     accptbtn.classList.add('accptbtn');
     accptbtn.innerText = 'Y';
-    accptbtn.onclick = () => {
+    accptbtn.onclick = (e) => {
         ws.send(JSON.stringify({
             code: 4,
             op: 2,
@@ -194,6 +201,8 @@ function recieveNewFriendRequest(ws, response) {
                 otherUid: utoappend.id
             }
         }));
+
+        e.target.onclick = () => {};
     }
     utoappend.appendChild(accptbtn);
 

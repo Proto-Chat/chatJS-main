@@ -37,6 +37,13 @@
             }
         }
 
+        
+        function changeCol(col) {
+            const el = document.getElementsByClassName('addfriendinp')[0];
+            el.style.borderStyle = 'solid';
+            el.style.borderColor = col;
+        }
+
 
         window.onload = () => {
             divs.friends = document.getElementById('friends');
@@ -79,8 +86,12 @@
                     break;
 
                     case 10: break;
+
+                    case 404:
+                        changeCol('red');
+                    break;
                     
-                    default: console.log(`Unknown code: ${response.code}`);
+                    default: console.log(typeof response.code, `Unknown code: ${response.code}`);
                 }
             });
         }

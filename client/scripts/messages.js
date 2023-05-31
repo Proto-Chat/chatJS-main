@@ -107,9 +107,7 @@ async function createContextMenu(e, editable = true) {
     if (isGif) {
         currentString = String(target.firstChild.src);
     }
-    else if (isImg) {
-        editable = false;
-    }
+    else if (isImg) { editable = false; }
     else {
         currentString = String(target.innerText.substring(target.innerText.indexOf(':') + 1));
     }
@@ -262,6 +260,25 @@ function createNewMessage(msg) {
     const userDisplay = document.createElement('a');
     userDisplay.innerText = `${msg.author.username}`;
     userDisplay.className = 'msgauthor';
+    userDisplay.id = msg.author.uid;
+    userDisplay.onclick = (e) => {
+        const uconfigs = JSON.parse(localStorage.getItem('user'));
+
+        if (e.target.id == uconfigs.uid) {
+            const uelement = document.getElementsByClassName('userprofile')[0];
+            if (!uelement) return;
+
+            uelement.click();
+            return;
+        }
+
+        const target = document.getElementById('chatMain');
+        if (!target) return;
+
+        const dmBar = target.children.item(0);
+        if (!dmBar) return;
+        dmBar.click();
+    }
 
     container.className = 'messageContainer';
     container.appendChild(userDisplay);
