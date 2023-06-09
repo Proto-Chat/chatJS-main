@@ -136,20 +136,20 @@ function getFriendRequestResponse(ws, response) {
         setTimeout(() => {userInvObj.remove()}, 5000);
     }
 
+    const myid = JSON.parse(localStorage.getItem('user')).uid;
+    var friendToAdd = (user) ? user : data.users.find((u) => u.uid != myid);
+
     // request accepted
     if (response.op == 2) {
-        const myid = JSON.parse(localStorage.getItem('user')).uid;
-        var friendToAdd = (user) ? user : data.users.find((u) => u.uid != myid);
         const friendsList = document.getElementById('friends');
         addToFriendsList(friendToAdd, friendsList);
+        showNotif("friendrequest", `${friendToAdd.username} accepted your friend request!`);
     }
     
     //Request denied
     else if (response.op == 3) {
-        if (!user) alert("fren request denied ;-;");
+        if (!user) showNotif("friendrequest", `${friendToAdd.username} rejected your friend request!`); // alert("fren request denied ;-;");
     }
-
-    // if ()
 }
 
 
@@ -207,4 +207,6 @@ function recieveNewFriendRequest(ws, response) {
     utoappend.appendChild(accptbtn);
 
     fdiv.appendChild(utoappend);
+    
+    showNotif("friendrequest", `${response.requester.username} sent you a friend request!`);
 }

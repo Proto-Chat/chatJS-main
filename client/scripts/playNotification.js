@@ -1,22 +1,21 @@
 // import .mp3
-const defaultNotification = require('../assets/audio/notifications/default.mp3')
+const newMsg = "https://github.com/ION606/chatJS/raw/main/client/assets/audio/notifications/msg.mp3";
+const friendRequest = "https://github.com/ION606/chatJS/raw/main/client/assets/audio/notifications/friend-request.mp3";
 
 function playNotification(notificationType) {
+	let notificationSound;
 
-  let notificationSound;
+	switch (notificationType) {
+		case "msg":
+			notificationSound = new Audio(newMsg);
+			notificationSound.play();
+		break;
 
-  switch(notificationType){
-    // case 'A':
-    //   notificationSound = new Audio();
-    //   notificationSound.play();
-    //   break;
-    // case 'B':
-    //   notificationSound = new Audio();
-    //   notificationSound.play();
-    //   break;
-    default: 
-      notificationSound = new Audio(defaultNotification);
-      notificationSound.play();
-  }
+		case "friendrequest":
+			notificationSound = new Audio(friendRequest);
+			notificationSound.play();
+		break;
 
+		default: 
+	}
 }

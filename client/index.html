@@ -14,6 +14,7 @@
     <script src="/scripts/profile.js"></script>
     <script src="/scripts/gifs.js"></script>
     <script src="/scripts/images.js"></script>
+    <script src="/scripts/playNotification.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css" integrity="sha512-+4zCK9k+qNFUR5X+cKL9EIR+ZOhtIloNl9GIKS57V1MyNsYpYcUrUeQc9vNfzsWfV28IaLL3i96P9sdNyeRssA==" crossorigin="anonymous" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/js/all.min.js" integrity="sha512-F5QTlBqZlvuBEs9LQPqc1iZv2UMxcVXezbHzomzS6Df4MZMClge/8+gXrKw2fl5ysdk4rWjR0vKS7NNkfymaBQ==" crossorigin="anonymous"></script>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:400,400i,500,500i,700,700i&display=swap">
@@ -114,8 +115,8 @@
                         else if (response.op == 2) console.log(response);
                     break;
 
-                    case 4: if (response.op != 6) return;
-                        updateField(response);
+                    case 4: if ([1,2,3,4].includes(response.op)) return showNotif("friendrequest", `recieved social interaction!`);
+                            else if (response.op == 6) updateField(response);
                     break;
 
                     case 5: messageRecieved(response);

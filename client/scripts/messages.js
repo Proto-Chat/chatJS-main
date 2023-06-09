@@ -16,7 +16,7 @@ function messageRecieved(response) {
 }
 
 
-function showNotif(username, content) {
+function showNotif(username, content, reason = "msg") {
     if ('Notification' in window) {
     // Request permission to show notifications
         Notification.requestPermission().then(function (permission) {
@@ -31,6 +31,8 @@ function showNotif(username, content) {
                 var notification = new Notification(username, {
                     body: notifContent,
                 });
+
+                playNotification(reason);
 
                 notification.onclick = (e) => {
                     if (window.location.pathname != '/') window.location.href = '/';
