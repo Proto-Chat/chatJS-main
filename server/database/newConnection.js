@@ -85,6 +85,16 @@ export async function createNewUser(mongoconnection, ws, data) {
 
         //Create the "note to self" dm
         client.db('dms').createCollection(`${doc.uid}|${doc.uid}`);
+        client.db('dms').createCollection(`0|${doc.uid}`);
+
+        // add SYSTEM as a friend
+        client.db(`${doc.uid}`).collection('dm_keys').insertOne({
+            uid: "0",
+            username: "SYSTEM",
+            notetoself: false,
+            open: true,
+            system: true
+        });
         
         //SEND CONFIRMTION OF ACCOUNT CREATION
         ws.send(JSON.stringify({code: 0, op: 2, type: 0}));

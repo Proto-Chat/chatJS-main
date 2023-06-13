@@ -15,7 +15,7 @@ export async function logout(clients, ws, mongoconnection, sid) {
 export async function toggleDM(mongoconnection, sid, other_id, open) {
     try {
         const uid = getUidFromSid(sid);
-        if (uid == other_id) return;
+        if (uid == other_id || other_id == '0') return;
         
         const client = await mongoconnection;
         const dbo = client.db(uid).collection('dm_keys');

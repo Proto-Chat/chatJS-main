@@ -34,6 +34,8 @@ export async function newMessage(mongoconnection, connectionMap, data) {
     const client = await mongoconnection;
     const others = splitByID(data.channelID);
 
+    if (others.includes('0')) return;
+
     //Open the DM for the recipient
     for (const i of others) {
         if (i == data.author.uid) continue;

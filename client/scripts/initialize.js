@@ -38,10 +38,13 @@ function initializeLayout(response, dmid) {
 
     element.appendChild(createPageMenu());
 
+    const dmSYS = data.dms.find((dm) => dm.uid == '0');
+    element.appendChild(createDmLink(dmSYS));
+
     for (const dmRaw of data.dms) {
         const a = createDmLink(dmRaw);
 
-        element.appendChild(a);
+        if (dmRaw.uid != "0") element.appendChild(a);
     }
 
     // localStorage.setItem('desc', data.configs.desc)
@@ -181,102 +184,115 @@ function setupDM(response) {
         }
     }
 
+    const inpwrapper = document.createElement('div');
 
-    const inpelement = document.createElement('textarea');
-    inpelement.id = 'textinp';
+    if (data.other.uid != '0') {
+        const inpelement = document.createElement('textarea');
+        inpelement.id = 'textinp';
 
-    var keys = {};
-    function handleEnter(e) {
-        let { which, type } = e || Event; // to deal with IE
-        let isKeyDown = (type == 'keydown');
-        keys[which] = isKeyDown;
+        var keys = {};
+        function handleEnter(e) {
+            let { which, type } = e || Event; // to deal with IE
+            let isKeyDown = (type == 'keydown');
+            keys[which] = isKeyDown;
 
-        if(isKeyDown && keys[13]) {
-            if (!keys[16]) {
-                send();
+            if(isKeyDown && keys[13]) {
+                if (!keys[16]) {
+                    send();
+                }
+            }
+            else if (isKeyDown) {
+                e.target.parentElement.style.borderColor = 'black';
+            }
+            else {
+                e.target.style.height = "1px";
+                e.target.style.height = (e.target.scrollHeight)+"px";
+                messages.scrollTop = messages.scrollHeight - messages.clientHeight;
             }
         }
-        else if (isKeyDown) {
-            e.target.parentElement.style.borderColor = 'black';
+        inpelement.onkeydown = handleEnter;
+        inpelement.onkeyup = handleEnter;
+
+        inpelement.addEventListener('paste', async (e) => {
+            const cData = e.clipboardData;
+            if (cData.getData('Text')) return;
+            if (cData.files.length == 0) return;
+            for (const file of cData.files) {
+                handlePastedImage(file);
+            }
+        });
+
+        
+        inpelement.onfocus = () => {
+            inpelement.style.border = "none";
         }
-        else {
-            e.target.style.height = "1px";
-            e.target.style.height = (e.target.scrollHeight)+"px";
-            messages.scrollTop = messages.scrollHeight - messages.clientHeight;
+
+        const gifBtn = document.createElement('button');
+        gifBtn.innerText = "GIF";
+        gifBtn.onclick = (e) => {
+            e.preventDefault();
+            if (document.getElementsByClassName('gifpopup').length > 0) return;
+            const gifpopup = createGifPopup();
+            gifpopup.style.right = e.target.style.right;
+            e.target.parentElement.appendChild(gifpopup);
         }
-    }
-    inpelement.onkeydown = handleEnter;
-    inpelement.onkeyup = handleEnter;
+        gifBtn.className = 'msgbtnsend';
+        gifBtn.style.marginRight = '5px';
 
-    inpelement.addEventListener('paste', async (e) => {
-        const cData = e.clipboardData;
-        if (cData.getData('Text')) return;
-        if (cData.files.length == 0) return;
-        for (const file of cData.files) {
-            handlePastedImage(file);
+        const inpbtn = document.createElement('button');
+        inpbtn.onclick = (e) => {
+            e.preventDefault();
+            send();
+        };
+        inpbtn.className = 'msgbtnsend';
+        inpbtn.innerText = "SEND";
+        inpbtn.style.minWidth = '60px';
+        inpbtn.style.marginRight = '1px';
+        // const i = document.createElement('i');
+        // i.className = 'fa-duotone fa-paper-plane-top';
+        // inpbtn.appendChild(i);
+
+        const upload = document.createElement('input');
+        upload.style.display = 'none';
+        upload.type = 'file';
+        upload.id = 'fileuploadinp';
+        upload.accept = 'image/*';
+        upload.addEventListener('change',  (e) => {
+            if (e.target.files.length == 0) return;
+            for (const file of e.target.files) {
+                handlePastedImage(file);
+            }
+        });
+
+        const uploadbtn = document.createElement('button');
+        uploadbtn.className = 'fileUploadBtn';
+        uploadbtn.innerText = "+";
+
+        uploadbtn.onclick = (e) => {
+            e.preventDefault();
+            document.getElementById('fileuploadinp').click();
         }
-    });
+        
+        const inpdiv = document.createElement('form');
+        inpdiv.className = 'msginp';
+        inpdiv.appendChild(upload);
+        inpdiv.appendChild(uploadbtn);
+        inpdiv.appendChild(inpelement);
+        inpdiv.appendChild(gifBtn);
+        inpdiv.appendChild(inpbtn);
+        inpwrapper.appendChild(inpdiv);
+    } else {
+        const inpdiv = document.createElement('form');
+        inpdiv.className = 'msginp';
+        inpdiv.style = 'align-content: center;justify-content: center;';
 
-    
-    inpelement.onfocus = () => {
-        inpelement.style.border = "none";
+        const h1 = document.createElement('h4');
+        h1.style = 'align-content: center; margin: 20px;';
+        h1.innerText = 'THIS IS A SYSTEM DM, YOU CAN\'T SEND MESSAGES HERE!';
+        inpdiv.appendChild(h1);
+
+        inpwrapper.appendChild(inpdiv);
     }
-
-    const gifBtn = document.createElement('button');
-    gifBtn.innerText = "GIF";
-    gifBtn.onclick = (e) => {
-        e.preventDefault();
-        if (document.getElementsByClassName('gifpopup').length > 0) return;
-        const gifpopup = createGifPopup();
-        gifpopup.style.right = e.target.style.right;
-        e.target.parentElement.appendChild(gifpopup);
-    }
-    gifBtn.className = 'msgbtnsend';
-    gifBtn.style.marginRight = '5px';
-
-    const inpbtn = document.createElement('button');
-    inpbtn.onclick = (e) => {
-        e.preventDefault();
-        send();
-    };
-    inpbtn.className = 'msgbtnsend';
-    inpbtn.innerText = "SEND";
-    inpbtn.style.minWidth = '60px';
-    inpbtn.style.marginRight = '1px';
-    // const i = document.createElement('i');
-    // i.className = 'fa-duotone fa-paper-plane-top';
-    // inpbtn.appendChild(i);
-
-    const upload = document.createElement('input');
-    upload.style.display = 'none';
-    upload.type = 'file';
-    upload.id = 'fileuploadinp';
-    upload.accept = 'image/*';
-    upload.addEventListener('change',  (e) => {
-        if (e.target.files.length == 0) return;
-        for (const file of e.target.files) {
-            handlePastedImage(file);
-        }
-    });
-
-    const uploadbtn = document.createElement('button');
-    uploadbtn.className = 'fileUploadBtn';
-    uploadbtn.innerText = "+";
-
-    uploadbtn.onclick = (e) => {
-        e.preventDefault();
-        document.getElementById('fileuploadinp').click();
-    }
-    
-    const inpwrapper = document.createElement('div');
-    const inpdiv = document.createElement('form');
-    inpdiv.className = 'msginp';
-    inpdiv.appendChild(upload);
-    inpdiv.appendChild(uploadbtn);
-    inpdiv.appendChild(inpelement);
-    inpdiv.appendChild(gifBtn);
-    inpdiv.appendChild(inpbtn);
-    inpwrapper.appendChild(inpdiv);
 
     // messages.onchange = () => {messages.lastChild.lastChild.scrollIntoView();}
 
