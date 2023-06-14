@@ -28,13 +28,13 @@ const splitByID = (channelID) => {
 }
 
 
-export async function newMessage(mongoconnection, connectionMap, data) {
+export async function newMessage(mongoconnection, connectionMap, data, isSystemMessage = false) {
     if (!data || !data.channelID) return false; //Maybe make it a "bad request"?
 
     const client = await mongoconnection;
     const others = splitByID(data.channelID);
 
-    if (others.includes('0')) return;
+    if (!isSystemMessage && others.includes('0')) return;
 
     //Open the DM for the recipient
     for (const i of others) {

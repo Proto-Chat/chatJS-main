@@ -17,6 +17,7 @@ import {
     createUConf,
     processUConf,
     toggleDM,
+    systemMsgAll
 } from './imports.js';
 
 const config = (configImp) ? configImp : process.env;
@@ -132,6 +133,13 @@ app.get('/*', async (req, res) => {
     }
 });
 */
+
+app.post('/systemmsgall', async (req, res) => {
+    const { token, content } = req.headers;
+    if (!token || !content) return;
+
+    systemMsgAll(mongoconnection, webSocketClients, res, token, content);
+});
 
 app.get('/favicon.ico', (req, res) => {
     res.sendFile('favicon.ico', {root: './client/assets'});
