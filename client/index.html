@@ -29,19 +29,12 @@
     </script>
 
     <script>
-        const ws = new WebSocket(createWSPath());
-        setInterval(() => { ws.send(JSON.stringify({code: 10})); }, 30000);
+        var ws;
+        function connectSocket() {
+            ws = new WebSocket(createWSPath());
+            setInterval(() => { ws.send(JSON.stringify({code: 10})); }, 30000);
 
-        //MUST BE DECLAIRED GLOBALLY!
-        const loadingAnimInterval = setInterval(() => {
-            const element = document.getElementById('loadingdiv').firstElementChild;
-            element.style.color = '#'+(0x1000000+Math.random()*0xffffff).toString(16).substr(1,6)
-        }, 1000);
-        
-
-        window.onload = () => {
-            localStorage.removeItem('currentChatID');
-
+            /*
             ws.addEventListener('error', (err) => {
                 const content = document.getElementById('loadingdiv');
                 content.style.display = "block";
@@ -53,9 +46,10 @@
                 } else content.innerHTML = "<h1>E R R O R</h1>";
                 
                 console.error(err);
-            });
+            });*/
 
             ws.addEventListener('open', () => {
+                console.log("websocket connection established!");
                 if (localStorage.getItem('sessionid') && localStorage.getItem('sessionid') != "undefined") {
                     ws.send(JSON.stringify({ code: 1, op: 0, sid: localStorage.getItem('sessionid') }));
                     getPFP();
@@ -117,6 +111,7 @@
 
                     case 4: if ([1,2,3,4].includes(response.op)) return showNotif("friendrequest", `recieved social interaction!`);
                             else if (response.op == 6) updateField(response);
+                            else if (response.op == 7) window.location.reload();
                     break;
 
                     case 5: messageRecieved(response);
@@ -131,7 +126,32 @@
             ws.addEventListener('close', (ev) => {
                 console.log(ev);
                 console.log(`WEBSOCKET CLOSED WITH CODE ${ev.code}`);
+
+                const bar = document.getElementById('reconnectingbar');
+                bar.style.display = 'block';
+
+                // try reconnecting
+                const timer = setInterval(() => {
+                    connectSocket();
+
+                    ws.addEventListener('open', () => {
+                        clearInterval(timer);
+                        window.location.reload();
+                    });
+                }, 1000);
             });
+        }
+
+        //MUST BE DECLAIRED GLOBALLY!
+        const loadingAnimInterval = setInterval(() => {
+            const element = document.getElementById('loadingdiv').firstElementChild;
+            element.style.color = '#'+(0x1000000+Math.random()*0xffffff).toString(16).substr(1,6)
+        }, 1000);
+        
+
+        window.onload = () => {
+            localStorage.removeItem('currentChatID');
+            connectSocket();
         }
     </script>
 </head>
@@ -141,6 +161,7 @@
             <h1>L O A D I N G . . .</h1>
         </div>
         <div id="maincontent" style="display: none">
+            <div id="reconnectingbar" class="reconnectingbar">R E C O N N E C T I N G . . .</div>
             <div id="dms" class="sidenav">
                 <!-- <a href="#about">About</a> -->
             </div>

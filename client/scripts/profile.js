@@ -203,6 +203,34 @@ async function createProfilePopup(udata) {
         outlineDiv.appendChild(descwrapper);
     }
 
+    if (!udata.me) {
+        const cid = localStorage.getItem('currentChatID');
+        const uid = JSON.parse(localStorage.getItem('user')).uid;
+        if (cid != `${uid}|${uid}` && !cid.includes('0')) {
+            const removeFriendBtn = document.createElement('button');
+            removeFriendBtn.className = 'removeFriendBtn';
+            removeFriendBtn.innerText = 'remove friend';
+            
+            removeFriendBtn.onclick = (e) => {
+                ws.send(JSON.stringify({
+                    code: 4,
+                    op: 6,
+                    data: {
+                        channelId: cid,
+                        uid: uid,
+                        sid: localStorage.getItem('sessionid')
+                    }
+                }));
+            }
+
+            const btnwrapperdiv = document.createElement('div');
+            btnwrapperdiv.style.textAlign = 'center';
+            btnwrapperdiv.appendChild(removeFriendBtn);
+
+            outlineDiv.appendChild(btnwrapperdiv);
+        }
+    }
+
     document.body.prepend(outlineDiv);
 
     //Deal with the rest
@@ -221,6 +249,7 @@ async function createProfilePopup(udata) {
 
 
 function initialShow(udata) {
+    udata.me = true;
     createProfilePopup(udata);
 }
 

@@ -130,7 +130,11 @@ async function acceptFIR(ws, mongoconnection, response, connectionMap) {
         // return console.log(12);
 
         const dmkey = `${ids[0]}|${ids[1]}`;
-        client.db('dms').createCollection(dmkey);
+
+        const collectionNames = await client.db('dms').listCollections().toArray();
+        const collectionExists = collectionNames.some((col) => col.name == dmkey);
+        
+        if (!collectionExists) client.db('dms').createCollection(dmkey);
 
         //Add that dm to the acceptor
         acceptorDB.insertOne({
@@ -247,6 +251,37 @@ async function recieveProfileEditRequest(ws, mongoconnection, response, connecti
 }
 
 
+async function removeFriend(ws, mongoconnection, response, connectionMap) {
+    try {
+        const data = response.data;
+        if (!data || !data.channelId || !data.sid || !data.uid) return;
+        const otherId = data.channelId.split('|').find((o) => (o != data.uid));
+        if (!otherId || otherId == '0') return null;
+
+        const client = await mongoconnection;
+        const dbo = client.db('main').collection('accounts');
+        const doc = await dbo.findOne({uid: `${data.uid}`});
+
+        if (!doc || !doc.sids.includes(data.sid)) return;
+        const dmdbo = client.db(data.uid).collection('dm_keys');
+        dmdbo.deleteOne({uid: otherId});
+
+        const otherdmdbo = client.db(otherId).collection('dm_keys');
+        otherdmdbo.deleteOne({uid: data.uid});
+
+        ws.send(JSON.stringify({
+            code: 4,
+            op: 7,
+        }));
+    }
+    catch (err) {
+        console.error(err);
+        ws.send(JSON.stringify({code: 500, type: 1}));
+        return null;
+    }
+}
+
+
 export function handleSocials(ws, mongoconnection, response, connectionMap) {
     switch (response.op) {
         case 0: getSocials(ws, mongoconnection, response);
@@ -265,6 +300,9 @@ export function handleSocials(ws, mongoconnection, response, connectionMap) {
         break
 
         case 5: recieveProfileEditRequest(ws, mongoconnection, response, connectionMap);
+        break;
+
+        case 6: removeFriend(ws, mongoconnection, response, connectionMap);
         break;
 
         default: console.log(response);

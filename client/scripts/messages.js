@@ -87,6 +87,7 @@ function createDMTopBar(data) {
             status: data.other.status,
             description: data.other.description,
             icon: true,
+            me: false
         });
     }
 

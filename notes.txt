@@ -33,7 +33,8 @@ codes (server --> client):
         3: friend request rejected
         4: cancel friend request
         5: friend request submitted (response to client --> server {code: 4, op: 1})
-        6: respond to profile edit request
+        6: respond to profile edit request,
+        7: remove friend
 
 5 - message sent
 10 - pong
@@ -63,6 +64,7 @@ codes (client --> server):
         3: friend request rejected
         4: friend request cancelled
         5: send profile edit request
+        6: remove friend
 5 - message
     op:
         0: recieved
