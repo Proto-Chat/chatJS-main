@@ -1,3 +1,8 @@
+var loc = window.location.href+'';
+if (loc.indexOf('http://') == 0 && loc.indexOf('localhost') == -1){
+    window.location.href = loc.replace('http://','https://');
+}
+
 function createWSPath() {
     const socketProtocol = (window.location.protocol === 'https:' ? 'wss:' : 'ws:')
     var echoSocketUrl = socketProtocol + `//${window.location.hostname}`;

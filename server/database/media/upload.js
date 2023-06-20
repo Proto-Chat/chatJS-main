@@ -17,7 +17,7 @@ export async function uploadPFP(mongoconnection, wm, sid, filename, filedata) {
         const dbo = client.db(uid).collection('configs');
         await dbo.updateOne({_id: 'myprofile'}, {$set: {icon: filename}});
         const response = await wm.uploadFile(uid, filename, filedata);
-        if (response.type && response.code) return response;
+        if (response && response.type && response.code) return response;
         return true;
     } catch (err) {
         console.log(err);
