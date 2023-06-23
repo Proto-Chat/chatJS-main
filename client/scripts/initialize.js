@@ -90,6 +90,19 @@ function initializeLayout(response, dmid) {
 }
 
 
+const createPFPDivIcon = (url) => {
+    const icon = document.createElement('img');
+    icon.style.position = 'absolute';
+    icon.style.width = '25px';
+    icon.style.height = '25px';
+    icon.style.marginTop = '5px';
+    // icon.style.marginLeft = '10px';
+    icon.src = url;
+
+    return icon;
+}
+
+
 function setUpUser(user) {
     const element = document.getElementsByClassName('userprofile')[0];
     const uname = document.createElement('h1');
@@ -97,11 +110,15 @@ function setUpUser(user) {
     element.appendChild(uname);
 
     const settingsTrigger = document.createElement('p');
-    settingsTrigger.innerText = '⚙';
+    // settingsTrigger.innerText = '⚙';
+    settingsTrigger.appendChild(createPFPDivIcon('https://clipground.com/images/settings-icon-png-white-3.png'));
     settingsTrigger.className = 'settingsTrigger';
     
     const logoutTrigger = document.createElement('p');
-    logoutTrigger.innerText = '🛑';
+    // logoutTrigger.innerText = '🛑';
+    const lico = createPFPDivIcon('https://github.com/ION606/chatJS/blob/main/client/assets/exit.png?raw=true');
+    lico.style.marginLeft = '20px';
+    logoutTrigger.appendChild(lico);
     logoutTrigger.className = 'settingsTrigger';
 
     const profileConfigs = {
