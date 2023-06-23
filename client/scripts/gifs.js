@@ -175,6 +175,7 @@ function createGifCollectionDisplay(resultContainer, url) {
         if (xmlHttp.readyState == 4 && xmlHttp.status == 200) {
             const response = JSON.parse(xmlHttp.responseText);
 
+            resultContainer.dataset.next = response.next;
             for (const i in response.results) {
                 resultContainer.appendChild(createGifForPopup(response.results[i]));
             }
@@ -190,10 +191,12 @@ function createGifCollectionDisplay(resultContainer, url) {
                             for (const i in response.results) {
                                 resultContainer.appendChild(createGifForPopup(response.results[i]));
                             }
+
+                            resultContainer.dataset.next = response.next;
                         }
                     };
 
-                    getNewGIFsReq.open("GET", url, true);
+                    getNewGIFsReq.open("GET", `${url}&pos=${resultContainer.dataset.next}`, true);
                     getNewGIFsReq.send(null);
                 }
             });
