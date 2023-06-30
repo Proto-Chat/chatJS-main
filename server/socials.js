@@ -12,6 +12,8 @@ async function getSocials(ws, mongoconnection, data) {
     
     const doc = await getConnection(mongoconnection, data.sid, true);
 
+    doc.friends = doc.friends.filter((f) => (!f.system && !f.bot));
+
     if (!doc) ws.send(JSON.stringify({type: 1, code: 0, op: 404}));
     else if (doc.type == 1) {
         ws.send(JSON.stringify(doc));
