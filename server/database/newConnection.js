@@ -63,6 +63,7 @@ export async function createNewUser(mongoconnection, ws, data) {
         }
 
         if (!doc.uid) return console.log(12); //DEAL WITH THIS LATER
+        const ntsdmid = (await import('crypto')).randomUUID();
 
         //Create the main account db
         const ab = client.db(doc.uid);
@@ -70,7 +71,8 @@ export async function createNewUser(mongoconnection, ws, data) {
             uid: doc.uid,
             username: doc.username,
             notetoself: true,
-            open: true
+            open: true,
+            dmid: ntsdmid
         });
 
         ab.createCollection('social');
@@ -83,9 +85,10 @@ export async function createNewUser(mongoconnection, ws, data) {
         ab.collection('sessions').insertOne({sid: sid});
         await dbo.updateOne({username: data.username}, { $push: { sids: sid } });
 
+        const sysdmid = (await import('crypto')).randomUUID();
         //Create the "note to self" dm
-        client.db('dms').createCollection(`${doc.uid}|${doc.uid}`);
-        client.db('dms').createCollection(`0|${doc.uid}`);
+        client.db('dms').createCollection(ntsdmid);
+        client.db('dms').createCollection(sysdmid);
 
         // add SYSTEM as a friend
         client.db(`${doc.uid}`).collection('dm_keys').insertOne({
@@ -93,7 +96,8 @@ export async function createNewUser(mongoconnection, ws, data) {
             username: "SYSTEM",
             notetoself: false,
             open: true,
-            system: true
+            system: true,
+            dmid: sysdmid
         });
         
         //SEND CONFIRMTION OF ACCOUNT CREATION

@@ -17,8 +17,10 @@ import {
     createUConf,
     processUConf,
     toggleDM,
-    systemMsgAll
+    systemMsgAll,
+    validateGDM, getDMID
 } from './imports.js';
+import { broadcastToSessions } from './database/newMessage.js';
 
 const config = (configImp) ? configImp : process.env;
 
@@ -45,38 +47,72 @@ const wsInstance = expressWs(app);
 
 
 app.put('/msgImg', async (req, res) => {
-    const sid = req.headers.sessionid;
-    const channelid = req.headers.channelid;
-    const fext = req.headers.fext;
-    const username = req.headers.username;
-    if (!sid) return res.sendStatus(401);
-    if (!channelid || !username) return res.sendStatus(404);
-    if (!fext) return res.sendStatus(409);
-
-    const buf = Buffer.from(req.body, 'base64');
-    const filename = Math.random().toString(36).slice(2);
-
-    const response = await handleMessage(mongoconnection, webSocketClients, {files: req.body, sid: sid, username: username, channelid: channelid, filename: `${filename}.${fext}`, buf: buf}, 3, CDNManager);
-    if (!response) return res.sendStatus(500);
-    res.sendStatus(200);
+    try {
+        const sid = req.headers.sessionid;
+        const channelid = req.headers.channelid;
+        const fext = req.headers.fext;
+        const username = req.headers.username;
+        if (!sid) return res.sendStatus(401);
+        if (!channelid || !username) return res.sendStatus(404);
+        if (!fext) return res.sendStatus(409);
+    
+        const buf = Buffer.from(req.body, 'base64');
+        const filename = Math.random().toString(36).slice(2);
+    
+        const response = await handleMessage(mongoconnection, webSocketClients, {files: req.body, sid: sid, username: username, channelid: channelid, filename: `${filename}.${fext}`, buf: buf}, 3, CDNManager);
+        if (!response) return res.sendStatus(500);
+        res.sendStatus(200);
+    }
+    catch (err) {
+        console.error(err);
+        res.sendStatus(500);
+    }
 });
 
 
 app.post('/updatepfp', async(request, response) => {
-    const { headers } = request;
-    const { sessionid, code, op, filename } = headers;
+    try {
+        const { headers } = request;
+        const { sessionid, code, op, filename, isgdm, gdmid } = headers;
 
-    if (!sessionid || !code || !op || !filename) return response.send({code: 400, message: 'missing parameters'});
-    if (!validateSession(mongoconnection, sessionid)) return response.send({code: 404, message: 'session not found'});
+        if (!sessionid || !code || !op || !filename) return response.send({code: 400, message: 'missing parameters'});
+        if (!validateSession(mongoconnection, sessionid)) return response.send({code: 404, message: 'session not found'});
 
-    const imgBufRaw = request.body;
-    const imgBuf = Buffer.from(imgBufRaw);
+        var uids;
+        if (isgdm) {
+            // check if this is a valid DM/the user is in it
+            uids = await validateGDM(mongoconnection, sessionid, gdmid);
+            if (!uids) return response.sendStatus(404);
+        }
 
-    const res = await uploadPFP(mongoconnection, CDNManager, sessionid, filename, imgBuf);
-    
-    if (res == true) response.sendStatus(201);
-    else if (res == false) response.sendStatus(500);
-    else response.send(res);
+        const imgBufRaw = request.body;
+        const imgBuf = Buffer.from(imgBufRaw);
+
+        const res = await uploadPFP(mongoconnection, CDNManager, sessionid, filename, imgBuf, gdmid);
+        
+        if (res == true) {
+            // send a "pfp updated" gateway event
+            if (isgdm) {
+                broadcastToSessions(client, webSocketClients, uids, {code: 4, op: 6, data: {
+                    uid: gdmid,
+                    isgroupdm: true,
+                    updated: 'icon',
+                    newdata: filename
+                }});
+            }
+            else {
+                const ws = webSocketClients.get(sessionid);
+                handleSocials(ws, mongoconnection, {op: 10, sid: sessionid, updated: 'icon', newdata: filename}, webSocketClients);
+                response.sendStatus(201);
+            }
+        }
+        else if (res == false) response.sendStatus(500);
+        else response.send(res);
+    }
+    catch (err) {
+        console.error(err);
+        response.sendStatus(500);
+    }
 });
 
 
@@ -90,10 +126,15 @@ app.get('/getpfp', async (req, res) => {
         const isValidSession = await validateSession(mongoconnection, sessionid);
         if (!isValidSession) return res.send({type: 1, code: 404, message: "session id not found"});
 
-        const uid = (otherid) ? otherid : getUidFromSid(sessionid);
+        //deal with group DMS
+        const isgdm = otherid && otherid.indexOf('|') != -1;
+        var uid;
+
+        if (isgdm) uid = await getDMID(mongoconnection, otherid);
+        else uid = (otherid) ? otherid : getUidFromSid(sessionid);
         if (!uid) return res.send(null);
 
-        const pfpData = await getPFP(mongoconnection, CDNManager, uid);
+        const pfpData = await getPFP(mongoconnection, CDNManager, uid, isgdm);
         if (!pfpData) return res.send(null);
 
         const buffer = Buffer.concat([pfpData]);

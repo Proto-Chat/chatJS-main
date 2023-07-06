@@ -23,56 +23,73 @@ export async function broadcastToSessions(client, connectionMap, others, toSend)
 }
 
 
-const splitByID = (channelID) => {
+const splitByID = (channelID, client) => {
     return channelID.split("|").filter((o) => (o && o.length > 0));
 }
 
 
 export async function newMessage(mongoconnection, connectionMap, data, isSystemMessage = false) {
-    if (!data || !data.channelID) return false; //Maybe make it a "bad request"?
+    try {
+        if (!data || !data.channelID) return false; //Maybe make it a "bad request"?
+        const channelId = data.channelID;
+        const client = await mongoconnection;
+        const keyId = await client.db(data.author.uid).collection('dm_keys').findOne({dmid: channelId});
 
-    const client = await mongoconnection;
-    const others = splitByID(data.channelID);
+        if (!keyId) return false;
+        const others = (keyId.isGroupDM) ? keyId.uid.split('|') : [keyId.uid, data.author.uid];
 
-    if (!isSystemMessage && others.includes('0')) return;
+        if (!isSystemMessage && others.includes('0')) return;
 
-    //Open the DM for the recipient
-    for (const i of others) {
-        if (i == data.author.uid) continue;
-        const other_dbo = client.db(`${i}`).collection('dm_keys');
-        other_dbo.updateOne({uid: data.author.uid}, {$set: {open: true, unread: true}});
+        //Open the DM for the recipient
+        for (const i of others) {
+            if (i == data.author.uid) continue;
+            const other_dbo = client.db(`${i}`).collection('dm_keys');
+            other_dbo.updateOne({uid: data.author.uid}, {$set: {open: true, unread: true}});
+        }
+
+        const dmsdbo = client.db((keyId.isGroupDM) ? 'gdms' : 'dms').collection(data.channelID);
+        delete data.channelID;
+        
+        dmsdbo.insertOne(data);
+        data.channelID = channelId;
+
+        return await broadcastToSessions(client, connectionMap, others, { type: 0, code: 5, op: 0, data: data });
     }
-
-    const channelId = data.channelID;
-    const dmsdbo = client.db('dms').collection(data.channelID);
-    delete data.channelID;
-    
-    dmsdbo.insertOne(data);
-    data.channelID = channelId;
-
-    return await broadcastToSessions(client, connectionMap, others, { type: 0, code: 5, op: 0, data: data });
+    catch(err) {
+        console.error(err);
+        return false;
+    }
 }
 
 
 async function deleteMessage(mongoconnection, connectionMap, data) {
-    const client = await mongoconnection;
-    const mbo = client.db('dms').collection(data.chatid);
-    const doc = await mbo.findOne({id: data.msgid});
-    const others = splitByID(data.chatid);
-    
-    if (data.user.uid != doc.author.uid) return;
+    try {
+        const client = await mongoconnection;
 
-    mbo.updateOne({id: data.msgid}, {$set: {deleted: true}});
+        // get the key
+        var doc = await client.db(data.user.uid).collection('dm_keys').findOne({dmid: data.chatid});
+        const others = (doc.isGroupDM) ? splitByID(doc.uid) : [data.user.uid, doc.uid];
 
-    broadcastToSessions(client, connectionMap, others, {
-        type: 0,
-        code: 5,
-        op: 1,
-        data: {
-            channelID: data.chatid,
-            msgid: data.msgid
-        }
-    });
+        const mbo = client.db((doc.isGroupDM) ? 'gdms' : 'dms').collection(data.chatid);
+        doc = await mbo.findOne({id: data.msgid});
+        
+        if (!doc || data.user.uid != doc.author.uid) return;
+
+        mbo.updateOne({id: data.msgid}, {$set: {deleted: true}});
+
+        broadcastToSessions(client, connectionMap, others, {
+            type: 0,
+            code: 5,
+            op: 1,
+            data: {
+                channelID: data.chatid,
+                msgid: data.msgid
+            }
+        });
+    } catch (err) {
+        console.error(err);
+        return false;
+    }
 }
 
 
@@ -80,9 +97,12 @@ async function editMessage(mongoconnection, connectionMap, data) {
     if (!data || !data.chatid || !data.content) return; //Maybe make it a "bad request"?
 
     const client = await mongoconnection;
-    const mbo = client.db('dms').collection(data.chatid);
-    const doc = await mbo.findOne({id: data.msgid});
-    const others = splitByID(data.chatid);
+    
+    var doc = await client.db(data.user.uid).collection('dm_keys').findOne({dmid: data.chatid});
+    const others = (doc.isGroupDM) ? splitByID(doc.uid) : [data.user.uid, doc.uid];
+
+    const mbo = client.db((doc.isGroupDM) ? 'gdms' : 'dms').collection(data.chatid);
+    doc = await mbo.findOne({id: data.msgid});
 
     if (!doc || data.user.uid != doc.author.uid) return;
     // if (doc.content != data.content) return;

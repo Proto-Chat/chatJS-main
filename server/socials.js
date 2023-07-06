@@ -2,9 +2,10 @@ import { getConnection } from "./database/getConnection.js";
 import { broadcastToSessions } from "./database/newMessage.js";
 import { getCurrentUsername } from "./initializations.js";
 import { getUidFromSid } from "./utils/decodesid.js";
+import { changeGCID, createGroupDM, leaveGroupDM } from "./groupDM.js";
 
 
-async function getSocials(ws, mongoconnection, data) {
+async function getSocials(ws, mongoconnection, data, getAll = true) {
     if (!data.sid) {
         ws.send(401);
         return false;
@@ -22,10 +23,14 @@ async function getSocials(ws, mongoconnection, data) {
     else {
         const uid = getUidFromSid(data.sid);
         const username = await getCurrentUsername(mongoconnection, uid);
-        ws.send(JSON.stringify({type: 0, code: 4, op: 0, data: {
-            friends: doc.friends,
-            user: {username: username, uid: uid},
-            requests: doc.invites
+        ws.send(JSON.stringify({
+            type: 0,
+            code: 4,
+            op: (getAll) ? 0 : 8,
+            data: {
+                friends: doc.friends,
+                user: {username: username, uid: uid},
+                requests: (getAll) ? doc.invites : null
         }}));
         return true;
     }
@@ -132,18 +137,24 @@ async function acceptFIR(ws, mongoconnection, response, connectionMap) {
         // return console.log(12);
 
         const dmkey = `${ids[0]}|${ids[1]}`;
+        const dmid = (await import('crypto')).randomUUID();
 
-        const collectionNames = await client.db('dms').listCollections().toArray();
-        const collectionExists = collectionNames.some((col) => col.name == dmkey);
+        // const collectionNames = await client.db('dms').listCollections().toArray();
+        // const collectionExists = collectionNames.some((col) => col.name == dmkey);
         
-        if (!collectionExists) client.db('dms').createCollection(dmkey);
+        client.db('dms').collection(dmid).insertOne({
+            _id: 'configs',
+            users: dmkey,
+            isSystem: false
+        });
 
         //Add that dm to the acceptor
         acceptorDB.insertOne({
             uid: requestorUobj.uid,
             username: requestorUobj.username,
             notetoself: false,
-            open: true
+            open: true,
+            dmid: dmid
         });
 
         //Add the dm to the acceptor
@@ -151,7 +162,8 @@ async function acceptFIR(ws, mongoconnection, response, connectionMap) {
             uid: acceptorObj.uid,
             username: acceptorObj.username,
             notetoself: false,
-            open: true
+            open: true,
+            dmid: dmid
         });
 
         const toSend = {
@@ -237,15 +249,18 @@ async function recieveProfileEditRequest(ws, mongoconnection, response, connecti
         }
         else if (fieldName == 'icon') {
             dbo.updateOne({_id: "myprofile"}, {$set: {icon: fieldContent}});
+        } else if (fieldName == 'gctitle') {
+            return await changeGCID(mongoconnection, connectionMap, response.data.sid, response.data.newVal, response.data.dmid);
         }
 
         const toSend = {code: 4, op: 6, data: {
             fieldname: fieldName,
             newContent: fieldContent,
-            sid: response.data.sid
+            sid: response.data.sid,
+            uid: uid
         }};
-
         broadcastToSessions(client, connectionMap, [uid], toSend);
+
     } catch (err) {
         console.log(err);
         ws.send({code: 4, op: 500, message: err.message});
@@ -266,10 +281,13 @@ async function removeFriend(ws, mongoconnection, response, connectionMap) {
 
         if (!doc || !doc.sids.includes(data.sid)) return;
         const dmdbo = client.db(data.uid).collection('dm_keys');
+        const dmdoc = await dmdbo.findOne({uid: otherId});
         dmdbo.deleteOne({uid: otherId});
 
         const otherdmdbo = client.db(otherId).collection('dm_keys');
         otherdmdbo.deleteOne({uid: data.uid});
+
+        client.db('dms').collection(dmdoc.dmid).updateOne({_id: 'configs'}, {$set: {userDeleted: true}});
 
         ws.send(JSON.stringify({
             code: 4,
@@ -280,6 +298,31 @@ async function removeFriend(ws, mongoconnection, response, connectionMap) {
         console.error(err);
         ws.send(JSON.stringify({code: 500, type: 1}));
         return null;
+    }
+}
+
+
+// broadcast a profil change request to all friends
+async function broadcastProfileChange(ws, mongoconnection, response, connectionMap) {
+    try {
+        const uid = getUidFromSid(response.sid);
+        const client = await mongoconnection;
+        const dbo = client.db(uid).collection('dm_keys');
+        const docs = await dbo.find({uid: {$ne: '0'}}, {uid: 1}).toArray();
+        
+        const uids = [];
+        for (const doc of docs) { uids.push(doc.uid); }
+        
+        broadcastToSessions(client, connectionMap, uids, {code: 4, op: 6, data: {
+            fieldname: response.updated,
+            newContent: response.newdata,
+            sid: response.sid,
+            uid: uid
+        }});
+    }
+    catch (err) {
+        console.error(err);
+        return false;
     }
 }
 
@@ -305,6 +348,18 @@ export function handleSocials(ws, mongoconnection, response, connectionMap) {
         break;
 
         case 6: removeFriend(ws, mongoconnection, response, connectionMap);
+        break;
+
+        case 7: getSocials(ws, mongoconnection, response, false);
+        break;
+
+        case 8: createGroupDM(ws, mongoconnection, response, connectionMap);
+        break;
+
+        case 9: leaveGroupDM(ws, mongoconnection, response, connectionMap);
+        break;
+
+        case 10: broadcastProfileChange(ws, mongoconnection, response, connectionMap);
         break;
 
         default: console.log(response);

@@ -34,8 +34,8 @@ codes (server --> client):
         4: cancel friend request
         5: friend request submitted (response to client --> server {code: 4, op: 1})
         6: respond to profile edit request,
-        7: remove friend
-
+        7: remove friend/group DM
+        8: send friends
 5 - message sent
 10 - pong
 
@@ -65,6 +65,10 @@ codes (client --> server):
         4: friend request cancelled
         5: send profile edit request
         6: remove friend
+        7: get friends
+        8: create group DM
+        9: remove from group DM (or delete if owner)
+        
 5 - message
     op:
         0: recieved

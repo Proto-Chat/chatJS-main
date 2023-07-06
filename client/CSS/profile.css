@@ -52,7 +52,7 @@
     background-color: #747373;
     width: 50vw;
     height: auto;
-    min-height: 50vw;
+    min-height: 70vh;
     z-index: 1000;
     margin: 0 auto;
     position: absolute;
@@ -160,4 +160,34 @@ input[type="file"] {
     margin-left: 50px;
     color: rgb(139, 139, 139);
     font-size: 20px;
+}
+
+
+/* Group DM friends display */
+.uSelectWrapper {
+    margin-top: 15px;
+    font-size: 1.5em;
+    overflow-y: scroll;
+    overflow-x: hidden;
+}
+
+.uSelectWrapper input[type="checkbox"] {
+    width: 1.5em;
+    height: 1.5em;
+    margin-left: 25%;
+}
+
+.groupDMSubmitBtn {
+    background-color: rgb(75, 75, 190);
+    font-size: 2em;
+    border-style: solid;
+    border-color: black;
+    border-radius: 10px;
+    margin-left: 25%;
+    margin-top: 15px;
+}
+
+.groupDMSubmitBtn:hover {
+    cursor: pointer;
+    background-color:rgb(106, 106, 255);
 }

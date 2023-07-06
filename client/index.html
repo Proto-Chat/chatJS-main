@@ -15,6 +15,7 @@
     <script src="/scripts/gifs.js"></script>
     <script src="/scripts/images.js"></script>
     <script src="/scripts/playNotification.js"></script>
+    <script src="/scripts/groupDM.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css" integrity="sha512-+4zCK9k+qNFUR5X+cKL9EIR+ZOhtIloNl9GIKS57V1MyNsYpYcUrUeQc9vNfzsWfV28IaLL3i96P9sdNyeRssA==" crossorigin="anonymous" />
     <script src="https://kit.fontawesome.com/728e740903.js" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/js/all.min.js" integrity="sha512-F5QTlBqZlvuBEs9LQPqc1iZv2UMxcVXezbHzomzS6Df4MZMClge/8+gXrKw2fl5ysdk4rWjR0vKS7NNkfymaBQ==" crossorigin="anonymous"></script>
@@ -99,12 +100,16 @@
                     
                     case 3:
                         if (response.op == 0) {
-                            if (sessionStorage.getItem('waitforDM')) {
-                                document.getElementById('loadingdiv').style.display = 'none';
-                                document.getElementById('maincontent').style.display = 'block';
-                                sessionStorage.removeItem('waitforDM')
+                            if (response.data.isGroupDM) {
+                                setupGroupDM(response);
+                            } else {
+                                if (sessionStorage.getItem('waitforDM')) {
+                                    document.getElementById('loadingdiv').style.display = 'none';
+                                    document.getElementById('maincontent').style.display = 'block';
+                                    sessionStorage.removeItem('waitforDM')
+                                }
+                                setupDM(response);
                             }
-                            setupDM(response);
                         }
                         else if (response.op == 1) closeDM(response);
                         else if (response.op == 2) console.log(response);
@@ -113,6 +118,7 @@
                     case 4: if ([1,2,3,4].includes(response.op)) return showNotif("friendrequest", `recieved social interaction!`);
                             else if (response.op == 6) updateField(response);
                             else if (response.op == 7) window.location.reload();
+                            else if (response.op == 8) displayFriendsList(response);
                     break;
 
                     case 5: messageRecieved(response);

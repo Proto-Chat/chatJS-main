@@ -302,6 +302,13 @@ body {
 }
 
 
+.addGroupDmBtn {
+    text-align: center;
+    font-size: 30px;
+    padding: 5px;
+}
+
+
 #errWrapper {
     display: none;
     text-align: center;

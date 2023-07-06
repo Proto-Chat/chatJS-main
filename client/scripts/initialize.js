@@ -29,6 +29,22 @@ function createPageMenu() {
     toSocials.innerText = 'SOCIALS';
     e.appendChild(toSocials);
 
+    const createDm = document.createElement('a');
+    createDm.onclick = (e) => {
+        if (document.getElementsByClassName('profileoutlinediv').length > 0) return console.log("div already open");
+
+        ws.send(JSON.stringify({
+            code: 4,
+            op: 7,
+            sid: localStorage.getItem('sessionid')
+        }));
+    }
+    createDm.classList.add('pageSwitchLink');
+    createDm.classList.add('unselectable');
+    createDm.classList.add('addGroupDmBtn');
+    createDm.innerText = '+';
+    e.appendChild(createDm);
+
     e.className = 'pageSwitchContainer';
     return e;
 }

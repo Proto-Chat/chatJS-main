@@ -21,7 +21,7 @@ export async function validateSession(connection, sid) {
 }
 
 
-export async function getConnection(connection, sid, all = false) {
+export async function getConnection(connection, sid, all = false, validateOnly = false) {
     try {
         if (!sid) return null;
 
@@ -33,7 +33,9 @@ export async function getConnection(connection, sid, all = false) {
         const sbo = await db.collection('sessions');
 
         const sessionObj = await sbo.findOne({sid: sid});
-        if (!sessionObj) return {type: 1, code: 0, op: 403};
+        if (!sessionObj && !validateOnly) return {type: 1, code: 0, op: 403};
+        else if (!sessionObj && validateOnly) return false;
+        else if (validateOnly) return true;
         
         sbo.updateOne({sid: sid}, {$set: {lastAccessed: new Date()}});
 

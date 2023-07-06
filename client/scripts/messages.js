@@ -87,7 +87,10 @@ function createDMTopBar(data) {
             status: data.other.status,
             description: data.other.description,
             icon: true,
-            me: false
+            me: false,
+            isGroupDM: data.isGroupDM,
+            isOwner: (data.configs) ? JSON.parse(localStorage.getItem('user')).uid == data.configs.owner : undefined,
+            gdmuids: (data.configs) ? data.configs.users : undefined
         });
     }
 

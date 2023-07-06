@@ -8,14 +8,24 @@ import { wasabiManager } from "./init.js";
  * @param {*} filename
  * @param {*} filedata
  */
-export async function uploadPFP(mongoconnection, wm, sid, filename, filedata) {
+export async function uploadPFP(mongoconnection, wm, sid, filename, filedata, gdmid) {
     try {        
         const client = await mongoconnection;
-        const uid = getUidFromSid(sid);
-        if (!uid) return false;
+        var uid;
 
-        const dbo = client.db(uid).collection('configs');
-        await dbo.updateOne({_id: 'myprofile'}, {$set: {icon: filename}});
+        if (!gdmid) {
+            uid = getUidFromSid(sid);
+            if (!uid) return false;
+    
+            const dbo = client.db(uid).collection('configs');
+            await dbo.updateOne({_id: 'myprofile'}, {$set: {icon: filename}});
+        }
+        else {
+            uid = gdmid;
+            const dbo = client.db('gdms').collection(gdmid);
+            await dbo.updateOne({_id: 'configs'}, {$set: {icon: filename}});
+        }
+
         const response = await wm.uploadFile(uid, filename, filedata);
         if (response && response.type && response.code) return response;
         return true;
@@ -31,13 +41,22 @@ export async function uploadPFP(mongoconnection, wm, sid, filename, filedata) {
  * @param {*} sid
  * @returns {Buffer} The PFP in buffer format
  */
-export async function getPFP(mongoconnection, wm, uid) {
+export async function getPFP(mongoconnection, wm, uid, isgdm = false) {
     try {
         if (!uid) return null;
+        var dbo;
+        var uprofile;
 
         const client = await mongoconnection;
-        const dbo = client.db(uid).collection('configs');
-        const uprofile = await dbo.findOne({_id: 'myprofile'});
+        
+        if (!isgdm) {
+            dbo = client.db(uid).collection('configs');
+            uprofile = await dbo.findOne({_id: 'myprofile'});
+        }
+        else {
+            dbo = client.db('gdms').collection(uid);
+            uprofile = await dbo.findOne({_id: 'configs'});
+        }
         
         if (!uprofile || !uprofile.icon) return null;
 

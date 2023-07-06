@@ -85,11 +85,11 @@ async function editComponent(component) {
         data: {
             sid: localStorage.getItem('sessionid'),
             fieldChanged: id,
-            newVal: newVal
+            newVal: newVal,
+            dmid: localStorage.getItem('currentChatID')
         }
-    }
+    };
 
-    //DEAL WITH THE SERVER SIDE TMW
     ws.send(JSON.stringify(toSend));
 }
 
@@ -165,8 +165,8 @@ async function createProfilePopup(udata) {
         iconWrapper.appendChild(icon);
         pfptitlediv.appendChild(iconWrapper);
 
-        if (udata.editing) {
-            const l = await createPFPChangeInp();
+        if (udata.isGroupDM || udata.editing) {
+            const l = await createPFPChangeInp(udata.isGroupDM);
             iconWrapper.appendChild(l);
             iconWrapper.addEventListener('mouseenter', () => {
                 iconWrapper.style.opacity = 0.6;
@@ -182,6 +182,13 @@ async function createProfilePopup(udata) {
     const username = document.createElement('h1');
     username.className = 'unselectable';
     username.innerText = udata.username;
+
+    if (udata.isGroupDM) {
+        const editbtn = createEditBtn('gctitleedit');
+        editbtn.className = 'editbtn';
+        username.appendChild(editbtn);
+    }
+
     pfptitlediv.appendChild(username);
     outlineDiv.appendChild(pfptitlediv);
 
@@ -190,37 +197,61 @@ async function createProfilePopup(udata) {
     outlineDiv.appendChild(br);
 
     //#region Status
-    if (udata.status != undefined) {
+    if (!udata.isGroupDM && udata.status != undefined) {
         const statuswrapper = createContentWrapper(udata, 'status', 'statedit');
         outlineDiv.appendChild(statuswrapper);
     }
 
     //#region Description
-    if (udata.description != undefined) {
+    if (!udata.isGroupDM && udata.description != undefined) {
         const descwrapper = createContentWrapper(udata, 'description', 'descedit');
         // descwrapper.id = 'abtmewrapper';
 
         outlineDiv.appendChild(descwrapper);
     }
 
+
     if (!udata.me) {
         const cid = localStorage.getItem('currentChatID');
         const uid = JSON.parse(localStorage.getItem('user')).uid;
-        if (cid != `${uid}|${uid}` && !cid.includes('0')) {
+        if (cid != `${uid}|${uid}` && !cid.split('|').includes('0')) {
             const removeFriendBtn = document.createElement('button');
             removeFriendBtn.className = 'removeFriendBtn';
-            removeFriendBtn.innerText = 'remove friend';
-            
-            removeFriendBtn.onclick = (e) => {
-                ws.send(JSON.stringify({
-                    code: 4,
-                    op: 6,
-                    data: {
-                        channelId: cid,
-                        uid: uid,
-                        sid: localStorage.getItem('sessionid')
-                    }
-                }));
+
+            if (!udata.isGroupDM) {
+                removeFriendBtn.innerText = 'remove friend';
+                removeFriendBtn.onclick = (e) => {
+                    ws.send(JSON.stringify({
+                        code: 4,
+                        op: 6,
+                        data: {
+                            channelId: cid,
+                            uid: uid,
+                            sid: localStorage.getItem('sessionid')
+                        }
+                    }));
+                }
+            }
+            else {
+                if (udata.isOwner) removeFriendBtn.innerText = 'delete group dm';
+                else removeFriendBtn.innerText = 'leave group dm';
+
+                removeFriendBtn.onclick = (e) => {
+                    if (!confirm(`are you sure you want to ${removeFriendBtn.innerText.replace('group', 'this group')}?`)) return;
+                    removeFriendBtn.disabled = true;
+
+                    ws.send(JSON.stringify({
+                        code: 4,
+                        op: 9,
+                        data: {
+                            channelId: localStorage.getItem('currentChatID'),
+                            uid: uid,
+                            sid: localStorage.getItem('sessionid')
+                        }
+                    }));
+
+                    removeFriendBtn.setAttribute("disabled", "disabled");
+                }
             }
 
             const btnwrapperdiv = document.createElement('div');
@@ -229,6 +260,11 @@ async function createProfilePopup(udata) {
 
             outlineDiv.appendChild(btnwrapperdiv);
         }
+    }
+
+    if (udata.gdmuids) {
+        // TODO: show what users are in the DM
+        // this is currently mitigated by sending an original message to the DM
     }
 
     document.body.prepend(outlineDiv);
@@ -258,7 +294,7 @@ function initialShow(udata) {
 function updateField(response) {
     const data = response.data;
     const outlineDiv = document.getElementsByClassName('profileoutlinediv')[0];
-    
+
     if (!outlineDiv) {
         var localData;
         if (!localStorage.getItem('profileConfigs')) localData = {status: "", description: "", icon: ""};
@@ -268,8 +304,6 @@ function updateField(response) {
         localStorage.setItem('profileConfigs', JSON.stringify(localData));
     }
     else {
-        if (data.fieldname == 'icon') return;
-
         var params = {title: "", description: "", status: "", btnid: ""};
         if (data.fieldname == 'desc') {
             params.title = 'description';
@@ -283,7 +317,64 @@ function updateField(response) {
         }
 
         const inpEl = document.getElementById(params.btnid);
-        inpEl.replaceWith(createContentWrapper(params, params.title, params.btnid, false))
+        if (inpEl) inpEl.replaceWith(createContentWrapper(params, params.title, params.btnid, false));
+    }
+
+    if (data.fieldname == 'gctitle') {
+        const dmbtn = document.getElementById(data.uid);
+        if (!dmbtn) window.location.reload();
+        const textNode = dmbtn.childNodes[1];
+
+        if (textNode.nodeType === Node.TEXT_NODE) textNode.nodeValue = data.newContent;
+
+        const dmtitle = document.getElementsByClassName('dmbaruname')[0];
+        if (!dmtitle) return;
+        dmtitle.innerText = data.newContent;
+
+        const inpEl = document.getElementById('gctitleedit');
+        
+        if (inpEl) {
+            const username = document.createElement('h1');
+            username.className = 'unselectable';
+            username.innerText = data.newContent;
+            const editbtn = createEditBtn('gctitleedit');
+            editbtn.className = 'editbtn';
+            username.appendChild(editbtn);
+            inpEl.replaceWith(username);
+        }
+  
+        
+        // if (inpEl) inpEl.replaceWith(createContentWrapper(params, data.newContent, 'gctitleedit', false));
+    }
+
+    // change icon regardless
+    if (data.fieldname == 'icon') {
+        //change the icon everywhere else
+        const dmDiv = document.getElementById(data.uid);
+        if (!dmDiv) return;
+
+        // duplicate code from messages.js (I think)
+        //Get the PFP
+        var req = new XMLHttpRequest();
+        req.open('GET', `${window.location.origin}/getpfp`, true);
+        req.responseType = 'arraybuffer';
+
+        req.onloadend = () => {
+            const blob = new Blob([req.response]);
+            const src = (blob.size > 0) ? URL.createObjectURL(blob) : 'https://github.com/ION606/chatJS/blob/main/client/assets/nopfp.jpg?raw=true';
+
+            const dmpfp = document.getElementById(`dmpfp-${data.uid}`);
+            dmpfp.src = src;
+
+            if (dmDiv.classList.contains('activechat')) {
+                const dmbarpfp = document.getElementsByClassName('dmbarpfp')[0];
+                if (dmbarpfp) dmbarpfp.src = src;
+            }
+        }
+
+        req.setRequestHeader('sessionid', localStorage.getItem('sessionid'));
+        req.setRequestHeader('otherid', data.uid);
+        req.send();
     }
 }
 
@@ -295,7 +386,7 @@ function updateField(response) {
  *  else should be done for chat, maybe send the message with a
  *  flag over ws, then post the image using a http request?
  */
-async function createPFPChangeInp() {
+async function createPFPChangeInp(isGDM = false) {
     const imgUploadInp = document.createElement('input');
     imgUploadInp.type = 'file';
     imgUploadInp.accept = 'image/*';
@@ -331,6 +422,12 @@ async function createPFPChangeInp() {
                 req.setRequestHeader('code', 4);
                 req.setRequestHeader('op', 0);
                 req.setRequestHeader('filename', file.name);
+                
+                if (isGDM) {
+                    req.setRequestHeader('isgdm', true);
+                    req.setRequestHeader('gdmid', localStorage.getItem('currentChatID'));
+                }
+                
                 req.setRequestHeader('Content-Type', 'application/octet-stream');
                 req.send(new Blob([data]));
             };
