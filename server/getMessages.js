@@ -18,9 +18,19 @@ async function getGroupDMmsgs(client, uid, other_id) {
     configs.otherId = other_id;
     const messages = await dbo.find({$or: [{deleted : { $exists : false }}, {deleted: false}], _id: {$ne: 'configs'}}).toArray();
 
+    // get the usernames
+    const friendList = await client.db(uid).collection('dm_keys').find().toArray();
+    const unames = {};
+    for (const f of configs.uids) {
+        const friend = friendList.find(o => o.uid == f);
+        if (!friend) return ws.send(404);
+        unames[f] = friend.username;
+    }
+
     return {
         configs: configs,
         messages: messages,
+        unames: unames,
         isGroupDM: true
     };
 }

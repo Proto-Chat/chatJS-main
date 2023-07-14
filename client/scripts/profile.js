@@ -211,6 +211,39 @@ async function createProfilePopup(udata) {
     }
 
 
+    if (udata.gdmuids) {        
+        const unamesDiv = document.createElement('div');
+        unamesDiv.style.textAlign = 'center';
+
+        const uNamesDivTitle = document.createElement('h2');
+        uNamesDivTitle.innerText = 'People in this DM';
+        unamesDiv.appendChild(uNamesDivTitle);
+        unamesDiv.className = 'unselectable';
+
+        for (const uname in udata.gdmuids) {
+            const unameBtn = document.createElement('button');
+            unameBtn.innerText = udata.gdmuids[uname];
+            unameBtn.id = `unameBtn|${uname}`;
+            unameBtn.className = 'gdmUnameBtn';
+
+            unameBtn.onclick = (e) => {
+                const btn = e.target;
+                const uid = btn.id.split('|')[1];
+                if (!uid) return;
+
+                const uHref = document.getElementById(uid);
+                if (!uHref) return alert('this DM is currently closed, go to the "socials" page to open it!');
+
+                uHref.click();
+                closeUserPopup(outlineDiv);
+            }
+
+            unamesDiv.appendChild(unameBtn);
+        }
+        outlineDiv.appendChild(unamesDiv);
+    }
+
+
     if (!udata.me) {
         const cid = localStorage.getItem('currentChatID');
         const uid = JSON.parse(localStorage.getItem('user')).uid;
@@ -262,10 +295,7 @@ async function createProfilePopup(udata) {
         }
     }
 
-    if (udata.gdmuids) {
-        // TODO: show what users are in the DM
-        // this is currently mitigated by sending an original message to the DM
-    }
+
 
     document.body.prepend(outlineDiv);
 

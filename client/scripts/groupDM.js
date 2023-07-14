@@ -101,6 +101,7 @@ function setupGroupDM(response) {
         status: "",
         uid: others.join("|"),
         username: data.configs.displayname,
+        othernames: data.unames
     }
     response.data.chatID = data.configs.dmId;
 

@@ -136,6 +136,7 @@ app.get('/getpfp', async (req, res) => {
 
         const pfpData = await getPFP(mongoconnection, CDNManager, uid, isgdm);
         if (!pfpData) return res.send(null);
+        else if (pfpData.type == 1) return res.send(null);
 
         const buffer = Buffer.concat([pfpData]);
         res.setHeader('Content-Type', 'application/octet-stream');

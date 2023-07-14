@@ -11,7 +11,9 @@
   "license": "ISC",
   "type": "module",
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.370.0",
     "aws-sdk": "^2.1377.0",
+    "backblaze-b2": "^1.7.0",
     "body-parser": "^1.20.2",
     "cors": "^2.8.5",
     "express": "^4.18.2",

@@ -67,7 +67,7 @@ export class wasabiManager {
                 Key: `${channelId}/${filename}`
             }, (err, data) => {
                 if (err) {
-                    if (err.code != 'NoSuchKey') console.log(err);
+                    console.log(err);
                     resolve(null);
                 } else resolve(data);
             });
@@ -77,8 +77,10 @@ export class wasabiManager {
     }
 
     constructor(accessKeyId, secretAccessKey, mongoconnection) {
+        throw "DO NOT USE THIS!!!";
+        // this.#wasabiEndpoint = new Endpoint('s3.us-east-2.wasabisys.com');
         this.#s3 = new S3({
-            endpoint: 's3.us-east-005.backblazeb2.com ',
+            endpoint: 's3.us-east-2.wasabisys.com',//this.#wasabiEndpoint,
             region: 'us-east-2',
             accessKeyId,
             secretAccessKey

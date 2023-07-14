@@ -309,6 +309,24 @@ body {
 }
 
 
+.gdmUnameBtn {
+    color: #ffffff;
+    background-color: #3d3846;
+    font-size: 15px;
+    border: 1px solid #2d63c8;
+    border-radius: 10px;
+    padding: 7px 24px;
+    cursor: pointer;
+    margin: 7px;
+}
+
+
+.gdmUnameBtn:hover {
+    color: #ffffff;
+    background-color: #6c6081;
+}
+
+
 #errWrapper {
     display: none;
     text-align: center;

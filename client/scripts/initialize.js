@@ -259,7 +259,6 @@ function setupDM(response) {
                 handlePastedImage(file);
             }
         });
-
         
         inpelement.onfocus = () => {
             inpelement.style.border = "none";

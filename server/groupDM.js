@@ -20,11 +20,13 @@ export async function createGroupDM(ws, mongoconnection, response, connectionMap
 
         const friendList = await client.db(uid).collection('dm_keys').find().toArray();
         const unames = [];
+        const unameObj = {};
 
         for (const f of uids) {
             const friend = friendList.find(o => o.uid == f);
             if (!friend) return ws.send(404);
             unames.push(friend.username);
+            unameObj[f] = friend.username;
         }
 
         // const collectionNames = await client.db('gdms').listCollections().toArray();
@@ -36,6 +38,7 @@ export async function createGroupDM(ws, mongoconnection, response, connectionMap
         gdbo.insertOne({
             _id: 'configs',
             uids: uids,
+            users: unameObj,
             owner: uid,
             dmId: gdmid,
             dateCreated: (new Date()).toISOString(),
