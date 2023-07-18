@@ -1,17 +1,19 @@
 import * as AWS from 'aws-sdk'
-const {Endpoint} = AWS;
-import fs from 'fs';
+const { Endpoint } = AWS;
+import cloudinary from 'cloudinary';
+import streamifier from 'streamifier';
+
 // import * as S3 from 'aws-sdk/clients/s3';
 import S3 from 'aws-sdk/clients/s3.js';
 
 
-export class wasabiManager {
+export class fileManager {
     #wasabiEndpoint;
 
     /** @type {S3} */
     #s3;
 
-
+    
     /**
      * @param {String} bucketName the id of the userv (pfp) or the channel id (message attatchement)
      */
@@ -34,10 +36,10 @@ export class wasabiManager {
     /**
      * @param {Buffer} data 
      */
-    async uploadFile(channelId, filename, data) {     
-        if (!channelId) return {type: 1, code: 0, message: 'channelid not found'};
-        if (!filename) return {type: 1, code: 1, message: 'filename not found'};
-        if (!data) return {type: 1, code: 2, message: 'no data'};
+    async uploadFile(channelId, filename, data) {
+        if (!channelId) return { type: 1, code: 0, message: 'channelid not found' };
+        if (!filename) return { type: 1, code: 1, message: 'filename not found' };
+        if (!data) return { type: 1, code: 2, message: 'no data' };
 
         const res = await new Promise((resolve) => {
             return this.#s3.putObject({
@@ -58,8 +60,8 @@ export class wasabiManager {
 
 
     async getFile(channelId, filename) {
-        if (!channelId) return {type: 1, code: 0, message: 'channelid not found'};
-        if (!filename) return {type: 1, code: 1, message: 'filename not found'};
+        if (!channelId) return { type: 1, code: 0, message: 'channelid not found' };
+        if (!filename) return { type: 1, code: 1, message: 'filename not found' };
 
         const res = await new Promise(async (resolve) => {
             this.#s3.getObject({
@@ -76,12 +78,53 @@ export class wasabiManager {
         return (res) ? res.Body : null;
     }
 
-    constructor(accessKeyId, secretAccessKey, mongoconnection) {
+
+    // FIXME
+    upToCloudinary(channelId, filename, data) {
+        try {
+            return new Promise((resolve, reject) => {
+                const stream = cloudinary.uploader.upload_stream(
+                    { resource_type: "auto", public_id: `${channelId}/${filename}` },
+                    (err, result) => {
+                        if (result) {
+                            console.log(result);
+                            resolve(result);
+                        }
+                        else {
+                            console.log(err);
+                            resolve(null);
+                        }
+                    }
+                );
+
+                streamifier.createReadStream(data).pipe(stream);
+            });
+        } catch (error) {
+            console.error('Error:', error);
+        }
+    }
+
+    async getCloudinary(channelId, filename) {
+        return await cloudinary.v2.search.expression(`${channelId}/${filename}`)
+            .sort_by('public_id', 'desc')
+            .max_results(1)
+            .execute()
+            .then(result => console.log(result));
+    }
+
+
+    constructor(accessKeyId, secretAccessKey, cloudinaryKey, cloudinarySecret) {
         this.#s3 = new S3({
             endpoint: 's3.us-east-005.backblazeb2.com ',
             region: 'us-east-2',
             accessKeyId,
             secretAccessKey
+        });
+
+        cloudinary.config({
+            cloud_name: 'dnqdmeehq',
+            api_key: cloudinaryKey,
+            api_secret: cloudinarySecret
         });
     }
 }

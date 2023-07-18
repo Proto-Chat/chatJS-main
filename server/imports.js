@@ -8,7 +8,7 @@ import { getUidFromSid } from './utils/decodesid.js';
 import { handleMessage, markDMAsRead } from './database/newMessage.js';
 import { logout } from './database/logout.js';
 import { handleSocials } from './socials.js';
-import { wasabiManager } from './database/media/init.js';
+import { fileManager } from './database/media/init.js';
 
 import express from 'express';
 import cors from 'cors';
@@ -34,7 +34,7 @@ export {
     handleMessage, markDMAsRead,
     logout,
     handleSocials,
-    wasabiManager,
+    fileManager as wasabiManager,
     express,
     cors,
     validateSession, getConnection,

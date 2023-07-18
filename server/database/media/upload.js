@@ -1,9 +1,9 @@
 import { getUidFromSid } from "../../utils/decodesid.js";
-import { wasabiManager } from "./init.js";
+import { fileManager } from "./init.js";
 
 /**
  * @param {*} mongoconnection
- * @param {wasabiManager} wm
+ * @param {fileManager} wm
  * @param {*} sid
  * @param {*} filename
  * @param {*} filedata
@@ -37,7 +37,7 @@ export async function uploadPFP(mongoconnection, wm, sid, filename, filedata, gd
 
 /**
  * @param {*} mongoconnection
- * @param {wasabiManager} wm
+ * @param {fileManager} wm
  * @param {*} sid
  * @returns {Buffer} The PFP in buffer format
  */

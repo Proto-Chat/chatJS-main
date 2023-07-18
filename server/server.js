@@ -34,7 +34,7 @@ const mongoconnection = client.connect();
 
 const port = process.env.PORT || 3000;
 // const wss = new WebSocketServer({ port: port, path: '/websocket' });
-const CDNManager = new wasabiManager(config.accessKeyID, config.accesskeySecret, mongoconnection);
+const CDNManager = new wasabiManager(config.accessKeyID, config.accesskeySecret, config.cloudinaryKey, config.cloudinarySecret);
 
 
 const app = express();

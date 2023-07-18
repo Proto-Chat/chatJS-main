@@ -15,6 +15,7 @@
     "aws-sdk": "^2.1377.0",
     "backblaze-b2": "^1.7.0",
     "body-parser": "^1.20.2",
+    "cloudinary": "^1.37.3",
     "cors": "^2.8.5",
     "express": "^4.18.2",
     "express-ws": "^5.0.2",
@@ -22,6 +23,7 @@
     "mongodb": "^5.2.0",
     "nodemailer": "^6.9.2",
     "socket.io": "^4.6.1",
+    "streamifier": "^0.1.1",
     "uuid": "^9.0.0",
     "ws": "^8.13.0"
   }
