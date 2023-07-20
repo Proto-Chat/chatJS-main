@@ -45,7 +45,10 @@ function showLogin() {
     element.appendChild(d3);
     
     const d4 = document.createElement('div');
-    d4.style.marginTop = '10px';
+    d4.style.marginTop = '5vh';
+    const hSep = document.createElement('h2');
+    hSep.innerText = 'Don\'t have an account?'
+    d4.appendChild(hSep);
     d4.appendChild(signupbtn);
     element.appendChild(d4);
 }
