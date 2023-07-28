@@ -50,6 +50,9 @@ codes (client --> server):
     op:
         0: request everything except images
 2 - logout
+    op:
+        0: all sessions
+        1: this session
 3 - messages with a user
         op:
             0: get messages with a user

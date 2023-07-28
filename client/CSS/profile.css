@@ -191,3 +191,17 @@ input[type="file"] {
     cursor: pointer;
     background-color:rgb(106, 106, 255);
 }
+
+.logoutallsessionsbtn {
+    color: #ffffff;
+    background-color: #e01b24;
+    font-size: 19px;
+    padding: 15px 50px;
+    cursor: pointer;
+    border-style: none;
+}
+
+.logoutallsessionsbtn:hover {
+    color: #ffffff;
+    background-color: #a51d2d;
+}

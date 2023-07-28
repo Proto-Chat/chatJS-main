@@ -294,8 +294,25 @@ async function createProfilePopup(udata) {
             outlineDiv.appendChild(btnwrapperdiv);
         }
     }
+    else {
+        const logoutAllSessionBtn = document.createElement('button');
+        logoutAllSessionBtn.className = 'logoutallsessionsbtn';
+        logoutAllSessionBtn.innerText = 'LOG OUT OF ALL SESSIONS';
+        logoutAllSessionBtn.onclick = () => {
+            ws.send(JSON.stringify({
+                code: 2,
+                op: 0,
+                data: {
+                    sid: localStorage.getItem('sessionid')
+                }
+            }));
+            
+            // logout here
+            // logout();
+        }
 
-
+        outlineDiv.appendChild(logoutAllSessionBtn);
+    }
 
     document.body.prepend(outlineDiv);
 

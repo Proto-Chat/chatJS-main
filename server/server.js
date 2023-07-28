@@ -6,7 +6,7 @@ import {
     getMessages,
     getUidFromSid,
     handleMessage, markDMAsRead,
-    logout,
+    logout, logoutAllSessions,
     handleSocials,
     wasabiManager,
     express,
@@ -192,6 +192,13 @@ app.get('/', (req, res) => {
     res.sendFile(`index.html`, {root: './client'});
 });
 
+app.get('/server/:sid', (req, res) => {
+    const serverId = req.path.replace('/server/', '');
+    if (!serverId) return res.sendStatus(404);
+
+    return res.sendFile('server.html', {root: './client'});
+})
+
 app.get('/social', (req, res) => {
     res.sendFile(`social.html`, {root: './client'});
 });
@@ -245,8 +252,10 @@ app.ws('/websocket', async (ws, req) => {
                 break;
 
                 case 2:
-                    if (!data.data.sid) return ws.send(JSON.stringify({type: 1, code: 400}));
-                    logout(webSocketClients, ws, mongoconnection, data.data.sid);
+                    if (!data.data || !data.data.sid) return ws.send(JSON.stringify({type: 1, code: 400}));
+                    
+                    if (data.op == 0) logoutAllSessions(webSocketClients, ws, mongoconnection, data.data.sid);
+                    else if (data.op == 1) logout(webSocketClients, ws, mongoconnection, data.data.sid);
                 break;
                 
                 case 3:

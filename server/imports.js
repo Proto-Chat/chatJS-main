@@ -6,7 +6,7 @@ import { resumeSesion, createSession } from './initializations.js';
 import { getMessages } from './getMessages.js';
 import { getUidFromSid } from './utils/decodesid.js';
 import { handleMessage, markDMAsRead } from './database/newMessage.js';
-import { logout } from './database/logout.js';
+import { logout, logoutAllSessions } from './database/logout.js';
 import { handleSocials } from './socials.js';
 import { fileManager } from './database/media/init.js';
 
@@ -33,6 +33,7 @@ export {
     getUidFromSid,
     handleMessage, markDMAsRead,
     logout,
+    logoutAllSessions,
     handleSocials,
     fileManager as wasabiManager,
     express,

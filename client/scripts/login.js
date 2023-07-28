@@ -64,6 +64,7 @@ function logout() {
 
     ws.send(JSON.stringify({
         code: 2,
+        op: 1,
         data: {sid: sid}
     }));
 }
