@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <script src="/scripts/send.js"></script>
+    <script src="/scripts/chatServer.js"></script>
+    <script src="/scripts/initialize.js"></script>
+    <script src="/scripts/profile.js"></script>
+    <script src="/scripts/gifs.js"></script>
+    <script src="/scripts/images.js"></script>
+    <script src="/scripts/playNotification.js"></script>
+
+    <link rel="stylesheet" type="text/css" href="/CSS/index.css">
+    <link rel="stylesheet" type="text/css" href="/CSS/chatServer.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css" integrity="sha512-+4zCK9k+qNFUR5X+cKL9EIR+ZOhtIloNl9GIKS57V1MyNsYpYcUrUeQc9vNfzsWfV28IaLL3i96P9sdNyeRssA==" crossorigin="anonymous" />
+    <script src="https://kit.fontawesome.com/728e740903.js" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/js/all.min.js" integrity="sha512-F5QTlBqZlvuBEs9LQPqc1iZv2UMxcVXezbHzomzS6Df4MZMClge/8+gXrKw2fl5ysdk4rWjR0vKS7NNkfymaBQ==" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:400,400i,500,500i,700,700i&display=swap">
+
+    <script>
+        const getUidFromSid = (sid) => atob(sid.split("?")[1], 'base64');
+        
+        function requestDM(uid) {
+            ws.send(JSON.stringify({sid: localStorage.getItem('sessionid'), code: 3, op: 0, uid: uid}));
+        }
+    </script>
+
+    <script>
+        var ws;
+        function connectSocket() {
+            ws = new WebSocket(createWSPath());
+            setInterval(() => { ws.send(JSON.stringify({code: 10})); }, 30000);
+
+            ws.addEventListener('open', () => {
+                console.log("websocket connection established!");
+                if (localStorage.getItem('sessionid') && localStorage.getItem('sessionid') != "undefined") {
+                    const serverId = window.location.href.substr(window.location.href.lastIndexOf('/') + 1);
+                    if (!serverId) window.location.href = '/';
+                    
+                    ws.send(JSON.stringify({ code: 1, op: 0, serverId: serverId, sid: localStorage.getItem('sessionid') }));
+                    getPFP();
+                }
+                else window.location.href = '/';
+            });
+
+            ws.addEventListener('message', (message) => {
+                const response = JSON.parse(message.data);
+
+                switch (response.code) {
+                    case 1: initializeServersPage(response);
+                    break;
+                    
+                    case 10: break;
+
+                    case 500: window.location.href = '/';
+                    break;
+                    
+                    default: console.log("UNKNOWN RESPONSE ", response);
+                }
+            });
+
+            ws.addEventListener('close', (ev) => {
+                console.log(ev);
+                console.log(`WEBSOCKET CLOSED WITH CODE ${ev.code}`);
+
+                const bar = document.getElementById('reconnectingbar');
+                bar.style.display = 'block';
+
+                // try reconnecting
+                const timer = setInterval(() => {
+                    connectSocket();
+
+                    ws.addEventListener('open', () => {
+                        clearInterval(timer);
+                        window.location.reload();
+                    });
+                }, 1000);
+            });
+        }
+
+        //MUST BE DECLAIRED GLOBALLY!
+        const loadingAnimInterval = setInterval(() => {
+            const element = document.getElementById('loadingdiv').firstElementChild;
+            element.style.color = '#'+(0x1000000+Math.random()*0xffffff).toString(16).substr(1,6);
+        }, 1000);
+        
+
+        window.onload = () => {
+            localStorage.removeItem('currentChatID');
+            connectSocket();
+        }
+    </script>
+
+    <title>proto-chat</title>
+</head>
+<body>
+    <span id="bodyWrapper">
+        <div id="loadingdiv">
+            <h1>L O A D I N G . . .</h1>
+        </div>
+        <div id="maincontent" style="display: none">
+            <div id="reconnectingbar" class="reconnectingbar">R E C O N N E C T I N G . . .</div>
+            <div id="channels" class="channelMenu">
+                <!-- <a href="#about">About</a> -->
+            </div>
+            <div class="main">
+                <div id="chatMain" style="display: none;">
+                    <div id="messages"></div>
+                </div>
+            </div>
+            <div class="backBtn" onclick="window.location.href = '/'">
+                <h1>Home</h1>
+            </div>
+        </div>
+    </span>
+    <span id="errWrapper">
+        <h1>This site is not yet available on screens smaller than 500px!</h1>
+        <h2>In the meantime, feel free to check out my other stuff at <br> <a href="https://www.itamarorenn.com/projects">www.itamarorenn.com</a></h2>
+    </span>
+</body>
+</html>

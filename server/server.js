@@ -21,6 +21,7 @@ import {
     validateGDM, getDMID
 } from './imports.js';
 import { broadcastToSessions } from './database/newMessage.js';
+import { handleChatServer } from './chatServer.js';
 
 const config = (configImp) ? configImp : process.env;
 
@@ -195,8 +196,11 @@ app.get('/', (req, res) => {
 app.get('/server/:sid', (req, res) => {
     const serverId = req.path.replace('/server/', '');
     if (!serverId) return res.sendStatus(404);
-
     return res.sendFile('server.html', {root: './client'});
+});
+
+app.get('/server', async (req, res) => {
+    res.sendStatus(404);
 })
 
 app.get('/social', (req, res) => {
@@ -283,10 +287,19 @@ app.ws('/websocket', async (ws, req) => {
                     handleMessage(mongoconnection, webSocketClients, data.data, data.op);
                 break;
 
+                case 6:
+                    handleChatServer(ws, mongoconnection, data);
+                    break;
+
                 case 10:
                     ws.send(JSON.stringify({code: 10}));
                 break;
 
+                case 500:
+                    alert('REQUEST FAILED!');
+                    window.location.reload();
+                    break;
+                    
                 default: ws.send(403);
             }
         } catch (err) {

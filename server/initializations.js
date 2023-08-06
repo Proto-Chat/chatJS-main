@@ -3,6 +3,7 @@ import { newConnection } from './database/newConnection.js';
 import { getConnection } from './database/getConnection.js';
 import { getUIDFromUsername, getUidFromSid, getUsernameFromUID } from './utils/decodesid.js';
 import { broadcastToSessions } from './database/newMessage.js';
+import { getServerInfo } from './chatServer.js';
 
 
 export async function getCurrentUsername(mongoconnection, uid) {
@@ -40,11 +41,30 @@ export async function resumeSesion(ws, mongoconnection, data, uid) {
         }
         else {
             const username = await getCurrentUsername(mongoconnection, uid);
-            ws.send(JSON.stringify({type: 0, code: 1, op: 0, data: {
-                dms: doc.dms,
-                user: {username: username, uid: uid},
-                configs: doc.configs
-            }}));
-            return true;
+
+            //deal with server stuff
+            if (data.serverId) {
+                const serverInfo = await getServerInfo(mongoconnection, data.sid, `S|${data.serverId}`);
+                if (!serverInfo) return false;
+
+                ws.send(JSON.stringify({
+                    type: 0,
+                    code: 1,
+                    op: 0,
+                    data: {
+                        serverInfo: serverInfo,
+                        user: {username: username, uid: uid},
+                        configs: doc.configs
+                    }
+                }));
+            }
+            else {
+                ws.send(JSON.stringify({type: 0, code: 1, op: 0, data: {
+                    dms: doc.dms,
+                    user: {username: username, uid: uid},
+                    configs: doc.configs
+                }}));
+                return true;
+            }
         }
 }

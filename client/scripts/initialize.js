@@ -42,8 +42,21 @@ function createPageMenu() {
     createDm.classList.add('pageSwitchLink');
     createDm.classList.add('unselectable');
     createDm.classList.add('addGroupDmBtn');
-    createDm.innerText = '+';
+    createDm.innerText = '+group DM';
+    createDm.style.fontSize = '20px';
     e.appendChild(createDm);
+    
+    const createServer = document.createElement('a');
+    createServer.onclick = (e) => {
+        if (document.getElementsByClassName('profileoutlinediv').length > 0) return console.log("div already open");
+        newServerPopup();
+    }
+    createServer.classList.add('pageSwitchLink');
+    createServer.classList.add('unselectable');
+    createServer.classList.add('addGroupDmBtn');
+    createServer.innerText = '+server';
+    createServer.style.fontSize = '20px';
+    e.appendChild(createServer);
 
     e.className = 'pageSwitchContainer';
     return e;
@@ -68,7 +81,6 @@ function initializeLayout(response, dmid) {
         if (dmRaw.uid != "0") element.appendChild(a);
     }
 
-    // localStorage.setItem('desc', data.configs.desc)
     const profileConfigs = data.configs.find((c) => c._id == 'myprofile');
 
     if (profileConfigs) {

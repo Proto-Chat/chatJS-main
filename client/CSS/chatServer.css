@@ -1,0 +1,42 @@
+.channelMenu {
+    height: calc(100% - 75px);
+    width: 200px;
+    position: fixed;
+    z-index: 1;
+    top: 0;
+    left: 0;
+    background-color: #111;
+    overflow-x: hidden;
+    padding-top: 20px;
+    color: white;
+}
+
+.channelMenu a {
+    padding: 6px 8px 6px 16px;
+    text-decoration: none;
+    font-size: 25px;
+    color: #999898;
+    display: block;
+    cursor: pointer;
+    position: relative;
+    
+    white-space: nowrap;
+    overflow: hidden; 
+    text-overflow: ellipsis;
+}
+
+.channelMenu a:hover {
+    color: #f1f1f1;
+}
+
+
+.backBtn h1 {
+    bottom: 10%;
+    position: absolute;
+    margin-left: 30%;
+}
+
+@media screen and (max-height: 450px) {
+    .channelMenu {padding-top: 15px;}
+    .channelMenu a {font-size: 18px;}
+}

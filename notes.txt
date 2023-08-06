@@ -37,6 +37,12 @@ codes (server --> client):
         7: remove friend/group DM
         8: send friends
 5 - message sent
+6 - server
+    op:
+        0: create server response
+        1: edit server response
+        2: create channel response
+        3: edit channel response
 10 - pong
 
 
@@ -77,6 +83,14 @@ codes (client --> server):
         0: recieved
         1: deleted
         2: edited
+
+6 - server
+    op:
+        0: create server
+        1: edit server
+        2: create channel
+        3: edit channel
+
 10 - ping
 
 DM FORMAT
