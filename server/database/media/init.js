@@ -13,7 +13,6 @@ export class fileManager {
     /** @type {S3} */
     #s3;
 
-    
     /**
      * @param {String} bucketName the id of the userv (pfp) or the channel id (message attatchement)
      */

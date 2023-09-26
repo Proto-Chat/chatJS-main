@@ -225,6 +225,7 @@ app.get('/assets/*', (req, res) => {
 
 
 app.ws('/websocket', async (ws, req) => {
+	console.log("CONNECTION RECIEVED");
     ws.on('error', console.error);
 
     ws.on('message', async (dataRaw) => {
