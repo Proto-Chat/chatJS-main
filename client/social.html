@@ -58,6 +58,11 @@
                 window.location.href = '/';
             });
 
+            ws.addEventListener('close', (ev) => {
+                console.log(ev);
+                console.log(`WEBSOCKET CLOSED WITH CODE ${ev.code}`);
+            });
+
             ws.addEventListener('message', (message) => {
                 const response = JSON.parse(message.data);
                 if (response == "401") return alert('401 UNAUTHORIZED');

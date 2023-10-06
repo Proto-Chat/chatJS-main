@@ -71,6 +71,7 @@ export async function createChannel(mongoconnection, sid, serverId, channelName 
     }
 }
 
+// testing server: S|Y0Td7hn4
 
 export async function getServerInfo(mongoconnection, sid, serverId) {
     try {
@@ -83,7 +84,7 @@ export async function getServerInfo(mongoconnection, sid, serverId) {
         const db = client.db(serverId);
         const configs = await db.collection('settings').findOne({_id: 'serverConfigs'});
         if (!configs) return null;
-        
+
         const channelObjs = (await db.listCollections().toArray()).filter((col) => col.name != 'settings');
         const channels = {};
         for (const channelRaw of channelObjs) {
