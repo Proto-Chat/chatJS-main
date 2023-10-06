@@ -21,6 +21,7 @@
     "express-ws": "^5.0.2",
     "form-data-extended": "^0.0.10",
     "mongodb": "^5.2.0",
+    "node-turn": "^0.0.6",
     "nodemailer": "^6.9.2",
     "socket.io": "^4.6.1",
     "streamifier": "^0.1.1",
