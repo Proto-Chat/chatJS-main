@@ -33,7 +33,7 @@ export class fileManager {
 
 
     /**
-     * @param {Buffer} data 
+     * @param {Buffer} data
      */
     async uploadFile(channelId, filename, data) {
         if (!channelId) return { type: 1, code: 0, message: 'channelid not found' };

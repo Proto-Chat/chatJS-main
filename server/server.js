@@ -47,6 +47,40 @@ app.use('/scripts', express.static('../scripts'));
 const wsInstance = expressWs(app);
 
 
+// TURN code
+const turnConfig = {
+    "listeningPort": 4000,
+    "relayIps": ["127.0.0.1"],
+    "useUdp": false,
+    "useTcp": true
+  }
+  
+// Create and configure the STUN server
+import turn from 'node-turn';
+
+const turnServer = new turn({
+    authMech: 'none',
+    debugLevel: 'INFO',
+    listeningIps: ['0.0.0.0'],
+    turnConfig
+});
+
+turnServer.on('listening', () => {
+    console.log('STUN server is running on port', turnServer.listeningPort);
+});
+
+
+turnServer.on('connection', async (connection) => {
+    console.log(connection);
+});
+
+turnServer.on('error', async (err) => {
+    console.log(err);
+});
+
+turnServer.start();
+
+
 app.put('/msgImg', async (req, res) => {
     try {
         const sid = req.headers.sessionid;
@@ -211,6 +245,10 @@ app.get('/join', (req, res) => {
     res.sendFile(`join.html`, {root: './client'});
 });
 
+app.get('/call', (req, res) => {
+    res.sendFile(`call.html`, {root: './client'});
+});
+
 app.get('/scripts/*', (req, res) => {
     res.sendFile(`${req.path}`, {root: './client'});
 });
@@ -222,6 +260,31 @@ app.get('/CSS/*', (req, res) => {
 app.get('/assets/*', (req, res) => {
     res.sendFile(`${req.path}`, {root: './client'});
 });
+
+
+/*
+app.ws('/call', async (ws, req) => {
+    console.log("CONNECTION RECIEVED");
+    ws.on('error', console.error);
+
+    ws.on('message', async (dataRaw) => {
+        try {
+            try {
+                JSON.parse(dataRaw);
+            }
+            catch (err) {
+                return ws.send(JSON.stringify({type: 1, code: 400, message: "Please use a JSON format"}));
+            }
+            
+            // const data = JSON.parse(dataRaw);
+            console.log(dataRaw);
+        }
+        catch (err) {
+            console.error(err);
+        }
+    });
+});
+*/
 
 
 app.ws('/websocket', async (ws, req) => {
