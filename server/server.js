@@ -241,6 +241,10 @@ app.get('/join', (req, res) => {
     res.sendFile(`join.html`, {root: './client'});
 });
 
+app.get('/login', (req, res) => {
+    res.sendFile(`login.html`, {root: './client'});
+});
+
 app.get('/call', (req, res) => {
     res.sendFile(`call.html`, {root: './client'});
 });

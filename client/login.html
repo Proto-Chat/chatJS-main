@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" type="text/css" href="/CSS/index.css">
+    <script src="/scripts/messages.js"></script>    
+    <script src="/scripts/send.js"></script>
+    <script src="/scripts/initialize.js"></script>
+    <script src="/scripts/login.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css" integrity="sha512-+4zCK9k+qNFUR5X+cKL9EIR+ZOhtIloNl9GIKS57V1MyNsYpYcUrUeQc9vNfzsWfV28IaLL3i96P9sdNyeRssA==" crossorigin="anonymous" />
+    <script src="https://kit.fontawesome.com/728e740903.js" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/js/all.min.js" integrity="sha512-F5QTlBqZlvuBEs9LQPqc1iZv2UMxcVXezbHzomzS6Df4MZMClge/8+gXrKw2fl5ysdk4rWjR0vKS7NNkfymaBQ==" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:400,400i,500,500i,700,700i&display=swap">
+    <title>Login | Proto-chat</title>
+</head>
+<body>
+    <span id="bodyWrapper">
+        <div id="loadingdiv">
+            <h1>L O A D I N G . . .</h1>
+        </div>
+        <form action="#" onsubmit="handleLogin(event)" id="logindiv" style="text-align: center;" hidden>
+            <input placeholder="username" class="uinp" name="username">
+            <div>
+              <input placeholder="password" style="margin: 10px;" type="password" class="uinp" name="password">
+            </div>
+            <div>
+              <button type="submit" style="margin-left: 10px;" class="loginbtn">login</button>
+            </div>
+            <div style="margin-top: 5vh;">
+              <h2>Don't have an account?</h2>
+              <a href="/join" style="margin-left: 10px;" class="signupbtn">sign up</a>
+            </div>
+        </div>
+        <div id="maincontent" style="display: none">
+            <div id="reconnectingbar" class="reconnectingbar">R E C O N N E C T I N G . . .</div>
+            <div id="dms" class="sidenav">
+                <!-- <a href="#about">About</a> -->
+            </div>
+            <div class="main">
+                <div id="chatMain" style="display: none;">
+                    <div id="messages"></div>
+                </div>
+            </div>
+            <div class="userprofile">
+                
+            </div>
+        </div>
+    </span>
+    <span id="errWrapper">
+        <h1>This site is not yet available on screens smaller than 500px!</h1>
+        <h2>In the meantime, feel free to check out my other stuff at <br> <a href="https://www.itamarorenn.com/projects">www.itamarorenn.com</a></h2>
+    </span>
+</body>
+</html>

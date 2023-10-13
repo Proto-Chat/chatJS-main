@@ -1,70 +1,126 @@
-function showLogin() {
-    clearInterval(loadingAnimInterval);
-    const element = document.getElementById('loadingdiv');
-    for (const k of element.children) { element.removeChild(k); }
-    element.style.textAlign = 'center';
-    
-    const uinp = document.createElement('input');
-    uinp.placeholder = "username";
-    uinp.className = 'uinp';
+/** @type {WebSocket} The websocket for the server. */
+let ws;
 
-    const upass = document.createElement('input');
-    upass.placeholder = "password";
-    upass.style.margin = '10px';
-    upass.type = 'password';
-    upass.className = 'uinp';
-    
-    const submitbtn = document.createElement('button');
-    submitbtn.innerText = "login";
-    submitbtn.onclick = () => {
-        const username = uinp.value;
-        const password = upass.value;
+/**
+ * Connect to the server's websocket.
+ */
+function connectSocket() {
+    ws = new WebSocket(createWSPath());
+    // Ping the server, to determine if there is a stable connection.
+    setInterval(() => { ws.send(JSON.stringify({ code: 10 })); }, 30000);
 
-        if (!username || !password) return;
-        ws.send(JSON.stringify({code: 0, op: 0, username: username, password: password }));
-    }
-    submitbtn.style.marginLeft = '10px';
-    submitbtn.className = 'loginbtn'; 
-    
-    const signupbtn = document.createElement('button');
-    signupbtn.innerText = "sign up";
-    signupbtn.onclick = () => { window.location.href = '/join'; }
-    signupbtn.style.marginLeft = '10px';
-    signupbtn.className = 'signupbtn';
-    
-    const d1 = document.createElement('div');
-    d1.appendChild(uinp);
-    element.appendChild(uinp);
+    ws.addEventListener('open', () => {
+        console.log("Websocket connection established!");
+        const sessionID = localStorage.getItem('sessionid') ?? 'undefined';
 
-    const d2 = document.createElement('div');
-    d2.appendChild(upass)
-    element.appendChild(d2);
-    
-    const d3 = document.createElement('div');
-    d3.appendChild(submitbtn);
-    element.appendChild(d3);
-    
-    const d4 = document.createElement('div');
-    d4.style.marginTop = '5vh';
-    const hSep = document.createElement('h2');
-    hSep.innerText = 'Don\'t have an account?'
-    d4.appendChild(hSep);
-    d4.appendChild(signupbtn);
-    element.appendChild(d4);
+        if (sessionID == "undefined") {
+            showLogin();
+        } else {
+            // If the user is already logged in, the user must go to the main
+            // page.
+            window.location = "/";
+        }
+    });
+
+    ws.addEventListener('message', message => {
+        const response = JSON.parse(message.data);
+
+        // If the response does not have a code 0, we do not care about it.
+        if (response.code != 0) {
+            console.log("UNKNOWN RESPONSE ", response);
+            return;
+        }
+
+        switch (response.op) {
+            // Invalid password.
+            case 401: {
+                const el = document.getElementsByClassName('uinp')[1];
+                el.style.borderColor = 'red';
+                el.style.borderStyle = 'solid';
+            } break;
+            // Invalid session ID.
+            case 403: {
+                localStorage.clear();
+                window.location.reload();
+            } break;
+            // Invalid username.
+            case 404: {
+                const el = document.getElementsByClassName('uinp')[0];
+                el.style.borderColor = 'red';
+                el.style.borderStyle = 'solid';
+            } break;
+            // We assume any other code is a success.
+            default: {
+                localStorage.setItem('sessionid', response.sessionid);
+                window.location.href = "/";
+            } break;
+        }
+    });
+
+    ws.addEventListener('close', (ev) => {
+        console.log(ev);
+        console.log(`WEBSOCKET CLOSED WITH CODE ${ev.code}`);
+
+        const bar = document.getElementById('reconnectingbar');
+        bar.style.display = 'block';
+
+        // Attempt to reconnect.
+        const timer = setInterval(() => {
+            connectSocket();
+
+            ws.addEventListener('open', () => {
+                clearInterval(timer);
+                window.location.reload();
+            });
+        }, 1000);
+    });
 }
 
+/**
+ * Get the user's ID from their session ID.
+ * @param {string} sid The session ID.
+ * @returns {string} Returns the user's ID.
+ */
+function getUidFromSid(sid) {
+    return atob(sid.split("?")[1], 'base64');
+}
 
-function logout() {
-    const sid = localStorage.getItem('sessionid')
-    if (!sid || sid.length == 0) {
-        localStorage.removeItem('sessionid');
-        window.location.reload();
-        return;
-    }
+/** @type {number} The timer for the loading animation. */
+const loadingAnimInterval = setInterval(() => {
+    const element = document.getElementById('loadingdiv').firstElementChild;
+    element.style.color = '#' + (0x1000000 + Math.random() * 0xffffff).toString(16).substr(1, 6)
+}, 1000);
 
+/**
+ * Construct the login page.
+ */
+function showLogin() {
+    clearInterval(loadingAnimInterval);
+    document.getElementById('logindiv').hidden = false;
+    document.getElementById('loadingdiv').hidden = true;
+}
+
+/**
+ * Handle when the user attempts to login.
+ * @param {SubmitEvent} e The form.
+ */
+function handleLogin(e) {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const username = e.target.elements.namedItem('username').value;
+    const password = e.target.elements.namedItem('password').value;
+
+    if (!username || !password) return;
     ws.send(JSON.stringify({
-        code: 2,
-        op: 1,
-        data: {sid: sid}
+        code: 0,
+        op: 0,
+        username: username,
+        password: password
     }));
+}
+
+window.onload = () => {
+    localStorage.removeItem('currentChatID');
+    connectSocket();
 }

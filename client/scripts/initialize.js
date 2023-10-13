@@ -357,3 +357,18 @@ function setupDM(response) {
     element.appendChild(inpwrapper);
     element.style = 'display: block;';
 }
+
+function logout() {
+    const sid = localStorage.getItem('sessionid')
+    if (!sid || sid.length == 0) {
+        localStorage.removeItem('sessionid');
+        window.location.reload();
+        return;
+    }
+
+    ws.send(JSON.stringify({
+        code: 2,
+        op: 1,
+        data: {sid: sid}
+    }));
+}
