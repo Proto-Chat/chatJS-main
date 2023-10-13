@@ -71,7 +71,7 @@ export async function createChannel(mongoconnection, sid, serverId, channelName 
     }
 }
 
-// testing server: S|Y0Td7hn4
+// testing server: http://localhost:3000/server/Y0Td7hn4
 
 export async function getServerInfo(mongoconnection, sid, serverId) {
     try {
@@ -84,6 +84,8 @@ export async function getServerInfo(mongoconnection, sid, serverId) {
         const db = client.db(serverId);
         const configs = await db.collection('settings').findOne({_id: 'serverConfigs'});
         if (!configs) return null;
+
+        configs.serverId = serverId.replace('S|', '');
 
         const channelObjs = (await db.listCollections().toArray()).filter((col) => col.name != 'settings');
         const channels = {};
@@ -104,10 +106,20 @@ export async function getServerInfo(mongoconnection, sid, serverId) {
     }
 }
 
+async function handleMessage(ws, mongoconnection, data) {
+
+}
+
+
+async function getChannel() {
+
+}
+
 
 export async function handleChatServer(ws, mongoconnection, data) {
     switch (data.op) {
-        case 0: const response = await createServer(mongoconnection, data.sid, data.data);
+        case 0:
+            const response = await createServer(mongoconnection, data.sid, data.data);
             if (!response) return ws.send(JSON.stringify({
                 code: 500
             }));
@@ -118,6 +130,10 @@ export async function handleChatServer(ws, mongoconnection, data) {
                 serverId: response.replace('S|', '')
             }));
         break;
+
+        case 2:
+            console.log(data);
+            break;
 
         default: console.log(data);
     }

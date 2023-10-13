@@ -91,13 +91,25 @@ function newServerPopup() {
 function createServerSideBar(data) {
     const info = data.serverInfo;
     const sidebar = document.getElementById('channels');
+    const serverId = data.serverInfo.configs.serverId;
+
     for (const channelRaw in info.channels) {
         const channelLink = document.createElement('a');
         channelLink.innerText = channelRaw;
         channelLink.id = info.channels[channelRaw].channelId;
 
         channelLink.onclick = (e) => {
-            console.log(e.target.id);
+            const closeDMWSObj = {
+                code: 6,
+                op: 2,
+                data: {
+                    serverId: serverId,
+                    channelId: e.target.id,
+                    sid: localStorage.getItem('sessionid')
+                }
+            };
+
+            ws.send(JSON.stringify(closeDMWSObj));
         }
 
         sidebar.appendChild(channelLink);

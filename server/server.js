@@ -288,7 +288,7 @@ app.ws('/call', async (ws, req) => {
 
 
 app.ws('/websocket', async (ws, req) => {
-	console.log("CONNECTION RECIEVED");
+	// console.log("CONNECTION RECIEVED");
     ws.on('error', console.error);
 
     ws.on('message', async (dataRaw) => {
@@ -302,7 +302,7 @@ app.ws('/websocket', async (ws, req) => {
             
             const data = JSON.parse(dataRaw);
             const code = data['code'];
-
+if (code != 10) console.log(code, data);
             switch (code) {
                 case 0:
                     if (data.op == 0) {
