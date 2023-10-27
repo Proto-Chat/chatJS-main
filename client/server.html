@@ -51,6 +51,10 @@
                 switch (response.code) {
                     case 1: initializeServersPage(response);
                     break;
+
+                    // recieve channel info
+                    case 2: console.log(response);
+                    break;
                     
                     case 10: break;
 
@@ -87,11 +91,8 @@
         }, 1000);
         
 
-        window.onload = () => {
-            localStorage.removeItem('currentChatID');
-            connectSocket();
-        }
-
+        localStorage.removeItem('currentChatID');
+        connectSocket();
     </script>
 
     <title>proto-chat</title>

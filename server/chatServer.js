@@ -107,12 +107,27 @@ export async function getServerInfo(mongoconnection, sid, serverId) {
 }
 
 async function handleMessage(ws, mongoconnection, data) {
-
+    
 }
 
 
-async function getChannel() {
+async function getChannel(ws, mongoconnection, data) {
+    try {
+        if (!data || !data.serverId || !data.channelId) return ws.send(JSON.stringify({type: 1, code: 404}));
+        const client = await mongoconnection;
+        const dbo = client.db(`S|${data.serverId}`).collection(data.channelId);
+        const doc = await dbo.find({}).toArray();
+        if (!doc) return;
 
+        ws.send(JSON.stringify({
+            code: 2,
+            data: doc
+        }));
+    }
+    catch (err) {
+        console.error(err);
+        ws.send(JSON.stringify({type: 1, code: 500}));
+    }
 }
 
 
@@ -132,7 +147,7 @@ export async function handleChatServer(ws, mongoconnection, data) {
         break;
 
         case 2:
-            console.log(data);
+            getChannel(ws, mongoconnection, data.data);
             break;
 
         default: console.log(data);

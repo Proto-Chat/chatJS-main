@@ -302,7 +302,7 @@ app.ws('/websocket', async (ws, req) => {
             
             const data = JSON.parse(dataRaw);
             const code = data['code'];
-if (code != 10) console.log(code, data);
+// if (code != 10) console.log(code, data);
             switch (code) {
                 case 0:
                     if (data.op == 0) {
