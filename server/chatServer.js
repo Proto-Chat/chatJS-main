@@ -107,7 +107,29 @@ export async function getServerInfo(mongoconnection, sid, serverId) {
 }
 
 async function handleMessage(ws, mongoconnection, data) {
-    
+    try {
+        // const msg = {author: {username: String, uid: String}, id: crypto.randomUUID(), serverId: String, channelID: String, content: <content>, timestamp: Date}
+        if (!data.id || !data.author  || !data.serverId || !data.channelId) return ws.send(JSON.stringify({msgId: data.id || null, code: 400, type: 1}));
+
+        const client = await mongoconnection;
+        const dbo = client.db(`S|${data.serverId}`).collection(data.channelId);
+        const doc = await dbo.findOne({id: channelConfigs});
+        if (!doc) return;
+
+// TODO check permissions
+
+        delete data[id];
+        const conf = await dbo.insertOne(data);
+        if (!conf) return ws.send(JSON.stringify({msgId: data.id || null, code: 500, type: 1}));
+
+// TODO send to everyone in the server
+        
+        
+    }
+    catch (err) {
+        console.error(err);
+        return ws.send(JSON.stringify({msgId: data.id || null, code: 500, type: 1}));
+    }
 }
 
 

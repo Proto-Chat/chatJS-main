@@ -41,7 +41,7 @@ export async function resumeSesion(ws, mongoconnection, data, uid) {
         }
         else {
             const username = await getCurrentUsername(mongoconnection, uid);
-console.log(data)
+
             //deal with server stuff
             if (data.serverId) {
                 const serverInfo = await getServerInfo(mongoconnection, data.sid, `S|${data.serverId}`);
