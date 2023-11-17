@@ -1,5 +1,6 @@
 import * as crypto from 'crypto';
-import { getUidFromSid } from './utils/decodesid.js';
+import { getUidFromSid, getUsernameFromUID } from './utils/decodesid.js';
+import { broadcastToSessions } from './database/newMessage.js';
 
 
 async function generateServerId(client) {
@@ -18,7 +19,7 @@ async function generateServerId(client) {
 }
 
 
-export async function createServer(mongoconnection, sid, data) {
+export async function createServer(mongoconnection, connectionMap, sid, data) {
     try {
         const uid = getUidFromSid(sid);
         if (!sid) return null;
@@ -35,8 +36,21 @@ export async function createServer(mongoconnection, sid, data) {
         const sdbo = client.db(serverId).collection('settings');
 
         // 0 - private, 1 - public
-        await sdbo.insertOne({_id: 'serverConfigs', owner: uid, dateCreated: (new Date()).toISOString(), isPublic: data.isPrivate, name: data.name});
-        await createChannel(mongoconnection, sid, serverId, 'general');
+        await sdbo.insertOne({
+            _id: 'serverConfigs',
+            owner: uid,
+            dateCreated: (new Date()).toISOString(),
+            isPublic: data.isPrivate,
+            name: data.name,
+        });
+
+        const uconf = await client.db(uid).collection('configs').findOne({_id: "myprofile"});
+        if (!uconf) return ws.send(JSON.stringify({type: 1, code: 401}));
+        delete uconf['description'];
+        uconf['uid'] = uid;
+
+        await sdbo.insertOne({_id: 'classifications', roles: [{'admin': [uid]}], users: [uconf]});
+        await createChannel(mongoconnection, connectionMap, sid, serverId, 'general');
 
         return serverId;
     }
@@ -47,7 +61,18 @@ export async function createServer(mongoconnection, sid, data) {
 }
 
 
-export async function createChannel(mongoconnection, sid, serverId, channelName = null) {
+function pingEveryoneInChannel(connectionMap, client, op, data, uconf, users) {
+    try {
+        const toSend = {code: 6, op: op, data: {serverId: data.serverId, channelId: data.channelId, user: uconf}};
+        broadcastToSessions(client, connectionMap, users.map(u => u.uid), toSend);
+    }
+    catch(err) {
+        console.error(err);
+    }
+}
+
+
+export async function createChannel(mongoconnection, connectionMap, sid, serverId, channelName = null) {
     try {
         const uid = getUidFromSid(sid);
         if (!uid) return;
@@ -62,7 +87,17 @@ export async function createChannel(mongoconnection, sid, serverId, channelName 
         // insert the channel
         const channelId = crypto.randomUUID();
         const dbo = db.collection(channelId);
-        await dbo.insertOne({_id: 'channelConfigs', name: (channelName) ? channelName : 'new channel', visibility: 0});
+        await dbo.insertOne({_id: 'channelConfigs', name: (channelName) ? channelName : 'new channel', visibility: 0, permissions: {roles: ['admin'], users: []}});
+        await dbo.insertOne({_id: 'inChannel', users: []}); // users = [{category/role: String, username: string, userId: string}]
+
+        // ping everyone in the server
+        const uDoc = await db.collection('settings').findOne({_id: 'classifications'});
+        broadcastToSessions(client, connectionMap, uDoc.map(u => u.uid), {
+            code: 6,
+            op: 2,
+            data: {serverId: serverId, channelId: channelId, creator: {username: getUsernameFromUID(client, uid), uid: uid}}
+        });
+
         return channelId;
     }
     catch (err) {
@@ -106,7 +141,8 @@ export async function getServerInfo(mongoconnection, sid, serverId) {
     }
 }
 
-async function handleMessage(ws, mongoconnection, data) {
+
+async function handleMessage(ws, connectionMap, mongoconnection, data) {
     try {
         // const msg = {author: {username: String, uid: String}, id: crypto.randomUUID(), serverId: String, channelID: String, content: <content>, timestamp: Date}
         if (!data.id || !data.author  || !data.serverId || !data.channelId) return ws.send(JSON.stringify({msgId: data.id || null, code: 400, type: 1}));
@@ -121,10 +157,12 @@ async function handleMessage(ws, mongoconnection, data) {
         delete data[id];
         const conf = await dbo.insertOne(data);
         if (!conf) return ws.send(JSON.stringify({msgId: data.id || null, code: 500, type: 1}));
+       
+        // send to everyone in the channel (server notifs are not a thing at the moment)
+        const inChannel = await dbo.findOne({_id: 'inChannel'});
+        data['code'] = 5;
 
-// TODO send to everyone in the server
-        
-        
+        broadcastToSessions(client, connectionMap, inChannel.map(u => u.uid), data);
     }
     catch (err) {
         console.error(err);
@@ -133,13 +171,37 @@ async function handleMessage(ws, mongoconnection, data) {
 }
 
 
-async function getChannel(ws, mongoconnection, data) {
+async function getChannel(ws, connectionMap, mongoconnection, data) {
     try {
         if (!data || !data.serverId || !data.channelId) return ws.send(JSON.stringify({type: 1, code: 404}));
+        else if (!data.sid) return ws.send(JSON.stringify({type: 1, code: 401}));
+
         const client = await mongoconnection;
         const dbo = client.db(`S|${data.serverId}`).collection(data.channelId);
         const doc = await dbo.find({}).toArray();
         if (!doc) return;
+
+        const uid = getUidFromSid(data.sid);
+        const sessionDoc = await client.db(uid).collection('sessions').findOne({sid: sid});
+        if (!sessionDoc) return null;
+
+        const uconf = await client.db(uid).collection('configs').findOne({_id: "myprofile"});
+        if (!uconf) return ws.send(JSON.stringify({type: 1, code: 401}));
+        delete uconf['description'];
+        uconf['uid'] = uid;
+
+        // add the fact that the user is currently looking at the channel to the DB
+        if (data.currentChannel) {
+            // remove user from the old channel
+            const dboOld = client.client.db(`S|${data.serverId}`).collection(data.currentChannel);
+            dboOld.updateOne({_id: 'inChannel'}, { $pull: { users: {uid: uid} } });
+        }
+
+        dbo.updateOne({_id: 'inChannel'}, { $push: { users: uconf} });
+        // update member list for everyone else in that channel
+        const inChannel = await dbo.findOne({_id: 'inChannel'});
+
+        pingEveryoneInChannel(connectionMap, client, 4, data, uconf, inChannel);
 
         ws.send(JSON.stringify({
             code: 2,
@@ -153,10 +215,10 @@ async function getChannel(ws, mongoconnection, data) {
 }
 
 
-export async function handleChatServer(ws, mongoconnection, data) {
+export async function handleChatServer(ws, connectionMap, mongoconnection, data) {
     switch (data.op) {
         case 0:
-            const response = await createServer(mongoconnection, data.sid, data.data);
+            const response = await createServer(mongoconnection, connectionMap, data.sid, data.data);
             if (!response) return ws.send(JSON.stringify({
                 code: 500
             }));
@@ -169,7 +231,15 @@ export async function handleChatServer(ws, mongoconnection, data) {
         break;
 
         case 2:
-            getChannel(ws, mongoconnection, data.data);
+            getChannel(ws, connectionMap, mongoconnection, data.data);
+            break;
+
+        case 4:
+            getChannel(ws, connectionMap, mongoconnection, data);
+            break;
+
+        case 5:
+            handleMessage(ws, connectionMap, mongoconnection, data);
             break;
 
         default: console.log(data);

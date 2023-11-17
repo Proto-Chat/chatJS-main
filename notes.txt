@@ -43,6 +43,7 @@ codes (server --> client):
         1: edit server response
         2: create channel response
         3: edit channel response
+        4: view channel
 10 - pong
 
 
@@ -90,6 +91,7 @@ codes (client --> server):
         1: edit server
         2: create channel
         3: edit channel
+        4: get channel
 
 10 - ping
 
