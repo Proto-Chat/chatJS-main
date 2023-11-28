@@ -182,7 +182,7 @@ async function getChannel(ws, connectionMap, mongoconnection, data) {
         if (!doc) return;
 
         const uid = getUidFromSid(data.sid);
-        const sessionDoc = await client.db(uid).collection('sessions').findOne({sid: sid});
+        const sessionDoc = await client.db(uid).collection('sessions').findOne({sid: data.sid});
         if (!sessionDoc) return null;
 
         const uconf = await client.db(uid).collection('configs').findOne({_id: "myprofile"});
@@ -197,11 +197,14 @@ async function getChannel(ws, connectionMap, mongoconnection, data) {
             dboOld.updateOne({_id: 'inChannel'}, { $pull: { users: {uid: uid} } });
         }
 
-        dbo.updateOne({_id: 'inChannel'}, { $push: { users: uconf} });
+        const uFromPresList = (await dbo.findOne({_id: 'inChannel'})).users.find(u => (u.uid == uid));
+        if (!uFromPresList) {
+            dbo.updateOne({_id: 'inChannel'}, { $push: { users: uconf} });
+        }
+
         // update member list for everyone else in that channel
         const inChannel = await dbo.findOne({_id: 'inChannel'});
-
-        pingEveryoneInChannel(connectionMap, client, 4, data, uconf, inChannel);
+        pingEveryoneInChannel(connectionMap, client, 4, data, uconf, inChannel.users);
 
         ws.send(JSON.stringify({
             code: 2,
@@ -215,7 +218,7 @@ async function getChannel(ws, connectionMap, mongoconnection, data) {
 }
 
 
-export async function handleChatServer(ws, connectionMap, mongoconnection, data) {
+export async function handleChatServer(ws, connectionMap, mongoconnection, data) {    
     switch (data.op) {
         case 0:
             const response = await createServer(mongoconnection, connectionMap, data.sid, data.data);
@@ -231,11 +234,14 @@ export async function handleChatServer(ws, connectionMap, mongoconnection, data)
         break;
 
         case 2:
-            getChannel(ws, connectionMap, mongoconnection, data.data);
+            // check perms and such
+            // createChannel(mongoconnection, connectionMap, data.data.sessionId)
+            // getChannel(ws, connectionMap, mongoconnection, data.data);
+            ws.send(501);
             break;
 
         case 4:
-            getChannel(ws, connectionMap, mongoconnection, data);
+            getChannel(ws, connectionMap, mongoconnection, data.data);
             break;
 
         case 5:

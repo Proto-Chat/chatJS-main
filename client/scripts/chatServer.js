@@ -101,7 +101,7 @@ function createServerSideBar(data) {
         channelLink.onclick = (e) => {
             const closeDMWSObj = {
                 code: 6,
-                op: 2,
+                op: 4,
                 data: {
                     serverId: serverId,
                     channelId: e.target.id,

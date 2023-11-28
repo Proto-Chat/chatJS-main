@@ -352,7 +352,7 @@ app.ws('/websocket', async (ws, req) => {
                 break;
 
                 case 6:
-                    handleChatServer(ws, mongoconnection, data);
+                    handleChatServer(ws, webSocketClients, mongoconnection, data);
                     break;
 
                 case 10:
