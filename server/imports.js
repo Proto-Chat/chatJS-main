@@ -21,6 +21,9 @@ import { toggleDM } from './database/logout.js';
 import { systemMsgAll } from './admin/systemmsgall.js';
 import { validateGDM, getDMID } from './groupDM.js';
 
+// call stuff
+import { initCallSockets } from './call.js'
+
 // import configImp from '../config.json' assert { type: 'json' };
 var configImp = null;
 
@@ -46,5 +49,6 @@ export {
     enableWs,
     toggleDM,
     validateGDM, getDMID,
-    systemMsgAll
+    systemMsgAll,
+    initCallSockets
 }

@@ -161,12 +161,16 @@
             const element = document.getElementById('loadingdiv').firstElementChild;
             element.style.color = '#'+(0x1000000+Math.random()*0xffffff).toString(16).substr(1,6)
         }, 1000);
-        
 
-        window.onload = () => {
-            localStorage.removeItem('currentChatID');
-            connectSocket();
-        }
+
+        // window.onload = () => {
+        //     localStorage.removeItem('currentChatID');
+        //     connectSocket();
+        // }
+
+        // because window.onload is FUCKED TO HELL
+        localStorage.removeItem('currentChatID');
+        connectSocket();
     </script>
 </head>
 <body>

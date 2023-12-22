@@ -6,11 +6,13 @@
 
     <script src="/scripts/send.js"></script>
     <script src="/scripts/chatServer.js"></script>
+    <script src="/scripts/chatServerChannel.js"></script>
     <script src="/scripts/initialize.js"></script>
     <script src="/scripts/profile.js"></script>
     <script src="/scripts/gifs.js"></script>
     <script src="/scripts/images.js"></script>
     <script src="/scripts/playNotification.js"></script>
+    <script src="/scripts/messages.js"></script>
 
     <link rel="stylesheet" type="text/css" href="/CSS/index.css">
     <link rel="stylesheet" type="text/css" href="/CSS/chatServer.css">
@@ -53,7 +55,10 @@
                     break;
 
                     // recieve channel info
-                    case 2: console.log(response);
+                    case 2: setUpChannel(response);
+                    break;
+
+                    case 5: messageRecieved(response);
                     break;
                     
                     case 10: break;
@@ -104,6 +109,7 @@
         </div>
         <div id="maincontent" style="display: none">
             <div id="reconnectingbar" class="reconnectingbar">R E C O N N E C T I N G . . .</div>
+            
             <div id="channels" class="channelMenu">
                 <!-- <a href="#about">About</a> -->
             </div>
@@ -111,6 +117,8 @@
                 <div id="chatMain" style="display: none;">
                     <div id="messages"></div>
                 </div>
+
+                <div id="serverInfoContainer"></div>
             </div>
             <div class="backBtn" onclick="window.location.href = '/'">
                 <h1>Home</h1>

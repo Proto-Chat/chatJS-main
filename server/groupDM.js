@@ -57,7 +57,7 @@ export async function createGroupDM(ws, mongoconnection, response, connectionMap
             id: crypto.randomUUID(),
             content: `DM with **${unamesNew.join(', ')}** created successfully`,
             timestamp: (new Date()).toISOString(),
-            channelID: gdmid
+            channelId: gdmid
         });
 
         for (const uid of uids) {

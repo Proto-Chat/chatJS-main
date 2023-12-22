@@ -18,6 +18,13 @@ async function generateServerId(client) {
     }
 }
 
+const findAndStripUConf = async (client, uid) => {
+    const uconf = await client.db(uid).collection('configs').findOne({_id: "myprofile"});
+    if (!uconf) return ws.send(JSON.stringify({type: 1, code: 401}));
+    delete uconf['description'];
+    uconf['uid'] = uid;
+    return uconf;
+}
 
 export async function createServer(mongoconnection, connectionMap, sid, data) {
     try {
@@ -44,10 +51,7 @@ export async function createServer(mongoconnection, connectionMap, sid, data) {
             name: data.name,
         });
 
-        const uconf = await client.db(uid).collection('configs').findOne({_id: "myprofile"});
-        if (!uconf) return ws.send(JSON.stringify({type: 1, code: 401}));
-        delete uconf['description'];
-        uconf['uid'] = uid;
+        const uconf = findAndStripUConf(client, uid);
 
         await sdbo.insertOne({_id: 'classifications', roles: [{'admin': [uid]}], users: [uconf]});
         await createChannel(mongoconnection, connectionMap, sid, serverId, 'general');
@@ -61,9 +65,9 @@ export async function createServer(mongoconnection, connectionMap, sid, data) {
 }
 
 
-function pingEveryoneInChannel(connectionMap, client, op, data, uconf, users) {
+function pingEveryoneInChannel(connectionMap, client, op, data, uconf, users, code = 6) {
     try {
-        const toSend = {code: 6, op: op, data: {serverId: data.serverId, channelId: data.channelId, user: uconf}};
+        const toSend = {code: code, op: op, data: {serverId: data.serverId, channelId: data.channelId, user: uconf}};
         broadcastToSessions(client, connectionMap, users.map(u => u.uid), toSend);
     }
     catch(err) {
@@ -71,28 +75,46 @@ function pingEveryoneInChannel(connectionMap, client, op, data, uconf, users) {
     }
 }
 
+// modify this as needed later (check perms in dbo)
+// maybe add an input for the action being done?
+const checkPerms = async (db, uid, dbo = undefined) => {
+    const serverDoc = await db.collection('settings').findOne({_id: 'serverConfigs'});
+
+    if (dbo) {
+// TODO: check channel perms
+    }
+
+    // for now, only the server owner can manage channels
+    return (!serverDoc || serverDoc.owner != uid);
+}
+
 
 export async function createChannel(mongoconnection, connectionMap, sid, serverId, channelName = null) {
     try {
         const uid = getUidFromSid(sid);
         if (!uid) return;
+
         const client = await mongoconnection;
         const sessionDoc = await client.db(uid).collection('sessions').findOne({sid: sid});
         if (!sessionDoc) return null;
 
-        const db = client.db(serverId)
-        const serverDoc = await db.collection('settings').findOne({_id: 'serverConfigs'});
-        if (!serverDoc || serverDoc.owner != uid) return null;
+        const db = client.db(`S|${serverId}`);
+
+        // for now, only the server owner can manage channels
+        if (!checkPerms(db, uid)) return null;
+
+        const uconf = findAndStripUConf(client, uid);
 
         // insert the channel
         const channelId = crypto.randomUUID();
         const dbo = db.collection(channelId);
-        await dbo.insertOne({_id: 'channelConfigs', name: (channelName) ? channelName : 'new channel', visibility: 0, permissions: {roles: ['admin'], users: []}});
+        await dbo.insertOne({_id: 'channelConfigs', name: (channelName) ? channelName : 'new channel', visibility: 0, permissions: {roles: ['admin'], users: [uconf]}});
         await dbo.insertOne({_id: 'inChannel', users: []}); // users = [{category/role: String, username: string, userId: string}]
 
         // ping everyone in the server
         const uDoc = await db.collection('settings').findOne({_id: 'classifications'});
-        broadcastToSessions(client, connectionMap, uDoc.map(u => u.uid), {
+
+        broadcastToSessions(client, connectionMap, uDoc.users.map(u => u.uid), {
             code: 6,
             op: 2,
             data: {serverId: serverId, channelId: channelId, creator: {username: getUsernameFromUID(client, uid), uid: uid}}
@@ -112,6 +134,7 @@ export async function getServerInfo(mongoconnection, sid, serverId) {
     try {
         const uid = getUidFromSid(sid);
         if (!uid) return;
+
         const client = await mongoconnection;
         const sessionDoc = await client.db(uid).collection('sessions').findOne({sid: sid});
         if (!sessionDoc) return null;
@@ -130,6 +153,8 @@ export async function getServerInfo(mongoconnection, sid, serverId) {
             channels[doc.name] = {channelId: channelRaw.name, vis: doc.visibility};
         }
 
+// TODO: check if the person has admin privilages
+
         return {
             configs: configs,
             channels: channels
@@ -144,25 +169,30 @@ export async function getServerInfo(mongoconnection, sid, serverId) {
 
 async function handleMessage(ws, connectionMap, mongoconnection, data) {
     try {
-        // const msg = {author: {username: String, uid: String}, id: crypto.randomUUID(), serverId: String, channelID: String, content: <content>, timestamp: Date}
-        if (!data.id || !data.author  || !data.serverId || !data.channelId) return ws.send(JSON.stringify({msgId: data.id || null, code: 400, type: 1}));
+        // const msg = {author: {username: String, uid: String}, id: crypto.randomUUID(), serverId: String, channelId: String, content: <content>, timestamp: Date}
+        if (!data.id || !data.author || !data.serverId || !data.channelId) return ws.send(JSON.stringify({msgId: data.id || null, code: 400, type: 1}));
 
         const client = await mongoconnection;
         const dbo = client.db(`S|${data.serverId}`).collection(data.channelId);
-        const doc = await dbo.findOne({id: channelConfigs});
-        if (!doc) return;
+
+        const doc = await dbo.findOne({_id: 'channelConfigs'});
+        if (!doc) return ws.send(JSON.stringify({code: 404, serverId: data.serverId, channelId: data.channelId}));
 
 // TODO check permissions
 
-        delete data[id];
-        const conf = await dbo.insertOne(data);
-        if (!conf) return ws.send(JSON.stringify({msgId: data.id || null, code: 500, type: 1}));
+        // delete data[id];  // idk why I did this
+// const conf = await dbo.insertOne(data);
+// if (!conf) return ws.send(JSON.stringify({msgId: data.id || null, code: 500, type: 1}));
        
         // send to everyone in the channel (server notifs are not a thing at the moment)
         const inChannel = await dbo.findOne({_id: 'inChannel'});
-        data['code'] = 5;
 
-        broadcastToSessions(client, connectionMap, inChannel.map(u => u.uid), data);
+        const uconf = await client.db(data.author.uid).collection('configs').findOne({_id: "myprofile"});
+        if (!uconf) return ws.send(JSON.stringify({type: 1, code: 401}));
+        delete uconf['description'];
+        uconf['uid'] = data.author.uid;
+
+        broadcastToSessions(client, connectionMap, inChannel.users.map(u => u.uid), {code: 5, op: 0, data: data});
     }
     catch (err) {
         console.error(err);
@@ -178,8 +208,10 @@ async function getChannel(ws, connectionMap, mongoconnection, data) {
 
         const client = await mongoconnection;
         const dbo = client.db(`S|${data.serverId}`).collection(data.channelId);
-        const doc = await dbo.find({}).toArray();
+        const doc = await dbo.find({$nor: [{_id: 'channelConfigs'}, {_id: 'inChannel'}]}).toArray();
         if (!doc) return;
+
+        const channelConfigs = await dbo.find({$or: [{_id: 'channelConfigs'}, {_id: 'inChannel'}]}).toArray();
 
         const uid = getUidFromSid(data.sid);
         const sessionDoc = await client.db(uid).collection('sessions').findOne({sid: data.sid});
@@ -206,10 +238,63 @@ async function getChannel(ws, connectionMap, mongoconnection, data) {
         const inChannel = await dbo.findOne({_id: 'inChannel'});
         pingEveryoneInChannel(connectionMap, client, 4, data, uconf, inChannel.users);
 
+        const confInd = channelConfigs.findIndex((o) => o._id == 'channelConfigs');
+        channelConfigs[confInd]['channelId'] = data.channelId;
+        channelConfigs[confInd]['serverId'] = data.serverId;
+
         ws.send(JSON.stringify({
             code: 2,
-            data: doc
+            messages: doc,
+            channelconfs: channelConfigs
         }));
+    }
+    catch (err) {
+        console.error(err);
+        ws.send(JSON.stringify({type: 1, code: 500}));
+    }
+}
+
+
+// update or delete
+async function updateChannel(ws, connectionMap, mongoconnection, data, op) {
+    try {
+        if (!data || !data.sid || !data.serverId || !data.channelId) return ws.send(JSON.stringify({type: 1, code: 404}));
+        else if (!data.sid) return ws.send(JSON.stringify({type: 1, code: 401}));
+
+        const client = await mongoconnection;
+        const db = client.db(`S|${data.serverId}`);
+        const dbo = db.collection(data.channelId);
+
+        const doc = await dbo.find({$nor: [{_id: 'channelConfigs'}, {_id: 'inChannel'}]}).toArray();
+        if (!doc) return;
+
+        const uid = getUidFromSid(data.sid);
+        const sessionDoc = await client.db(uid).collection('sessions').findOne({sid: data.sid});
+        if (!sessionDoc) return null;
+
+        if (!checkPerms(db, uid, data.channelId, dbo)) return null;
+
+        const toSend = {serverId: data.serverId, channelId: data.channelId, changer: {username: getUsernameFromUID(client, uid), uid: uid}};
+
+        // edit
+        if (op == 6) {
+            await dbo.updateOne({_id: "channelConfigs"}, {$set: {name: data.newName}});
+            toSend['newName'] = data.newName;
+        }
+        // delete
+        else if (op == 7) {
+            await dbo.drop();
+        }
+        else return ws.send(JSON.stringify({type: 1, code: 404, msg: `UNKNOWN OP ${op}`}));
+
+        // ping everyone in the server
+        const uDoc = await db.collection('settings').findOne({_id: 'classifications'});
+
+        broadcastToSessions(client, connectionMap, uDoc.users.map(u => u.uid), {
+            code: 6,
+            op: op - 1,
+            data: toSend
+        });
     }
     catch (err) {
         console.error(err);
@@ -234,10 +319,8 @@ export async function handleChatServer(ws, connectionMap, mongoconnection, data)
         break;
 
         case 2:
-            // check perms and such
-            // createChannel(mongoconnection, connectionMap, data.data.sessionId)
-            // getChannel(ws, connectionMap, mongoconnection, data.data);
-            ws.send(501);
+            createChannel(mongoconnection, connectionMap, data.data.sid, data.data.serverId, data.data.channelName);
+            // ws.send(501);
             break;
 
         case 4:
@@ -245,7 +328,12 @@ export async function handleChatServer(ws, connectionMap, mongoconnection, data)
             break;
 
         case 5:
-            handleMessage(ws, connectionMap, mongoconnection, data);
+            handleMessage(ws, connectionMap, mongoconnection, data.data);
+            break;
+
+        case 6:
+        case 7:
+            updateChannel(ws, connectionMap, mongoconnection, data.data, data.op);
             break;
 
         default: console.log(data);

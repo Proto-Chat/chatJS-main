@@ -1,6 +1,6 @@
 function newServerPopup() {
     const br = (el) => el.appendChild(document.createElement('br'));
-    
+
     const wrapperDiv = document.createElement('div');
     wrapperDiv.className = 'profileoutlinediv';
     br(wrapperDiv);
@@ -50,7 +50,7 @@ function newServerPopup() {
 
     form.appendChild(label);
     form.appendChild(serverPrivacySelect);
-    
+
     const btnwrapperdiv = document.createElement('div');
     const submitBtn = document.createElement('button');
     submitBtn.className = 'groupDMSubmitBtn';
@@ -66,7 +66,7 @@ function newServerPopup() {
         const serverPrivacyInp = document.getElementById('serverPrivacyInp');
         const serverPrivacy = serverPrivacyInp.options[serverPrivacyInp.selectedIndex].text;
         if (!serverPrivacy) return alert("No privacy provided!");
-        
+
         ws.send(JSON.stringify({
             code: 6,
             op: 0,
@@ -93,13 +93,28 @@ function createServerSideBar(data) {
     const sidebar = document.getElementById('channels');
     const serverId = data.serverInfo.configs.serverId;
 
+    const isOwner = JSON.parse(localStorage.getItem('user')).uid == data.serverInfo.configs.owner;
+    if (isOwner) {
+        // admin stuff
+        const newChannelLink = document.createElement('a');
+        newChannelLink.href = '';
+        newChannelLink.classList.add('pageSwitchLink');
+        newChannelLink.classList.add('unselectable');
+        newChannelLink.innerText = 'NEW CHANNEL';
+        newChannelLink.onclick = (e) => {
+            e.preventDefault();
+            showNewChannelPopup();
+        }
+        sidebar.appendChild(newChannelLink);
+    }
+
     for (const channelRaw in info.channels) {
         const channelLink = document.createElement('a');
         channelLink.innerText = channelRaw;
         channelLink.id = info.channels[channelRaw].channelId;
 
         channelLink.onclick = (e) => {
-            const closeDMWSObj = {
+            const openChannel = {
                 code: 6,
                 op: 4,
                 data: {
@@ -109,7 +124,20 @@ function createServerSideBar(data) {
                 }
             };
 
-            ws.send(JSON.stringify(closeDMWSObj));
+            ws.send(JSON.stringify(openChannel));
+        }
+
+        // edit the channel if has perms
+// TODO: have this sent from the back-end
+        if (isOwner) {
+            channelLink.addEventListener('contextmenu', (e) => {
+                if (document.getElementsByClassName('msgdropdown').length != 0) {
+                    document.getElementsByClassName('msgdropdown')[0].remove();
+                }
+                
+                showEditChannelPopup(e.target.id, e.target.innerText);
+                e.preventDefault();
+            });
         }
 
         sidebar.appendChild(channelLink);
@@ -117,9 +145,54 @@ function createServerSideBar(data) {
 }
 
 
+function createServerConfMain(serverInfo) {
+    const rootElement = document.getElementById('serverInfoContainer');
+    const header = document.createElement('h1');
+    header.textContent = `Welcome to ${serverInfo.configs.name}!`;
+    rootElement.appendChild(header);
+
+    const channelHeader = document.createElement('h2');
+    channelHeader.textContent = "Check out these channels:";
+    rootElement.appendChild(channelHeader);
+
+    const channelsList = document.createElement('ul');
+    for (const channelName in serverInfo.channels) {
+        const listItem = document.createElement('li');
+        const link = document.createElement('a');
+        link.href = "";
+        link.id = serverInfo.channels[channelName]['channelId'];
+        link.textContent = channelName;
+        link.onclick = (e) => {
+            e.preventDefault();
+            const openChannel = {
+                code: 6,
+                op: 4,
+                data: {
+                    serverId: serverInfo.configs.serverId,
+                    channelId: e.target.id,
+                    sid: localStorage.getItem('sessionid')
+                }
+            };
+
+            ws.send(JSON.stringify(openChannel));
+        }
+        listItem.appendChild(link);
+        channelsList.appendChild(listItem);
+    }
+
+    rootElement.appendChild(channelsList);
+}
+
+
 function initializeServersPage(response) {
-    console.log(response.data);
     createServerSideBar(response.data);
+    console.log(response.data);
+
+    // create the "welcome" screen
+    const serverId = response.data.serverInfo.configs.serverId;
+    createServerConfMain(response.data.serverInfo);
+    createNewChannelPopup(serverId);
+    createEditChannelPopup(serverId);
 
     clearInterval(loadingAnimInterval);
     document.getElementById('loadingdiv').style.display = 'none';

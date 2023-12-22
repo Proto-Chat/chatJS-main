@@ -27,44 +27,46 @@ export async function createSession(ws, mongoconnection, data) {
 
 export async function resumeSesion(ws, mongoconnection, data, uid) {
     if (!data.sid) {
-            ws.send({type: 1, code: 0, op: 401});
-            return false;
-        }
-        const doc = await getConnection(mongoconnection, data.sid);
+        ws.send({type: 1, code: 0, op: 401});
+        return false;
+    }
+    const doc = await getConnection(mongoconnection, data.sid);
 
-        if (!doc) {
-            return ws.send(JSON.stringify({type: 1, code: 0, op: 403}));
-        }
-        if (doc.type == 1) {
-            ws.send(JSON.stringify(doc));
-            return false;
-        }
-        else {
-            const username = await getCurrentUsername(mongoconnection, uid);
+    if (!doc) {
+        ws.send(JSON.stringify({type: 1, code: 0, op: 403}));
+        return false;
+    }
+    else if (doc.type == 1) {
+        ws.send(JSON.stringify(doc));
+        return false;
+    }
+    else {
+        const username = await getCurrentUsername(mongoconnection, uid);
 
-            //deal with server stuff
-            if (data.serverId) {
-                const serverInfo = await getServerInfo(mongoconnection, data.sid, `S|${data.serverId}`);
-                if (!serverInfo) return false;
+        //deal with server stuff
+        if (data.serverId) {
+            const serverInfo = await getServerInfo(mongoconnection, data.sid, `S|${data.serverId}`);
+            if (!serverInfo) return false;
 
-                ws.send(JSON.stringify({
-                    type: 0,
-                    code: 1,
-                    op: 0,
-                    data: {
-                        serverInfo: serverInfo,
-                        user: {username: username, uid: uid},
-                        configs: doc.configs
-                    }
-                }));
-            }
-            else {
-                ws.send(JSON.stringify({type: 0, code: 1, op: 0, data: {
-                    dms: doc.dms,
+            ws.send(JSON.stringify({
+                type: 0,
+                code: 1,
+                op: 0,
+                data: {
+                    serverInfo: serverInfo,
                     user: {username: username, uid: uid},
                     configs: doc.configs
-                }}));
-                return true;
-            }
+                }
+            }));
+            return true;
         }
+        else {
+            ws.send(JSON.stringify({type: 0, code: 1, op: 0, data: {
+                dms: doc.dms,
+                user: {username: username, uid: uid},
+                configs: doc.configs
+            }}));
+            return true;
+        }
+    }
 }

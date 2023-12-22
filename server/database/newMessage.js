@@ -23,15 +23,15 @@ export async function broadcastToSessions(client, connectionMap, others, toSend)
 }
 
 
-const splitByID = (channelID, client) => {
-    return channelID.split("|").filter((o) => (o && o.length > 0));
+const splitByID = (channelId, client) => {
+    return channelId.split("|").filter((o) => (o && o.length > 0));
 }
 
 
 export async function newMessage(mongoconnection, connectionMap, data, isSystemMessage = false) {
     try {
-        if (!data || !data.channelID) return false; //Maybe make it a "bad request"?
-        const channelId = data.channelID;
+        if (!data || !data.channelId) return false; //Maybe make it a "bad request"?
+        const channelId = data.channelId;
         const client = await mongoconnection;
         const keyId = await client.db(data.author.uid).collection('dm_keys').findOne({dmid: channelId});
 
@@ -47,11 +47,11 @@ export async function newMessage(mongoconnection, connectionMap, data, isSystemM
             other_dbo.updateOne({uid: data.author.uid}, {$set: {open: true, unread: true}});
         }
 
-        const dmsdbo = client.db((keyId.isGroupDM) ? 'gdms' : 'dms').collection(data.channelID);
-        delete data.channelID;
+        const dmsdbo = client.db((keyId.isGroupDM) ? 'gdms' : 'dms').collection(data.channelId);
+        delete data.channelId;
         
         dmsdbo.insertOne(data);
-        data.channelID = channelId;
+        data.channelId = channelId;
 
         return await broadcastToSessions(client, connectionMap, others, { type: 0, code: 5, op: 0, data: data });
     }
@@ -82,7 +82,7 @@ async function deleteMessage(mongoconnection, connectionMap, data) {
             code: 5,
             op: 1,
             data: {
-                channelID: data.chatid,
+                channelId: data.chatid,
                 msgid: data.msgid
             }
         });
@@ -114,7 +114,7 @@ async function editMessage(mongoconnection, connectionMap, data) {
         code: 5,
         op: 2,
         data: {
-            channelID: data.chatid,
+            channelId: data.chatid,
             msgid: data.msgid,
             content: data.content,
             author: data.user
@@ -154,7 +154,7 @@ async function uploadMsgImg(mongoconnection, CDNManager, connectionMap, data) {
                 uid: uid,
                 username: data.username
             },
-            channelID: data.channelid,
+            channelId: data.channelid,
             id: randomUUID(),
             timestamp: (new Date()).toISOString(),
             content: {

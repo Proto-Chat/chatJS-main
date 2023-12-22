@@ -36,6 +36,87 @@
     margin-left: 30%;
 }
 
+#serverInfoContainer {
+    background-color: #5c5c5c;
+    color: rgb(233, 233, 233);
+    font-family: monospace;
+    padding: 20px;
+    margin: 20px;
+}
+
+#serverInfoContainer h1, #serverInfoContainer h2 {
+    margin-bottom: 10px;
+}
+
+#serverInfoContainer a {
+    color: rgb(233, 233, 233);
+    text-decoration: none;
+    padding: 5px 10px;
+    border-radius: 4px;
+    background-color: rgba(255, 255, 255, 0.1);
+    transition: background-color 0.3s ease;
+}
+
+#serverInfoContainer a:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+    text-decoration: underline;
+}
+
+#serverInfoContainer ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+#serverInfoContainer li {
+    margin: 20px 0;
+}
+
+
+/* NEW CHANNEL POPUP */
+/* ... existing CSS ... */
+
+.popup-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.popup {
+    background-color: #5c5c5c;
+    padding: 20px;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.popup h2 {
+    color: rgb(233, 233, 233);
+}
+
+.popup input[type="text"] {
+    padding: 5px;
+    margin-bottom: 10px;
+}
+
+.popup button {
+    color: rgb(233, 233, 233);
+    background-color: transparent;
+    border: 1px solid rgb(233, 233, 233);
+    padding: 5px 10px;
+    margin: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.popup button:hover {
+    background-color: rgba(233, 233, 233, 0.2);
+}
+
 @media screen and (max-height: 450px) {
     .channelMenu {padding-top: 15px;}
     .channelMenu a {font-size: 18px;}

@@ -1,4 +1,4 @@
-function send() {
+function send(serverId = undefined) {
     const element = document.getElementById('textinp');
     const content = element.value.trim();
     if (!content) {
@@ -8,23 +8,34 @@ function send() {
         return;
     }
     const authorID = getUidFromSid(localStorage.getItem('sessionid'));
-    const username = JSON.parse(localStorage.getItem('user')).username;
-    const channelID = localStorage.getItem('currentChatID');
-    const msg = {author: {username: username, uid: authorID}, id: crypto.randomUUID(), channelID: channelID, content: content, timestamp: (new Date()).toISOString()}
 
-    ws.send(JSON.stringify({code: 5, op: 0, data: msg}));
+    if (!localStorage.getItem('user')) {
+        alert("A user error has occured, please try again!");
+        window.location.href = '/';
+    }
+
+    const username = JSON.parse(localStorage.getItem('user')).username;
+
+    const channelId = localStorage.getItem('currentChatID');
+    var msg = {author: {username: username, uid: authorID}, id: crypto.randomUUID(), channelId: channelId, content: content, timestamp: (new Date()).toISOString()};;
+    if (serverId) {
+        msg['serverId'] = serverId;
+        ws.send(JSON.stringify({code: 6, op: 5, data: msg}));
+    } else ws.send(JSON.stringify({code: 5, op: 0, data: msg}));
+
     element.value = "";
+    element.innerText = "";
 }
 
 
 function sendGif(element) {
     const authorID = getUidFromSid(localStorage.getItem('sessionid'));
     const username = JSON.parse(localStorage.getItem('user')).username;
-    const channelID = localStorage.getItem('currentChatID');
+    const channelId = localStorage.getItem('currentChatID');
     const msg = {
         author: {username: username, uid: authorID},
         id: crypto.randomUUID(),
-        channelID: channelID,
+        channelId: channelId,
         content: {
             url: element.src, // the PREVIEW url
             id: element.id

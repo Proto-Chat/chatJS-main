@@ -1,5 +1,5 @@
 function messageRecieved(response) {
-    if (response.op != 0 && response.data.channelID != localStorage.getItem('currentChatID')) return;
+    if (response.op != 0 && response.data.channelId != localStorage.getItem('currentChatID')) return;
 
     switch(response.op) {
         case 0: addMessage(response.data);
@@ -330,21 +330,21 @@ function addMessage(msg, author = null) {
     if (!document.getElementById(msg.author.uid)) {
         const dmLink = createDmLink(msg.author);
         const dmBar = document.getElementById('dms');
-        dmBar.insertBefore(dmLink, dmBar.childNodes[2]);
+        if (dmBar) dmBar.insertBefore(dmLink, dmBar.childNodes[2]);
     }
 
     const uid = JSON.parse(localStorage.getItem('user')).uid;
-    var other_id = msg.channelID.split('|').filter((o) => (o && o != uid)).join("|");
+    var other_id = msg.channelId.split('|').filter((o) => (o && o != uid)).join("|");
     
     //account for "not-to-self" dm
-    if (!other_id && msg.channelID.split('|').indexOf(uid) != -1) other_id = uid;
+    if (!other_id && msg.channelId.split('|').indexOf(uid) != -1) other_id = uid;
     
     const otherSplit = other_id.split("|");
     if (otherSplit[0] == otherSplit[1]) other_id = otherSplit[0];
     if (!other_id) return console.log(`ID "${msg.author.uid}" not found!`);
 
     //DM is not the current DM
-    if (msg.channelID != localStorage.getItem('currentChatID') || !document.hasFocus()) {
+    if (msg.channelId != localStorage.getItem('currentChatID') || !document.hasFocus()) {
         const dmToHighlight = document.getElementById(other_id);
         dmToHighlight.classList.add('unread');
 

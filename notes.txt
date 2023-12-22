@@ -44,6 +44,8 @@ codes (server --> client):
         2: create channel response
         3: edit channel response
         4: view channel
+        5: channel edited
+        6: channel deleted
 10 - pong
 
 
@@ -92,6 +94,9 @@ codes (client --> server):
         2: create channel
         3: edit channel
         4: get channel
+        5: send message
+        6: edit channel
+        7: delete channel
 
 10 - ping
 

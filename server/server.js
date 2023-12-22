@@ -18,7 +18,8 @@ import {
     processUConf,
     toggleDM,
     systemMsgAll,
-    validateGDM, getDMID
+    validateGDM, getDMID,
+    initCallSockets
 } from './imports.js';
 import { broadcastToSessions } from './database/newMessage.js';
 import { handleChatServer } from './chatServer.js';
@@ -45,40 +46,17 @@ app.use('/assets', express.static('../assets'));
 app.use('/CSS', express.static('../CSS'));
 app.use('/scripts', express.static('../scripts'));
 const wsInstance = expressWs(app);
-
-
-// TURN code
-const turnConfig = {
-    "listeningPort": 4000,
-    "relayIps": ["127.0.0.1"],
-    "useUdp": false,
-    "useTcp": true
-  }
   
-// Create and configure the STUN server
-import turn from 'node-turn';
 
-const turnServer = new turn({
-    authMech: 'none',
-    debugLevel: 'INFO',
-    listeningIps: ['0.0.0.0'],
-    turnConfig
-});
+//#region CALLING
 
-turnServer.on('listening', () => {
-    console.log('STUN server is running on port', turnServer.listeningPort);
-});
+// // stand-in for database?
+// const users = new Map();
+// const socketsToUsers = {};
 
+// const io = initCallSockets(server);
 
-turnServer.on('connection', async (connection) => {
-    console.log(connection);
-});
-
-turnServer.on('error', async (err) => {
-    console.log(err);
-});
-
-turnServer.start();
+//#endregion
 
 
 app.put('/msgImg', async (req, res) => {
