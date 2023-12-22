@@ -11,27 +11,6 @@ function createWSPath() {
     return echoSocketUrl;
 }
 
-// add the meta tags into the webpage
-// add the meta tags into the webpage
-function injectMetaTags() {
-    const htmlToAdd = `
-    <meta property="og:title" content="Proto-Chat" />
-    <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://chat.itamarorenn.com" />
-    <meta property="og:image" content="https://github.com/Proto-Chat/chatJS-main/blob/server/client/assets/favicon.png?raw=true" />
-    <meta property="og:description" content="The Discord clone that runs on RPI servers" />
-    <meta name="theme-color" content="#8f8bbf">
-    <meta name="twitter:card" content="summary_large_image">
-    `;
-
-    const fragment = document.createRange().createContextualFragment(htmlToAdd);
-    document.head.appendChild(fragment);
-}
-
-// Ensure the DOM is fully loaded before running the function
-document.addEventListener('DOMContentLoaded', injectMetaTags);
-
-
 
 function createPageMenu() {
     const e = document.createElement('div');

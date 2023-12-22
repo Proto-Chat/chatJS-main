@@ -19,7 +19,8 @@ import {
     toggleDM,
     systemMsgAll,
     validateGDM, getDMID,
-    initCallSockets
+    initCallSockets,
+    createMetaTags
 } from './imports.js';
 import { broadcastToSessions } from './database/newMessage.js';
 import { handleChatServer } from './chatServer.js';
@@ -202,7 +203,8 @@ app.get('/favicon.ico', (req, res) => {
 
 
 app.get('/', (req, res) => {
-    res.sendFile(`index.html`, {root: './client'});
+    createMetaTags.createBaseMeta(res);
+    // res.sendFile(`index.html`, {root: './client'});
 });
 
 app.get('/server/:sid', (req, res) => {
@@ -213,14 +215,15 @@ app.get('/server/:sid', (req, res) => {
 
 app.get('/server', async (req, res) => {
     res.sendStatus(404);
-})
+});
 
 app.get('/social', (req, res) => {
     res.sendFile(`social.html`, {root: './client'});
 });
 
 app.get('/join', (req, res) => {
-    res.sendFile(`join.html`, {root: './client'});
+    createMetaTags.createJoinMeta(res);
+    // res.sendFile(`join.html`, {root: './client'});
 });
 
 app.get('/call', (req, res) => {

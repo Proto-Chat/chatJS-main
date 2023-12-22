@@ -23,6 +23,7 @@ import { validateGDM, getDMID } from './groupDM.js';
 
 // call stuff
 import { initCallSockets } from './call.js'
+import * as createMetaTags from './createMetaTags.js';
 
 // import configImp from '../config.json' assert { type: 'json' };
 var configImp = null;
@@ -50,5 +51,6 @@ export {
     toggleDM,
     validateGDM, getDMID,
     systemMsgAll,
-    initCallSockets
+    initCallSockets,
+    createMetaTags
 }
