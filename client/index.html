@@ -156,10 +156,14 @@
         }, 1000);
         
 
-        window.onload = () => {
-            localStorage.removeItem('currentChatID');
-            connectSocket();
-        }
+        // window.onload = () => {
+        //     localStorage.removeItem('currentChatID');
+        //     connectSocket();
+        // }
+        
+        // because window.onload is FUCKED TO HELL
+        localStorage.removeItem('currentChatID');
+        connectSocket();
     </script>
 </head>
 <body>

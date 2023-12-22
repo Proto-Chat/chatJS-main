@@ -18,7 +18,8 @@ import {
     processUConf,
     toggleDM,
     systemMsgAll,
-    validateGDM, getDMID
+    validateGDM, getDMID,
+    createMetaTags
 } from './imports.js';
 import { broadcastToSessions } from './database/newMessage.js';
 
@@ -223,7 +224,8 @@ app.get('/favicon.ico', (req, res) => {
 
 
 app.get('/', (req, res) => {
-    res.sendFile(`index.html`, {root: './client'});
+    createMetaTags.createBaseMeta(res);
+    // res.sendFile(`index.html`, {root: './client'});
 });
 
 app.get('/server/:sid', (req, res) => {
@@ -231,14 +233,15 @@ app.get('/server/:sid', (req, res) => {
     if (!serverId) return res.sendStatus(404);
 
     return res.sendFile('server.html', {root: './client'});
-})
+});
 
 app.get('/social', (req, res) => {
     res.sendFile(`social.html`, {root: './client'});
 });
 
 app.get('/join', (req, res) => {
-    res.sendFile(`join.html`, {root: './client'});
+    createMetaTags.createJoinMeta(res);
+    // res.sendFile(`join.html`, {root: './client'});
 });
 
 app.get('/call', (req, res) => {
