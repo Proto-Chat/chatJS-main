@@ -20,20 +20,15 @@ function injectMetaTags() {
     <meta property="og:image" content="https://github.com/Proto-Chat/chatJS-main/blob/server/client/assets/favicon.png?raw=true" />
     <meta property="og:description" content="The Discord clone that runs on RPI servers" />
     <meta name="theme-color" content="#8f8bbf">
-    
-    <!-- make the og:image larger -->
     <meta name="twitter:card" content="summary_large_image">
-    `
+    `;
 
-    const div = document.createElement('div');
-    div.innerHTML = htmlToAdd;
-
-    // Append each meta tag to the document head
-    Array.from(div.children).forEach(tag => {
-        document.head.appendChild(tag);
-    });
+    const fragment = document.createRange().createContextualFragment(htmlToAdd);
+    document.head.appendChild(fragment);
 }
-injectMetaTags();
+
+// Ensure the DOM is fully loaded before running the function
+document.addEventListener('DOMContentLoaded', injectMetaTags);
 
 
 function createPageMenu() {
