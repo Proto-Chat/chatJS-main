@@ -48,6 +48,7 @@ const wsInstance = expressWs(app);
 
 
 // TURN code
+/*
 const turnConfig = {
     "listeningPort": 4000,
     "relayIps": ["127.0.0.1"],
@@ -79,6 +80,7 @@ turnServer.on('error', async (err) => {
 });
 
 turnServer.start();
+*/
 
 
 app.put('/msgImg', async (req, res) => {
