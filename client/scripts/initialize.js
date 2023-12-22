@@ -1,6 +1,6 @@
-var loc = window.location.href+'';
-if (loc.indexOf('http://') == 0 && loc.indexOf('localhost') == -1){
-    window.location.href = loc.replace('http://','https://');
+var loc = window.location.href + '';
+if (loc.indexOf('http://') == 0 && loc.indexOf('localhost') == -1) {
+    window.location.href = loc.replace('http://', 'https://');
 }
 
 function createWSPath() {
@@ -12,6 +12,7 @@ function createWSPath() {
 }
 
 // add the meta tags into the webpage
+// add the meta tags into the webpage
 function injectMetaTags() {
     const htmlToAdd = `
     <meta property="og:title" content="Proto-Chat" />
@@ -20,20 +21,16 @@ function injectMetaTags() {
     <meta property="og:image" content="https://github.com/Proto-Chat/chatJS-main/blob/server/client/assets/favicon.png?raw=true" />
     <meta property="og:description" content="The Discord clone that runs on RPI servers" />
     <meta name="theme-color" content="#8f8bbf">
-    
-    <!-- make the og:image larger -->
     <meta name="twitter:card" content="summary_large_image">
-    `
+    `;
 
-    const div = document.createElement('div');
-    div.innerHTML = htmlToAdd;
-
-    // Append each meta tag to the document head
-    Array.from(div.children).forEach(tag => {
-        document.head.appendChild(tag);
-    });
+    const fragment = document.createRange().createContextualFragment(htmlToAdd);
+    document.head.appendChild(fragment);
 }
-injectMetaTags();
+
+// Ensure the DOM is fully loaded before running the function
+document.addEventListener('DOMContentLoaded', injectMetaTags);
+
 
 
 function createPageMenu() {
@@ -69,7 +66,7 @@ function createPageMenu() {
     createDm.innerText = '+group DM';
     createDm.style.fontSize = '20px';
     e.appendChild(createDm);
-    
+
     const createServer = document.createElement('a');
     createServer.onclick = (e) => {
         if (document.getElementsByClassName('profileoutlinediv').length > 0) return console.log("div already open");
@@ -111,7 +108,7 @@ function initializeLayout(response, dmid) {
         delete profileConfigs._id;
         localStorage.setItem('profileConfigs', JSON.stringify(profileConfigs));
     }
-    
+
     setUpUser(response.data.user);
 
     //URL Params
@@ -126,7 +123,7 @@ function initializeLayout(response, dmid) {
                 if (document.getElementById(`dmpfp-${dmid}`)) {
                     clearInterval(waitloop);
                     if (dmid) requestDM(dmid);
-                    
+
                     sessionStorage.removeItem('waitforDM');
                     clearInterval(loadingAnimInterval);
                     document.getElementById('loadingdiv').style.display = 'none';
@@ -165,7 +162,7 @@ function setUpUser(user) {
     // settingsTrigger.innerText = '⚙';
     settingsTrigger.appendChild(createPFPDivIcon('https://clipground.com/images/settings-icon-png-white-3.png'));
     settingsTrigger.className = 'settingsTrigger';
-    
+
     const logoutTrigger = document.createElement('p');
     // logoutTrigger.innerText = '🛑';
     const lico = createPFPDivIcon('https://github.com/ION606/chatJS/blob/main/client/assets/exit.png?raw=true');
@@ -183,7 +180,7 @@ function setUpUser(user) {
 
     profileConfigs.username = JSON.parse(localStorage.getItem('user')).username;
     const localConfigs = JSON.parse(localStorage.getItem('profileConfigs'));
-    
+
     profileConfigs.description = localConfigs?.description || "";
     profileConfigs.status = localConfigs?.status || "";
     profileConfigs.icon = localConfigs?.icon || "";
@@ -217,10 +214,10 @@ function setupDM(response) {
     // highlight the current one and make all others not active
     var currentlyActive = document.getElementsByClassName('activechat')[0];
     if (currentlyActive) currentlyActive.classList.remove('activechat');
-    
+
     currentlyActive = document.getElementById(data.other.uid);
     currentlyActive.classList.add('activechat');
-    
+
     localStorage.setItem('currentChatID', data.chatID);
 
     if (currentlyActive.classList.contains('unread')) {
@@ -249,7 +246,7 @@ function setupDM(response) {
     for (const msg of data.messages) {
         const msgElement = createNewMessage(msg);
         messages.appendChild(msgElement);
-        
+
         if (msgElement.lastChild.lastChild && msgElement.lastChild.lastChild.tagName == 'VIDEO') {
             lastVideo = msgElement.lastChild.lastChild;
 
@@ -270,7 +267,7 @@ function setupDM(response) {
             let isKeyDown = (type == 'keydown');
             keys[which] = isKeyDown;
 
-            if(isKeyDown && keys[13]) {
+            if (isKeyDown && keys[13]) {
                 if (!keys[16]) {
                     send();
                 }
@@ -280,7 +277,7 @@ function setupDM(response) {
             }
             else {
                 e.target.style.height = "1px";
-                e.target.style.height = (e.target.scrollHeight)+"px";
+                e.target.style.height = (e.target.scrollHeight) + "px";
                 messages.scrollTop = messages.scrollHeight - messages.clientHeight;
             }
         }
@@ -295,7 +292,7 @@ function setupDM(response) {
                 handlePastedImage(file);
             }
         });
-        
+
         inpelement.onfocus = () => {
             inpelement.style.border = "none";
         }
@@ -330,7 +327,7 @@ function setupDM(response) {
         upload.type = 'file';
         upload.id = 'fileuploadinp';
         upload.accept = 'image/*';
-        upload.addEventListener('change',  (e) => {
+        upload.addEventListener('change', (e) => {
             if (e.target.files.length == 0) return;
             for (const file of e.target.files) {
                 handlePastedImage(file);
@@ -345,7 +342,7 @@ function setupDM(response) {
             e.preventDefault();
             document.getElementById('fileuploadinp').click();
         }
-        
+
         const inpdiv = document.createElement('form');
         inpdiv.className = 'msginp';
         inpdiv.appendChild(upload);
