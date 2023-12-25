@@ -187,8 +187,13 @@ function setUpUser(user) {
 }
 
 
-function setupDM(response) {
+async function setupDM(response) {
     const data = response.data;
+
+    // encryption stuff
+    const symmEncKey = data.symmKeyEnc;
+    const r = await writeKeyToIDB(symmEncKey, true);
+    if (!r) return alert("DM Encryption Error!");
 
     // highlight the current one and make all others not active
     var currentlyActive = document.getElementsByClassName('activechat')[0];
@@ -220,10 +225,21 @@ function setupDM(response) {
     const messages = document.createElement('div');
     messages.id = 'messages';
 
+
+    // decryption
+    const symmKeyEnc = await getSymmKey();
+
+    const decHelper = async(msg) => {
+        if (msg.content['filename']) return msg;
+        const msgContent = await decryptMsg(symmKeyEnc, msg.content);
+        msg.content = msgContent;
+        return msg;
+    }
+
     let lastVideo;
     var counter = 0;
     for (const msg of data.messages) {
-        const msgElement = createNewMessage(msg);
+        const msgElement = createNewMessage(await decHelper(msg));
         messages.appendChild(msgElement);
 
         if (msgElement.lastChild.lastChild && msgElement.lastChild.lastChild.tagName == 'VIDEO') {

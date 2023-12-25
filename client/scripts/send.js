@@ -1,4 +1,4 @@
-function send(serverId = undefined) {
+async function send(serverId = undefined) {
     const element = document.getElementById('textinp');
     const content = element.value.trim();
     if (!content) {
@@ -15,9 +15,13 @@ function send(serverId = undefined) {
     }
 
     const username = JSON.parse(localStorage.getItem('user')).username;
-
     const channelId = localStorage.getItem('currentChatID');
-    var msg = {author: {username: username, uid: authorID}, id: crypto.randomUUID(), channelId: channelId, content: content, timestamp: (new Date()).toISOString()};;
+
+    // encrypt the data
+    const encContent = (serverId) ? content : await encryptMsg(await getSymmKey(), content);
+
+    var msg = {author: {username: username, uid: authorID}, id: crypto.randomUUID(), channelId: channelId, content: encContent, timestamp: (new Date()).toISOString()};
+
     if (serverId) {
         msg['serverId'] = serverId;
         ws.send(JSON.stringify({code: 6, op: 5, data: msg}));

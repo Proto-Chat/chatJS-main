@@ -46,6 +46,11 @@ codes (server --> client):
         4: view channel
         5: channel edited
         6: channel deleted
+
+7 - encryption
+    op:
+        0: create new keys
+
 10 - pong
 
 
@@ -97,6 +102,10 @@ codes (client --> server):
         5: send message
         6: edit channel
         7: delete channel
+
+7 - security
+    op:
+        0: new keys created
 
 10 - ping
 

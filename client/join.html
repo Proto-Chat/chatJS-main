@@ -7,12 +7,14 @@
     <title>proto-chat</title>
     <link rel="stylesheet" type="text/css" href="/CSS/login.css">
     <script src="/scripts/initialize.js"></script>
+    <script src="/scripts/encryption.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/idb@8/build/umd.js"></script>
 
     <script>
         const ws = new WebSocket(createWSPath());
         setInterval(() => { ws.send(JSON.stringify({code: 10})); }, 30000);
 
-        window.onload = () => {
+        function fakeWindowOnload() {
             ws.addEventListener('error', (err) => {
                 alert('Uh oh!\nAn error occured!');
                 window.location.href = '/';
@@ -24,7 +26,9 @@
 
             ws.addEventListener('message', (message) => {
                 const data = JSON.parse(message.data);
-                if (data.code != 0) return;
+
+                if (data.code == 7) createAndStoreKey(data);
+                else if (data.code != 0) return; // note this deals with the CODE
                 else if (data.op == 1) recieveCode(data);
                 else if (data.op == 2) recieveCodeResponse(data);
             });
@@ -46,9 +50,7 @@
                 }
             }));
         }
-    </script>
-
-    <script>
+     
         function recieveCode(data) {
             if (data.type == 1) return alert('email already exists!');
             if (data.type == 2) return alert('username already exists!');
@@ -76,8 +78,15 @@
         function recieveCodeResponse(data) {
             if (data.type == 1) return alert('incorrect code!');
             else if (data.type == 2) return alert('code expired!\nplease refresh the page and try again!');
-            window.location.href = '';
+            
+            // create encryption
+            console.log(data);
+
+            window.location.href = '/';
         }
+
+
+        fakeWindowOnload();
     </script>
 </head>
 <body class="unselectable">

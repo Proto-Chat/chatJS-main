@@ -46,7 +46,7 @@
         }
 
 
-        window.onload = () => {
+        function socialWindowOnload() {
             divs.friends = document.getElementById('friends');
             divs.connect = document.getElementById('connect');
             divs.accept = document.getElementById('accept');
@@ -101,6 +101,9 @@
                 }
             });
         }
+
+        setTimeout(socialWindowOnload, 1000);
+        // socialWindowOnload();
     </script>
 </head>
 <body class="unselectable">

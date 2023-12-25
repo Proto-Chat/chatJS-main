@@ -49,9 +49,15 @@ function deleteMsg(msgid) {
 }
 
 
-function edit(data) {
+async function edit(data) {
     const element = document.getElementById(data.msgid);
     if (!element.tagName == 'INPUT') return;
+
+    // encryption
+    const symmKeyEnc = await getSymmKey();
+
+    const msgContent = await decryptMsg(symmKeyEnc, data.content);
+    data.content = msgContent;
 
     const newMessageContainer = createNewMessage(data);
     const newMessage = newMessageContainer.children.item(2);
@@ -157,7 +163,7 @@ async function createContextMenu(e, editable = true) {
             
             const oldMsg = target;
             var keys = {};
-            newinpdiv.onkeydown = (e) => {
+            newinpdiv.onkeydown = async (e) => {
                 const switchBackFromInp = () => {
                     if (newinpdiv.nextSibling.nodeName == "BR") newinpdiv.nextSibling.remove();
 
@@ -175,11 +181,14 @@ async function createContextMenu(e, editable = true) {
                 if(isKeyDown && keys[13] && !keys[16]) {
                     if (newinpdiv.value == oldMsg.innerText) return switchBackFromInp();
     
+                    const symmEncKey = await getSymmKey();
+                    if (!symmEncKey) return alert("ENCRYPTION ERROR!");
+
                     ws.send(JSON.stringify({
                         code: 5,
                         op: 2,
                         data: {
-                            content: newinpdiv.value,
+                            content: await encryptMsg(symmEncKey, newinpdiv.value),
                             user: JSON.parse(userRaw),
                             chatid: localStorage.getItem('currentChatID'),
                             msgid: target.id
@@ -321,10 +330,20 @@ function createNewMessage(msg) {
 }
 
 
-function addMessage(msg, author = null) {
+async function addMessage(msg, author = null) {
     //Check if the message already exists (deals with "note-to-self")
     if (document.getElementById(msg.id)) return;
     const element = document.getElementById('messages');
+
+    // encryption
+    console.log(msg.content);
+    if (!msg.content['filename']) {
+        const symmKeyEnc = await getSymmKey();
+
+        const msgContent = await decryptMsg(symmKeyEnc, msg.content);
+        msg.content = msgContent;
+    }
+
 
     //DM is not open
     if (!document.getElementById(msg.author.uid)) {

@@ -1,11 +1,16 @@
 import { getUidFromSid, wasabiManager } from "../imports.js";
 import { randomUUID } from 'crypto';
 
-export async function broadcastToSessions(client, connectionMap, others, toSend) {
+export async function broadcastToSessions(client, connectionMap, others, toSend, encDoc) {
     try {
         for (const k of others) {
             const dbo = client.db(k).collection('sessions');
             const docs = await dbo.find().toArray();
+
+            if (encDoc) {
+                const symmEncKeyEnc = encDoc[k];
+                toSend['data']['encSymmKey'] = symmEncKeyEnc;
+            }
 
             for (const doc of docs) {
                 if (connectionMap.has(doc.sid)) {
@@ -53,7 +58,10 @@ export async function newMessage(mongoconnection, connectionMap, data, isSystemM
         dmsdbo.insertOne(data);
         data.channelId = channelId;
 
-        return await broadcastToSessions(client, connectionMap, others, { type: 0, code: 5, op: 0, data: data });
+        const encDoc = await dmsdbo.findOne({_id: 'configs'});
+        if (!encDoc) return ws.send({type: 1, code: 404, msg: "ENCRYPTION ERROR, KEY NOT FOUND!"});
+
+        return await broadcastToSessions(client, connectionMap, others, { type: 0, code: 5, op: 0, data: data }, encDoc.keyObj);
     }
     catch(err) {
         console.error(err);
@@ -109,6 +117,9 @@ async function editMessage(mongoconnection, connectionMap, data) {
 
     mbo.updateOne({id: data.msgid}, {$set: {content: data.content}});
 
+    const encDoc = await mbo.findOne({_id: 'configs'});
+    if (!encDoc) return ws.send({type: 1, code: 404, msg: "ENCRYPTION ERROR, KEY NOT FOUND!"});
+
     broadcastToSessions(client, connectionMap, others, {
         type: 0,
         code: 5,
@@ -118,8 +129,8 @@ async function editMessage(mongoconnection, connectionMap, data) {
             msgid: data.msgid,
             content: data.content,
             author: data.user
-        }
-    });
+        },
+    }, encDoc.keyObj);
 }
 
 

@@ -1,0 +1,28 @@
+encryption procedures:
+
+1. creation
+	a. when creating an account, the user generates a public and private key
+	b. a new encryption key is derived from the user's password
+	b2. the salt is stored in plaintext in the DB
+	c. the private key is then encrypted using the this new key and stored in the DB/locally
+	d. create a key to encrypt all messages (we'll call it encKey)
+	e. encrypt encKey using user A's public key and add it to obj
+	f. encrypt encKey using user B's public key and add it to obj
+	g. save both to DB
+
+TODO: ENCRYPT THE PASSWORD
+?. the password is encrypted SOMEHOW and stored in the DB
+	
+	?. the public key is stored in the DB unencrypted
+
+
+CURRENTLY AT "TRY TO ENCRYPT MESSAGES"
+
+2. access
+	info: if the private key is not in the browser, the user must log out
+	a. when logging in, the user's public key will be used to unencrypt their password to check
+	b. the user will then be sent the private key, which has been encrypted using their password
+	c. this will be stored in the browser's IndexDB
+	d. when sending a message IN A DM, the user will encrypt it with their private key
+	e. when a message is sent, the server will attatch the sender's public key
+	f. when a message is recieved, the recipient will unencrypt it using the attached public key

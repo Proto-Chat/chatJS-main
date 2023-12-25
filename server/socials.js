@@ -3,6 +3,7 @@ import { broadcastToSessions } from "./database/newMessage.js";
 import { getCurrentUsername } from "./initializations.js";
 import { getUidFromSid } from "./utils/decodesid.js";
 import { changeGCID, createGroupDM, leaveGroupDM } from "./groupDM.js";
+import { generateSymmKeyset } from "./utils/encryption.js";
 
 
 async function getSocials(ws, mongoconnection, data, getAll = true) {
@@ -142,10 +143,16 @@ async function acceptFIR(ws, mongoconnection, response, connectionMap) {
         // const collectionNames = await client.db('dms').listCollections().toArray();
         // const collectionExists = collectionNames.some((col) => col.name == dmkey);
         
+        // encryption
+        const requestorPubKey = JSON.parse((await client.db(requestorUobj.uid).collection('configs').findOne({_id: 'encryption'})).keyPub);
+        const acceptorPubKey = JSON.parse((await client.db(acceptorObj.uid).collection('configs').findOne({_id: 'encryption'})).keyPub);
+        const keyObj = generateSymmKeyset({uid: requestorUobj.uid, keyPub: requestorPubKey}, {uid: acceptorObj.uid, keyPub: acceptorPubKey});
+
         client.db('dms').collection(dmid).insertOne({
             _id: 'configs',
             users: dmkey,
-            isSystem: false
+            isSystem: false,
+            keyObj: keyObj
         });
 
         //Add that dm to the acceptor

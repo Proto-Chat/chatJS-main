@@ -20,6 +20,7 @@
     "express": "^4.18.2",
     "express-ws": "^5.0.2",
     "form-data-extended": "^0.0.10",
+    "jwk-to-pem": "^2.0.5",
     "mongodb": "^5.2.0",
     "node-turn": "^0.0.6",
     "nodemailer": "^6.9.2",

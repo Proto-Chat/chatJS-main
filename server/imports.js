@@ -15,7 +15,7 @@ import cors from 'cors';
 import { getConnection, validateSession } from './database/getConnection.js';
 import { getPFP, uploadPFP } from './database/media/upload.js';
 import bodyParser from 'body-parser';
-import { createUConf, processUConf } from './database/uConf.js';
+import { createUConf, processUConf, recieveKeysInit } from './database/uConf.js';
 import enableWs from 'express-ws';
 import { toggleDM } from './database/logout.js';
 import { systemMsgAll } from './admin/systemmsgall.js';
@@ -52,5 +52,6 @@ export {
     validateGDM, getDMID,
     systemMsgAll,
     initCallSockets,
-    createMetaTags
+    createMetaTags,
+    recieveKeysInit
 }

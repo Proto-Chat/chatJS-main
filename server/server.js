@@ -20,7 +20,8 @@ import {
     systemMsgAll,
     validateGDM, getDMID,
     initCallSockets,
-    createMetaTags
+    createMetaTags,
+    recieveKeysInit
 } from './imports.js';
 import { broadcastToSessions } from './database/newMessage.js';
 import { handleChatServer } from './chatServer.js';
@@ -359,6 +360,11 @@ app.ws('/websocket', async (ws, req) => {
 
                 case 6:
                     handleChatServer(ws, webSocketClients, mongoconnection, data);
+                    break;
+
+                case 7:
+                    if (data.op == 0) recieveKeysInit(mongoconnection, ws, data);
+                    else console.log(`unknown op for code 7 (op == ${data.op})`);
                     break;
 
                 case 10:

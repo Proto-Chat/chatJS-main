@@ -28,7 +28,7 @@ export function createBaseMeta(res) {
 
 
 export function createJoinMeta(res) {
-	fs.readFile('./client/index.html', 'utf8', (err, html) => {
+	fs.readFile('./client/join.html', 'utf8', (err, html) => {
 		if (err) {
 			console.error(err);
 			return res.status(500).send('Error reading the file');
