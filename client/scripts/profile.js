@@ -119,7 +119,10 @@ function handleEnter(e, oldmsg) {
 const pfpCloseFnct = () => {
     const outlineDiv = document.getElementsByClassName('profileoutlinediv')[0];
     const udivCorner = document.getElementsByClassName('userprofile')[0];
-    if (!outlineDiv.matches(":hover") && !udivCorner.matches(":hover")) {
+    if (!udivCorner) {
+        closeUserPopup(outlineDiv);
+    }
+    else if (!outlineDiv.matches(":hover") && !udivCorner.matches(":hover")) {
         // window.location.reload();
         closeUserPopup(outlineDiv, udivCorner);
         const uClickable = document.getElementsByClassName('userprofile')[0];
@@ -325,9 +328,13 @@ async function createProfilePopup(udata) {
 
     if (maincontent) maincontent.style.color = "rgba(0,0,0)";
     if (msgs) msgs.style.color = "rgba(0,0,0)";
-    udivCorner.style.width = (udivCorner.offsetWidth - 1) + 'px'
-    udivCorner.style.borderRight = "solid";
-    udivCorner.style.borderWidth = "1px";
+
+    if (udivCorner) {
+        udivCorner.style.width = (udivCorner.offsetWidth - 1) + 'px'
+        udivCorner.style.borderRight = "solid";
+        udivCorner.style.borderWidth = "1px";
+    }
+
 }
 
 

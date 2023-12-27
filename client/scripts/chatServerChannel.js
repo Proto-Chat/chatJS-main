@@ -179,8 +179,13 @@ function setUpChannel(response) {
 
     if (!response.channelconfs || !response.messages) return alert("ERROR!");
     const channelConfigs = response.channelconfs.find(o => o._id == 'channelConfigs');
-    const inChannel = response.channelconfs.find(o => o._id == 'inChannel');
+
+    // global
+    inChannel = response.channelconfs.find(o => o._id == 'inChannel').users;
     const data = response.messages;
+
+    // hide the "welcome" stuff
+    document.getElementById('serverInfoContainer').style.display = 'none';
 
     // highlight the current one and make all others not active
     var currentlyActive = document.getElementsByClassName('activechat')[0];

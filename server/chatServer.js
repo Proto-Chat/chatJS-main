@@ -181,8 +181,8 @@ async function handleMessage(ws, connectionMap, mongoconnection, data) {
 // TODO check permissions
 
         // delete data[id];  // idk why I did this
-// const conf = await dbo.insertOne(data);
-// if (!conf) return ws.send(JSON.stringify({msgId: data.id || null, code: 500, type: 1}));
+        const conf = await dbo.insertOne(data);
+        if (!conf) return ws.send(JSON.stringify({msgId: data.id || null, code: 500, type: 1}));
        
         // send to everyone in the channel (server notifs are not a thing at the moment)
         const inChannel = await dbo.findOne({_id: 'inChannel'});

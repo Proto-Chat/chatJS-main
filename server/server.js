@@ -204,7 +204,24 @@ app.get('/msgImg', async (req, res) => {
         console.error(err);
         res.sendStatus(500);
     }
-}); 
+});
+
+// for convenience
+app.get('/getUser', async (req, res) => {
+    try {
+        const { uid } = req.headers;
+        if (!uid) return res.sendStatus(404);
+
+        const uConf = await client.db(uid).collection('configs').findOne({_id: 'myprofile'});
+        if (!uConf) return res.sendStatus(404);
+
+        delete uConf['_id'];
+        return res.send(JSON.stringify(uConf));
+    }
+    catch (err) {
+        res.sendStatus(500);
+    }
+});
 
 /* THIS WILL BREAK THE WS SERVER
 app.get('/*', async (req, res) => {   

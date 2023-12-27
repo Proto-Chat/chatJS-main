@@ -1,15 +1,15 @@
 function messageRecieved(response) {
     if (response.op != 0 && response.data.channelId != localStorage.getItem('currentChatID')) return;
 
-    switch(response.op) {
+    switch (response.op) {
         case 0: addMessage(response.data);
-        break;
+            break;
 
         case 1: deleteMsg(response.data.msgid)
-        break;
+            break;
 
         case 2: edit(response.data);
-        break;
+            break;
 
         default: //do nothing
     }
@@ -18,7 +18,7 @@ function messageRecieved(response) {
 
 function showNotif(username, content, reason = "msg") {
     if ('Notification' in window) {
-    // Request permission to show notifications
+        // Request permission to show notifications
         Notification.requestPermission().then(function (permission) {
             if (permission === 'granted') {
                 var notifContent = content;
@@ -157,10 +157,10 @@ async function createContextMenu(e, editable = true) {
             const newinpdiv = document.createElement('textarea');
             newinpdiv.className = 'editingdiv';
             newinpdiv.value = currentString;
-    
+
             //Set initial height
-            newinpdiv.style.height = (newinpdiv.rows * 25)+"px";
-            
+            newinpdiv.style.height = (newinpdiv.rows * 25) + "px";
+
             const oldMsg = target;
             var keys = {};
             newinpdiv.onkeydown = async (e) => {
@@ -173,14 +173,14 @@ async function createContextMenu(e, editable = true) {
                     }
                     newinpdiv.replaceWith(oldMsg);
                 }
-    
+
                 let { which, type } = e || Event; // to deal with IE
                 let isKeyDown = (type == 'keydown');
                 keys[which] = isKeyDown;
-        
-                if(isKeyDown && keys[13] && !keys[16]) {
+
+                if (isKeyDown && keys[13] && !keys[16]) {
                     if (newinpdiv.value == oldMsg.innerText) return switchBackFromInp();
-    
+
                     const symmEncKey = await getSymmKey();
                     if (!symmEncKey) return alert("ENCRYPTION ERROR!");
 
@@ -198,16 +198,16 @@ async function createContextMenu(e, editable = true) {
                     switchBackFromInp();
                 }
             }
-    
+
             newinpdiv.onkeyup = (e) => {
                 let { which, type } = e || Event; // to deal with IE
                 let isKeyDown = (type == 'keydown');
                 keys[which] = isKeyDown;
-    
+
                 e.target.style.height = "1px";
-                e.target.style.height = (e.target.scrollHeight)+"px";
+                e.target.style.height = (e.target.scrollHeight) + "px";
             }
-    
+
             newinpdiv.id = String(target.id);
             target.replaceWith(newinpdiv, document.createElement('br'));
         }
@@ -229,7 +229,8 @@ async function createContextMenu(e, editable = true) {
         const openImgLink = document.createElement('a');
         openImgLink.innerText = "open image";
         openImgLink.onclick = () => {
-            window.open(e.target.src,'Image','resizable=1');}
+            window.open(e.target.src, 'Image', 'resizable=1');
+        }
         dropdown.appendChild(openImgLink);
     }
 
@@ -239,7 +240,7 @@ async function createContextMenu(e, editable = true) {
         if (e2.target == dropdown) return;
         dropdown.remove();
     });
-    
+
     dropdown.offsetLeft = e.offsetLeft;
     dropdown.offsetTop = e.offsetTop;
 
@@ -267,17 +268,40 @@ function createNewMessage(msg) {
         if (document.getElementsByClassName('msgdropdown').length != 0) {
             document.getElementsByClassName('msgdropdown')[0].remove();
         }
-        
+
         e.preventDefault();
         createContextMenu(e);
     });
+
 
     const userDisplay = document.createElement('a');
     userDisplay.innerText = `${msg.author.username}`;
     userDisplay.className = 'msgauthor';
     userDisplay.id = msg.author.uid;
-    userDisplay.onclick = (e) => {
+    userDisplay.onclick = async (e) => {
         const uconfigs = JSON.parse(localStorage.getItem('user'));
+
+        if (msg.serverId) {
+            if (inChannel) {
+                const user = inChannel.find(m => (m.uid == e.target.id));
+                const img = await getFriendPFP(user.uid);
+                const uProfResponse = await getUProf(user.uid);
+                if (uProfResponse == 'Not Found') return alert("User Not Found!");
+                const uProf = JSON.parse(uProfResponse);
+                console.log(uProf);
+
+                createProfilePopup({
+                    icourl: img.src,
+                    editing: false,
+                    username: uProf.username,
+                    status: uProf.status,
+                    description: uProf.description,
+                    icon: true,
+                    me: false
+                });
+            }
+            return;
+        }
 
         if (e.target.id == uconfigs.uid) {
             const uelement = document.getElementsByClassName('userprofile')[0];
@@ -298,7 +322,7 @@ function createNewMessage(msg) {
     container.className = 'messageContainer';
     container.appendChild(userDisplay);
     container.appendChild(document.createElement('br'));
-    
+
     if (msg.content.url && isValidUrl(msg.content.url) && msg.content.url.indexOf('media.tenor.com') != -1) {
         msgContentContainer.appendChild(createGIF(msg.content));
         msgContentContainer.style.height = '200px';
@@ -308,7 +332,7 @@ function createNewMessage(msg) {
         var req = new XMLHttpRequest();
         req.open('GET', `${window.location.origin}/msgImg?fname=${msg.content.filename}`, true);
         req.responseType = 'arraybuffer';
-    
+
         req.onloadend = () => {
             const fileBuf = req.response;
             if (!fileBuf) return;
@@ -316,7 +340,7 @@ function createNewMessage(msg) {
             msgContentContainer.appendChild(createImage(fileBuf));
             msgContentContainer.style.height = '200px';
         }
-    
+
         req.setRequestHeader('sessionid', localStorage.getItem('sessionid'));
         req.setRequestHeader('channelid', localStorage.getItem('currentChatID'));
         req.setRequestHeader('username', JSON.parse(localStorage.getItem('user')).username);
@@ -325,7 +349,7 @@ function createNewMessage(msg) {
     else msgContentContainer.innerText = `${msg.content}`;
 
     container.appendChild(msgContentContainer);
-    
+
     return container;
 }
 
@@ -336,8 +360,7 @@ async function addMessage(msg, author = null) {
     const element = document.getElementById('messages');
 
     // encryption
-    console.log(msg.content);
-    if (!msg.content['filename']) {
+    if (!msg.content['filename'] && !msg.serverId) {
         const symmKeyEnc = await getSymmKey();
 
         const msgContent = await decryptMsg(symmKeyEnc, msg.content);
@@ -347,17 +370,17 @@ async function addMessage(msg, author = null) {
 
     //DM is not open
     if (!document.getElementById(msg.author.uid)) {
-        const dmLink = createDmLink(msg.author);
+        const dmLink = await createDmLink(msg.author);
         const dmBar = document.getElementById('dms');
         if (dmBar) dmBar.insertBefore(dmLink, dmBar.childNodes[2]);
     }
 
     const uid = JSON.parse(localStorage.getItem('user')).uid;
     var other_id = msg.channelId.split('|').filter((o) => (o && o != uid)).join("|");
-    
+
     //account for "not-to-self" dm
     if (!other_id && msg.channelId.split('|').indexOf(uid) != -1) other_id = uid;
-    
+
     const otherSplit = other_id.split("|");
     if (otherSplit[0] == otherSplit[1]) other_id = otherSplit[0];
     if (!other_id) return console.log(`ID "${msg.author.uid}" not found!`);
@@ -387,7 +410,7 @@ async function addMessage(msg, author = null) {
     //If the user is not on top, say smth
 
     //FIXME it snaps down anyways, maybe make it so that it only does that for the person sending the message
-    
+
     // console.log(element.scrollHeight - element.scrollTop);
     // if (element.scrollHeight - element.scrollTop) console.log('new message recieved in this DM!');
 
@@ -401,7 +424,7 @@ async function addMessage(msg, author = null) {
     } else {
         element.scrollTop = element.scrollHeight + newMsg.style.height;
     }
-    
+
 }
 
 
@@ -435,7 +458,7 @@ function openDM(id) {
 }
 
 
-function createDmLink(dmRaw) {
+async function createDmLink(dmRaw) {
     const a = document.createElement('a');
     a.innerText = dmRaw.username;
     a.id = dmRaw.uid;
@@ -459,24 +482,7 @@ function createDmLink(dmRaw) {
     a.classList.add('unselectable');
 
     //Get the PFP
-    var req = new XMLHttpRequest();
-    req.open('GET', `${window.location.origin}/getpfp`, true);
-
-    req.responseType = 'arraybuffer';
-
-    req.onloadend = () => {
-        const blob = new Blob([req.response]);
-        const img = document.createElement('img');
-        img.src = (blob.size > 0) ? URL.createObjectURL(blob) : 'https://github.com/ION606/chatJS/blob/main/client/assets/nopfp.jpg?raw=true';
-        img.className = 'pfpsmall';
-        img.id = `dmpfp-${dmRaw.uid}`;
-
-        a.prepend(img);
-    }
-    
-    req.setRequestHeader('sessionid', localStorage.getItem('sessionid'));
-    req.setRequestHeader('otherid', dmRaw.uid);
-    req.send();
+    a.prepend(await getFriendPFP(dmRaw.uid));
 
     if (dmRaw.unread) a.classList.add('unread');
 
@@ -487,6 +493,45 @@ function createDmLink(dmRaw) {
     return a;
 }
 
+
+function getUProf(uid) {
+    return new Promise((resolve, reject) => {
+        var req = new XMLHttpRequest();
+        req.open('GET', `${window.location.origin}/getUser`, true);
+
+        req.onloadend = () => {
+            resolve(req.response);
+        };
+
+        req.setRequestHeader('uid', uid);
+        req.setRequestHeader('otherid', uid);
+        req.send();
+    });
+}
+
+
+function getFriendPFP(uid) {
+    return new Promise((resolve, reject) => {
+        var req = new XMLHttpRequest();
+        req.open('GET', `${window.location.origin}/getpfp`, true);
+
+        req.responseType = 'arraybuffer';
+
+        req.onloadend = () => {
+            const blob = new Blob([req.response]);
+            const img = document.createElement('img');
+            img.src = (blob.size > 0) ? URL.createObjectURL(blob) : 'https://github.com/ION606/chatJS/blob/main/client/assets/nopfp.jpg?raw=true';
+            img.className = 'pfpsmall';
+            img.id = `dmpfp-${uid}`;
+
+            resolve(img);;
+        };
+
+        req.setRequestHeader('sessionid', localStorage.getItem('sessionid'));
+        req.setRequestHeader('otherid', uid);
+        req.send();
+    });
+}
 
 /**
  * @param {File} file 
@@ -500,9 +545,9 @@ async function handlePastedImage(file) {
     req.onloadend = () => {
         if (req.response != "OK") alert("request failed!");
     }
-    
+
     var fname = file.name.split(".");
-    if (fname.length === 1 || ( fname[0] === "" && fname.length === 2 ) ) {
+    if (fname.length === 1 || (fname[0] === "" && fname.length === 2)) {
         return alert("please provide a valid file!");
     }
 

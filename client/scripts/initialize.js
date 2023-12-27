@@ -63,7 +63,7 @@ function createPageMenu() {
 }
 
 
-function initializeLayout(response, dmid) {
+async function initializeLayout(response, dmid) {
     const data = response.data;
     const element = document.getElementById('dms');
     for (const k of element.childNodes) { k.remove(); }
@@ -73,10 +73,10 @@ function initializeLayout(response, dmid) {
     element.appendChild(createPageMenu());
 
     const dmSYS = data.dms.find((dm) => dm.uid == '0');
-    element.appendChild(createDmLink(dmSYS));
+    element.appendChild(await createDmLink(dmSYS));
 
     for (const dmRaw of data.dms) {
-        const a = createDmLink(dmRaw);
+        const a = await createDmLink(dmRaw);
 
         if (dmRaw.uid != "0") element.appendChild(a);
     }
