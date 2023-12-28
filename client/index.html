@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -7,7 +8,8 @@
     <link rel="stylesheet" type="text/css" href="/CSS/index.css">
     <link rel="stylesheet" type="text/css" href="/CSS/gif.css">
     <link rel="stylesheet" type="text/css" href="/CSS/profile.css">
-    <script src="/scripts/messages.js"></script>    
+    <link rel="stylesheet" type="text/css" href="/CSS/utils.css">
+    <script src="/scripts/messages.js"></script>
     <script src="/scripts/send.js"></script>
     <script src="/scripts/initialize.js"></script>
     <script src="/scripts/login.js"></script>
@@ -17,19 +19,24 @@
     <script src="/scripts/playNotification.js"></script>
     <script src="/scripts/groupDM.js"></script>
     <script src="/scripts/chatServer.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css" integrity="sha512-+4zCK9k+qNFUR5X+cKL9EIR+ZOhtIloNl9GIKS57V1MyNsYpYcUrUeQc9vNfzsWfV28IaLL3i96P9sdNyeRssA==" crossorigin="anonymous" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css"
+        integrity="sha512-+4zCK9k+qNFUR5X+cKL9EIR+ZOhtIloNl9GIKS57V1MyNsYpYcUrUeQc9vNfzsWfV28IaLL3i96P9sdNyeRssA=="
+        crossorigin="anonymous" />
     <script src="https://kit.fontawesome.com/728e740903.js" crossorigin="anonymous"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/js/all.min.js" integrity="sha512-F5QTlBqZlvuBEs9LQPqc1iZv2UMxcVXezbHzomzS6Df4MZMClge/8+gXrKw2fl5ysdk4rWjR0vKS7NNkfymaBQ==" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/js/all.min.js"
+        integrity="sha512-F5QTlBqZlvuBEs9LQPqc1iZv2UMxcVXezbHzomzS6Df4MZMClge/8+gXrKw2fl5ysdk4rWjR0vKS7NNkfymaBQ=="
+        crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/idb@8/build/umd.js"></script>
     <script src="/scripts/encryption.js"></script>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:400,400i,500,500i,700,700i&display=swap">
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css?family=Roboto:400,400i,500,500i,700,700i&display=swap">
     <title>proto-chat</title>
-    
+
     <script>
         const getUidFromSid = (sid) => atob(sid.split("?")[1], 'base64');
-        
+
         function requestDM(uid) {
-            ws.send(JSON.stringify({sid: localStorage.getItem('sessionid'), code: 3, op: 0, uid: uid}));
+            ws.send(JSON.stringify({ sid: localStorage.getItem('sessionid'), code: 3, op: 0, uid: uid }));
         }
     </script>
 
@@ -78,27 +85,27 @@
                         }
                         else if (response.op == 404) {
                             const el = document.getElementsByClassName('uinp')[0];
-                            el.style.borderColor = 'red'; 
-                            el.style.borderStyle = 'solid'; 
+                            el.style.borderColor = 'red';
+                            el.style.borderStyle = 'solid';
                         }
                         else if (response.op == 401) {
                             const el = document.getElementsByClassName('uinp')[1];
-                            el.style.borderColor = 'red'; 
-                            el.style.borderStyle = 'solid'; 
+                            el.style.borderColor = 'red';
+                            el.style.borderStyle = 'solid';
                         }
                         else {
                             localStorage.setItem('sessionid', response.sessionid);
                             window.location.reload();
                         }
-                    break;
+                        break;
 
                     case 1: initializeLayout(response, sessionStorage.getItem('waitforDM'));
                     break;
 
                     case 2: localStorage.removeItem('sessionid');
                         window.location.reload();
-                    break;
-                    
+                        break;
+
                     case 3:
                         if (response.op == 0) {
                             if (response.data.isGroupDM) {
@@ -114,13 +121,13 @@
                         }
                         else if (response.op == 1) closeDM(response);
                         else if (response.op == 2) console.log(response);
-                    break;
+                        break;
 
-                    case 4: if ([1,2,3,4].includes(response.op)) return showNotif("friendrequest", `recieved social interaction!`);
-                            else if (response.op == 6) updateField(response);
-                            else if (response.op == 7) window.location.reload();
-                            else if (response.op == 8) displayFriendsList(response);
-                    break;
+                    case 4: if ([1, 2, 3, 4].includes(response.op)) return showNotif("friendrequest", `recieved social interaction!`);
+                    else if (response.op == 6) updateField(response);
+                    else if (response.op == 7) window.location.reload();
+                    else if (response.op == 8) displayFriendsList(response);
+                        break;
 
                     case 5: messageRecieved(response);
                     break;
@@ -160,9 +167,41 @@
 
         //MUST BE DECLAIRED GLOBALLY!
         const loadingAnimInterval = setInterval(() => {
-            const element = document.getElementById('loadingdiv').firstElementChild;
-            element.style.color = '#'+(0x1000000+Math.random()*0xffffff).toString(16).substr(1,6)
+            const newCol = '#' + (0x1000000 + Math.random() * 0xffffff).toString(16).substr(1, 6);
+            const loadingTXT = document.getElementById('loadingdiv');
+            loadingTXT.style.color = newCol;
+
+            const loadingSpinner = document.getElementById('loader');
+            loadingSpinner.style.borderTop = `5px solid ${newCol}`;
         }, 1000);
+
+        const loadingTooLongTimeout = setTimeout(() => {
+            const loadingdiv = document.getElementById('loadingdiv');
+            const newBtn = document.createElement('button');
+            newBtn.id = 'notconnectingbtn';
+            newBtn.innerText = 'Problems Connecting?';
+            newBtn.onclick = () => {
+                const dispDiv = document.createElement('div');
+                dispDiv.innerHTML = `<div style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background-color: white; padding: 20px; box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.5); text-align: center; width: 300px; border-radius: 10px;">
+                        <h2 style="margin-top: 0; color: darkred;">Problems Connecting</h2>
+                        <button style="margin: 10px; padding: 10px 20px; background-color: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer;" onclick=window.location.reload()>Reload</button>
+                        <button style="margin: 10px; padding: 10px 20px; background-color: #f44336; color: white; border: none; border-radius: 5px; cursor: pointer;" onclick="window.open('https://github.com/Proto-Chat/chatJS-main/issues')">Report Bug</button>
+                     </div>`;
+
+                // Append the dispDiv to the body or any other container element
+                loadingdiv.appendChild(dispDiv);
+
+                document.addEventListener('mousedown', (e) => {
+                    // Check if the click is outside the dispDiv
+                    if (!dispDiv.contains(e.target)) {
+                        dispDiv.remove();
+                    }
+                });
+
+            }
+
+            loadingdiv.appendChild(newBtn);
+        }, 20000);
 
 
         // window.onload = () => {
@@ -170,14 +209,17 @@
         //     connectSocket();
         // }
 
+
         // because window.onload is FUCKED TO HELL
         localStorage.removeItem('currentChatID');
         connectSocket();
     </script>
 </head>
+
 <body>
     <span id="bodyWrapper">
         <div id="loadingdiv">
+            <div id="loader"></div>
             <h1>L O A D I N G . . .</h1>
         </div>
         <div id="maincontent" style="display: none">
@@ -191,13 +233,15 @@
                 </div>
             </div>
             <div class="userprofile">
-                
+
             </div>
         </div>
     </span>
     <span id="errWrapper">
         <h1>This site is not yet available on screens smaller than 500px!</h1>
-        <h2>In the meantime, feel free to check out my other stuff at <br> <a href="https://www.itamarorenn.com/projects">www.itamarorenn.com</a></h2>
+        <h2>In the meantime, feel free to check out my other stuff at <br> <a
+                href="https://www.itamarorenn.com/projects">www.itamarorenn.com</a></h2>
     </span>
 </body>
+
 </html>
