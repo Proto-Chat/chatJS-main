@@ -1,0 +1,36 @@
+#loadingdiv {
+    text-align: center;
+}
+
+#loader {
+    border: 5px solid rgba(233, 233, 233, 0.2);
+    border-top: 5px solid rgb(233, 233, 233);
+    border-radius: 50%;
+    width: 10em;
+    height: 10em;
+    animation: spin 2s linear infinite;
+    margin: auto;
+    margin-top: calc(50vh - 15em);
+}
+
+#notconnectingbtn {
+    padding: 10px 20px;
+    background-color: #f44336; /* Red color for 'not connecting' */
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: background-color 0.3s ease;
+}
+
+#notconnectingbtn:hover {
+    background-color: #d32f2f; /* Darker shade on hover */
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
