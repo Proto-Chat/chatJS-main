@@ -1,9 +1,12 @@
 function showLogin() {
     clearInterval(loadingAnimInterval);
-    const element = document.getElementById('loadingdiv');
-    for (const k of element.children) { element.removeChild(k); }
-    element.style.textAlign = 'center';
+    const loadingdiv = document.getElementById('loadingdiv');
+    for (const k of loadingdiv.children) { loadingdiv.removeChild(k); }
+    loadingdiv.style.display = 'none';
     
+    const element = document.getElementById('loginDiv');
+    element.style.textAlign = 'center';
+
     const uinp = document.createElement('input');
     uinp.placeholder = "username";
     uinp.className = 'uinp';
@@ -51,6 +54,7 @@ function showLogin() {
     d4.appendChild(hSep);
     d4.appendChild(signupbtn);
     element.appendChild(d4);
+    element.style.display = 'block';
 }
 
 
