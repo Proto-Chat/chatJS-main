@@ -17,6 +17,7 @@ body {
     overflow-x: hidden;
     padding-top: 20px;
     color: white;
+    transition: width 0.3s;
 }
 
 .sidenav a {
@@ -404,6 +405,35 @@ body {
     text-overflow: ellipsis;
 }
   
+
+/* Collapsed State */
+.sidebar-collapsed {
+    width: 0;
+    transition: width 0.3s;
+}
+
+.collapseSidebarBtn {
+    height: calc(100% - 80px);
+    top: 0;
+    width: 20px;
+    margin-left: 170px;
+    z-index: 999999;
+    position: absolute;
+    opacity: 0; /* Make the button transparent instead of not displaying it */
+    transition: opacity 0.3s; /* Smooth transition for opacity change */
+    transition: width 0.3s;
+    transition: height 0.3s;
+    background-color: #7770709f;
+    border-style: none;
+}
+
+.collapseSidebarBtn:hover {
+    opacity: 1; /* Make the button fully visible on hover */
+}
+
+/* #sidebarWrapper {
+    transition: width 0.3s;
+} */
 
 
 #errWrapper {

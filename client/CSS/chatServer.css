@@ -19,9 +19,9 @@
     display: block;
     cursor: pointer;
     position: relative;
-    
+
     white-space: nowrap;
-    overflow: hidden; 
+    overflow: hidden;
     text-overflow: ellipsis;
 }
 
@@ -29,6 +29,9 @@
     color: #f1f1f1;
 }
 
+.backBtn {
+    transition: width 0.3s;
+}
 
 .backBtn h1 {
     bottom: 10%;
@@ -44,7 +47,8 @@
     margin: 20px;
 }
 
-#serverInfoContainer h1, #serverInfoContainer h2 {
+#serverInfoContainer h1,
+#serverInfoContainer h2 {
     margin-bottom: 10px;
 }
 
@@ -117,7 +121,77 @@
     background-color: rgba(233, 233, 233, 0.2);
 }
 
+.member-sidebar {
+    position: fixed;
+    right: 0;
+    top: 0;
+    width: 200px;
+    /* Adjust as needed */
+    height: calc(100% - 75px);
+    /* margin-top: 75px; */
+    background-color: #1d1c1c9f;
+    /* Choose your color */
+    overflow-y: auto;
+    /* For scrolling */
+    transition: width 0.3s;
+    /* Smooth transition for opening/closing */
+    border-left: #000000;
+}
+
+
+/* user card stuff */
+.user-card {
+    display: flex;
+    align-items: center;
+    padding: 0px 10px;
+    border-bottom: 1px solid #444;
+    /* Darker border for visibility */
+    background-color: #2a2a2a;
+    /* Dark background */
+    color: white;
+    /* Light text for visibility */
+}
+
+.user-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 20px;
+    margin-right: 10px;
+    margin-top: 5px;
+    float: left;
+}
+
+.user-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.username {
+    font-weight: bold;
+    color: #f1f1f1;
+    /* Lighter color for username */
+    float: right;
+}
+
+.status {
+    font-style: italic;
+    color: #999;
+    /* Greyish color for status */
+}
+
+.memTitle {
+    margin-top: 10px;
+    font-size: 20px;
+    text-align: center;
+    text-decoration: underline;
+}
+
 @media screen and (max-height: 450px) {
-    .channelMenu {padding-top: 15px;}
-    .channelMenu a {font-size: 18px;}
+    .channelMenu {
+        padding-top: 15px;
+    }
+
+    .channelMenu a {
+        font-size: 18px;
+    }
 }

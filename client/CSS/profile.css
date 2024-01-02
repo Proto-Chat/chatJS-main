@@ -7,6 +7,7 @@
     background-color: rgb(52, 52, 53);
     cursor: pointer;
     border-right: black;
+    transition: opacity 0.3s;
 }
 
 .userprofile h1 {
@@ -21,6 +22,7 @@
     white-space: nowrap;
     overflow: hidden; 
     text-overflow: ellipsis;
+    transition: opacity 0.3s;
 }
 
 .settingsTrigger {
@@ -31,6 +33,8 @@
     cursor: grab;
     display: inline;
     margin-right: 25px;
+    position: inherit;
+    transition: opacity 0.3s;
 }
 
 .nopointer { cursor: default; }

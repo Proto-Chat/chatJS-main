@@ -18,6 +18,7 @@
     <link rel="stylesheet" type="text/css" href="/CSS/index.css">
     <link rel="stylesheet" type="text/css" href="/CSS/chatServer.css">
     <link rel="stylesheet" type="text/css" href="/CSS/profile.css">
+    <link rel="stylesheet" type="text/css" href="/CSS/utils.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css" integrity="sha512-+4zCK9k+qNFUR5X+cKL9EIR+ZOhtIloNl9GIKS57V1MyNsYpYcUrUeQc9vNfzsWfV28IaLL3i96P9sdNyeRssA==" crossorigin="anonymous" />
     <script src="https://kit.fontawesome.com/728e740903.js" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/js/all.min.js" integrity="sha512-F5QTlBqZlvuBEs9LQPqc1iZv2UMxcVXezbHzomzS6Df4MZMClge/8+gXrKw2fl5ysdk4rWjR0vKS7NNkfymaBQ==" crossorigin="anonymous"></script>
@@ -95,8 +96,12 @@
 
         //MUST BE DECLAIRED GLOBALLY!
         const loadingAnimInterval = setInterval(() => {
-            const element = document.getElementById('loadingdiv').firstElementChild;
-            element.style.color = '#'+(0x1000000+Math.random()*0xffffff).toString(16).substr(1,6);
+            const newCol = '#' + (0x1000000 + Math.random() * 0xffffff).toString(16).substr(1, 6);
+            const loadingTXT = document.getElementById('loadingdiv');
+            loadingTXT.style.color = newCol;
+
+            const loadingSpinner = document.getElementById('loader');
+            loadingSpinner.style.borderTop = `5px solid ${newCol}`;
         }, 1000);
         
 
@@ -109,6 +114,7 @@
 <body>
     <span id="bodyWrapper">
         <div id="loadingdiv">
+            <div id="loader"></div>
             <h1>L O A D I N G . . .</h1>
         </div>
         <div id="maincontent" style="display: none">

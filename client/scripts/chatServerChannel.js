@@ -26,7 +26,7 @@ function createNewChannelPopup(serverId) {
     const addButton = document.createElement('button');
     addButton.id = 'newChannelAddBtn';
     addButton.textContent = 'Add Channel';
-    addButton.addEventListener('click', () => {addNewChannel(serverId)});
+    addButton.addEventListener('click', () => { addNewChannel(serverId) });
     popup.appendChild(addButton);
 
     // Add Close button
@@ -173,6 +173,112 @@ function deleteChannel(channelId, serverId) {
 }
 
 
+function adjustSidebarHeight() {
+    const inputBox = document.querySelector('.msginp');
+    const sidebar = document.querySelector('.member-sidebar');
+
+    if (inputBox && sidebar) {
+        const inputBoxTop = inputBox.getBoundingClientRect().top;
+        sidebar.style.height = `${inputBoxTop}px`;
+    }
+}
+
+
+/**
+ * @param {HTMLElement} toColl 
+ */
+function createCollapsable(toColl, collLeft = true) {
+    const collapseBtn = document.createElement('button');
+    collapseBtn.className = 'collapseSidebarBtn';
+    collapseBtn.innerText = (collLeft) ? "<" : ">";
+    const oldWidth = toColl.style.width || '200px';
+
+    if (!collLeft) {
+        collapseBtn.style.right = '0px';
+        // collapseBtn.style.top = '75px';
+    }
+
+    collapseBtn.style.top = '20px';
+
+    collapseBtn.style.height = 'calc(100% - 150px)';
+
+    const posBtn = (isCollapsed) => {
+        if (collLeft) collapseBtn.style.marginLeft = (!isCollapsed) ? '170px' : '0px';
+        else collapseBtn.style.marginRight = (!isCollapsed) ? '180px' : '0px';
+    }
+
+    posBtn(false);
+
+    collapseBtn.onclick = () => {
+        toColl.classList.toggle("sidebar-collapsed");
+        const isCollapsed = toColl.style.width == '0px';
+        const newWidth = (isCollapsed) ? oldWidth : '0px';
+
+        toColl.childNodes.forEach((c) => { if (c.style) c.style.display = (isCollapsed) ? 'block' : 'none' });
+        if (collLeft) document.getElementsByClassName('backBtn')[0].style.display = (isCollapsed) ? 'block' : 'none';
+
+        toColl.style.transition = 'width 0.3s';
+        toColl.style.setProperty('width', newWidth, 'important');
+
+        posBtn(!isCollapsed);
+
+        collapseBtn.innerText = (isCollapsed) ? ((collLeft) ? '<' : '>') : ((collLeft) ? '>' : '<');
+        collapseBtn.style.height = (isCollapsed) ? 'calc(100% - 80px)' : '100%';
+    }
+    document.getElementById('maincontent').appendChild(collapseBtn);
+}
+
+
+function createUCard(uObj) {
+    // Create the main card container
+    const userCard = document.createElement('div');
+    userCard.className = 'user-card';
+
+    // Create the image element
+    const icon = document.createElement('img');
+    icon.src = uObj.icon;
+    icon.alt = 'User Icon';
+    icon.className = 'user-icon';
+    if (!uObj.icon) icon.src = 'https://github.com/ION606/chatJS/blob/main/client/assets/nopfp.jpg?raw=true';
+    else setPFP(undefined, icon, uObj.icon);
+
+    // Create the user info container
+    const userInfo = document.createElement('div');
+    userInfo.className = 'user-info';
+
+    // Create and add the username and status
+    const username = document.createElement('p');
+    username.className = 'username';
+    username.textContent = uObj.username;
+
+    const status = document.createElement('p');
+    status.className = 'status';
+    status.textContent = uObj.status;
+
+    // Append elements to the card
+    userInfo.appendChild(username);
+    userInfo.appendChild(status);
+    userCard.appendChild(icon);
+    userCard.appendChild(userInfo);
+
+    // Append the card to the sidebar or any other container
+    document.querySelector('.member-sidebar').appendChild(userCard);
+}
+
+
+async function fillUSideBar() {
+    return new Promise((resolve) => {
+        try {
+            for (const uObj of inChannel) createUCard(uObj);
+            resolve(true);
+        } catch(err) {
+            console.error(err);
+            resolve(false);
+        }
+    });
+}
+
+
 // a modified setupDM
 function setUpChannel(response) {
     console.log(response);
@@ -235,7 +341,7 @@ function setUpChannel(response) {
     }
 
     const inpwrapper = document.createElement('div');
-
+    inpwrapper.className = 'msgInpContainer';
 
     // CHECK CHANNEL PERMS HERE LATER
     if (true) {
@@ -249,9 +355,7 @@ function setUpChannel(response) {
             keys[which] = isKeyDown;
 
             if (isKeyDown && keys[13]) {
-                if (!keys[16]) {
-                    send(channelConfigs.serverId);
-                }
+                if (!keys[16]) send(channelConfigs.serverId);
             }
             else if (isKeyDown) {
                 e.target.parentElement.style.borderColor = 'black';
@@ -261,6 +365,8 @@ function setUpChannel(response) {
                 e.target.style.height = (e.target.scrollHeight) + "px";
                 messages.scrollTop = messages.scrollHeight - messages.clientHeight;
             }
+
+            adjustSidebarHeight();
         }
         inpelement.onkeydown = handleEnter;
         inpelement.onkeyup = handleEnter;
@@ -347,6 +453,20 @@ function setUpChannel(response) {
 
     // messages.onchange = () => {messages.lastChild.lastChild.scrollIntoView();}
 
+    // create the "inChannel" sidebar
+    const memberSideBar = document.createElement('div');
+    memberSideBar.className = 'member-sidebar';
+    const memTitle = document.createElement('div');
+    memTitle.innerText = 'users';
+    memTitle.className = 'memTitle';
+    memberSideBar.appendChild(memTitle);
+
+    document.getElementById('maincontent').appendChild(memberSideBar);
+    createCollapsable(memberSideBar, false);
+    
+    // add the users asynchronously
+    fillUSideBar(inChannel).then((res) => console.log((res) ? 'added all users to sidebar!' : 'failed to add all users to sidebar!'));
+
     if (messages && messages.lastChild) {
         if (lastVideo) {
             lastVideo.addEventListener('playing', () => {
@@ -367,7 +487,15 @@ function setUpChannel(response) {
     }
 
 
+    // const observer = new MutationObserver(observerCallback);
+    // const config = { childList: true, subtree: true };
+    // observer.observe(document.body, config);
+
     element.appendChild(messages);
     element.appendChild(inpwrapper);
+    createCollapsable(document.getElementById('channels'));
     element.style = 'display: block;';
 }
+
+
+window.addEventListener('DOMContentLoaded', adjustSidebarHeight);

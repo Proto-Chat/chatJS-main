@@ -16,7 +16,6 @@ TODO: ENCRYPT THE PASSWORD
 	?. the public key is stored in the DB unencrypted
 
 
-CURRENTLY AT "TRY TO ENCRYPT MESSAGES"
 
 2. access
 	info: if the private key is not in the browser, the user must log out

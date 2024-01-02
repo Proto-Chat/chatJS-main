@@ -88,6 +88,29 @@ async function initializeLayout(response, dmid) {
         localStorage.setItem('profileConfigs', JSON.stringify(profileConfigs));
     }
 
+    const collapseBtn = document.createElement('button');
+    collapseBtn.className = 'collapseSidebarBtn';
+    collapseBtn.innerText = "<";
+    collapseBtn.onclick = () => {
+        document.getElementById("dms").classList.toggle("sidebar-collapsed");
+        const uProf = document.getElementsByClassName("userprofile")[0];
+        // uProf.classList.toggle("sidebar-collapsed");  // BROKEN
+        
+        const isCollapsed = uProf.style.width == '0px';
+        const newWidth = (isCollapsed) ? '200px' : '0px';
+
+        uProf.childNodes.forEach((c) => {if (c.style) c.style.width = newWidth});
+        document.getElementsByClassName('nopointer')[0].childNodes.forEach(e => e.style.display = (isCollapsed) ? 'inline' : 'none');
+
+        uProf.style.transition = 'width 0.3s';
+        uProf.style.setProperty('width', newWidth, 'important');
+
+        collapseBtn.style.marginLeft = (isCollapsed) ? '170px' : '0px';
+        collapseBtn.innerText = (isCollapsed) ? '<' : '>';
+        collapseBtn.style.height = (isCollapsed) ? 'calc(100% - 80px)' : '100%';
+    }
+    document.getElementById('maincontent').appendChild(collapseBtn);
+
     setUpUser(response.data.user);
 
     //URL Params
