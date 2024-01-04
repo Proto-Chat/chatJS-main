@@ -5,7 +5,7 @@ function messageRecieved(response) {
         case 0: addMessage(response.data);
             break;
 
-        case 1: deleteMsg(response.data.msgid)
+        case 1: deleteMsg(response.data.id)
             break;
 
         case 2: edit(response.data);
@@ -50,14 +50,15 @@ function deleteMsg(msgid) {
 
 
 async function edit(data) {
-    const element = document.getElementById(data.msgid);
-    if (!element.tagName == 'INPUT') return;
+    const element = document.getElementById(data.id);
+    if (element.tagName != 'TEXTAREA') return;
 
     // encryption
     const symmKeyEnc = await getSymmKey();
 
-    const msgContent = await decryptMsg(symmKeyEnc, data.content);
+    const msgContent = (data.serverId) ? data.content : await decryptMsg(symmKeyEnc, data.content);
     data.content = msgContent;
+    if (!data.author && data.user) data.author = data.user;
 
     const newMessageContainer = createNewMessage(data);
     const newMessage = newMessageContainer.children.item(2);
@@ -111,6 +112,8 @@ async function createContextMenu(e, editable = true) {
     const dropdown = document.createElement('div');
     dropdown.className = "msgdropdown";
 
+    const serverId = target.dataset.serverId;
+
     //#region COMPONENTS
     var currentString;
     const isGif = (target.firstChild.tagName == 'VIDEO');
@@ -126,7 +129,8 @@ async function createContextMenu(e, editable = true) {
 
     const copyid = document.createElement('a');
     copyid.onclick = () => {
-        navigator.clipboard.writeText(target.id);
+        if (serverId) navigator.clipboard.writeText(`${serverId}/${target.id}`);
+        else navigator.clipboard.writeText(target.id);
     }
     copyid.innerText = "copy message id";
     dropdown.appendChild(copyid);
@@ -136,16 +140,31 @@ async function createContextMenu(e, editable = true) {
     deletemsg.onclick = () => {
         if (!userRaw) return;
 
-        ws.send(JSON.stringify({
-            type: 0,
-            code: 5,
-            op: 1,
-            data: {
-                user: JSON.parse(userRaw),
-                chatid: localStorage.getItem('currentChatID'),
-                msgid: target.id
-            }
-        }));
+        if (serverId) {
+            ws.send(JSON.stringify({
+                type: 0,
+                code: 6,
+                op: 7,
+                data: {
+                    user: JSON.parse(userRaw),
+                    id: target.id,
+                    channelId: localStorage.getItem('currentChatID'),
+                    serverId: serverId,
+                }
+            }));
+        }
+        else {
+            ws.send(JSON.stringify({
+                type: 0,
+                code: 5,
+                op: 1,
+                data: {
+                    user: JSON.parse(userRaw),
+                    chatid: localStorage.getItem('currentChatID'),
+                    id: target.id
+                }
+            }));
+        }
     }
     deletemsg.innerText = "delete message";
     dropdown.appendChild(deletemsg);
@@ -184,16 +203,32 @@ async function createContextMenu(e, editable = true) {
                     const symmEncKey = await getSymmKey();
                     if (!symmEncKey) return alert("ENCRYPTION ERROR!");
 
-                    ws.send(JSON.stringify({
-                        code: 5,
-                        op: 2,
-                        data: {
-                            content: await encryptMsg(symmEncKey, newinpdiv.value),
-                            user: JSON.parse(userRaw),
-                            chatid: localStorage.getItem('currentChatID'),
-                            msgid: target.id
-                        }
-                    }));
+                    if (serverId) {
+                        ws.send(JSON.stringify({
+                            type: 0,
+                            code: 6,
+                            op: 6,
+                            data: {
+                                user: JSON.parse(userRaw),
+                                id: target.id,
+                                channelId: localStorage.getItem('currentChatID'),
+                                serverId: serverId,
+                                content: newinpdiv.value  // UNENCRYPTED FOR NOW
+                            }
+                        }));
+                    }
+                    else {
+                        ws.send(JSON.stringify({
+                            code: 5,
+                            op: 2,
+                            data: {
+                                content: await encryptMsg(symmEncKey, newinpdiv.value),
+                                user: JSON.parse(userRaw),
+                                chatid: localStorage.getItem('currentChatID'),
+                                id: target.id
+                            }
+                        }));
+                    }
                 } else if (e.code == 'Escape') {
                     switchBackFromInp();
                 }
@@ -264,6 +299,8 @@ function createNewMessage(msg) {
     const msgContentContainer = document.createElement('span');
     msgContentContainer.className = 'msg';
     msgContentContainer.id = msg.id;
+    if (msg.serverId) msgContentContainer.dataset.serverId = msg.serverId;
+
     msgContentContainer.addEventListener('contextmenu', (e) => {
         if (document.getElementsByClassName('msgdropdown').length != 0) {
             document.getElementsByClassName('msgdropdown')[0].remove();

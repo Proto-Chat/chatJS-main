@@ -77,19 +77,26 @@ async function getPrivKey(asCrypto = false) {
 }
 
 async function getSymmKey() {
-    const symmEncKeyEnc = await (await getDB())?.transaction(storeName).objectStore(storeName).get(symmEncIDBKey) || null;;
-    const prvKey = await getPrivKey(true);
-    if (!symmEncKeyEnc || !prvKey) return alert("Encryption Key Error!\nPlease try again later!");
+    try {
+        const symmEncKeyEnc = await (await getDB())?.transaction(storeName).objectStore(storeName).get(symmEncIDBKey) || null;;
+        const prvKey = await getPrivKey(true);
+        if (!symmEncKeyEnc || !prvKey) return alert("Encryption Key Error!\nPlease try again later!");
 
-    // decrypt the symm key with the private key
-    const symmEncKey = await crypto.subtle.decrypt({ name: "RSA-OAEP" }, prvKey, base64ToArrayBuffer(symmEncKeyEnc));
-    return await crypto.subtle.importKey(
-        "raw",
-        symmEncKey,
-        { name: "AES-GCM" },
-        true,
-        ["encrypt", "decrypt"]
-    );
+        // decrypt the symm key with the private key
+        const symmEncKey = await crypto.subtle.decrypt({ name: "RSA-OAEP" }, prvKey, base64ToArrayBuffer(symmEncKeyEnc));
+
+        return await crypto.subtle.importKey(
+            "raw",
+            symmEncKey,
+            { name: "AES-GCM" },
+            true,
+            ["encrypt", "decrypt"]
+        );
+    }
+    catch(err) {
+        console.error("ENCRYPTION ERROR:", err);
+        return null;
+    }
 }
 
 

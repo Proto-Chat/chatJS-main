@@ -1,6 +1,7 @@
 import * as crypto from 'crypto';
 import { getUidFromSid, getUsernameFromUID } from './utils/decodesid.js';
 import { broadcastToSessions } from './database/newMessage.js';
+import { SERVERMACROS as MACROS } from './macros.js';
 
 
 async function generateServerId(client) {
@@ -167,10 +168,11 @@ export async function getServerInfo(mongoconnection, sid, serverId) {
 }
 
 
-async function handleMessage(ws, connectionMap, mongoconnection, data) {
+async function handleMessage(ws, connectionMap, mongoconnection, data, op) {
     try {
         // const msg = {author: {username: String, uid: String}, id: crypto.randomUUID(), serverId: String, channelId: String, content: <content>, timestamp: Date}
-        if (!data.id || !data.author || !data.serverId || !data.channelId) return ws.send(JSON.stringify({msgId: data.id || null, code: 400, type: 1}));
+        const user = data.author || data.user || undefined;
+        if (!data.id || !user || !data.serverId || !data.channelId) return ws.send(JSON.stringify({msgId: data.id || null, code: 400, type: 1}));
 
         const client = await mongoconnection;
         const dbo = client.db(`S|${data.serverId}`).collection(data.channelId);
@@ -180,23 +182,37 @@ async function handleMessage(ws, connectionMap, mongoconnection, data) {
 
 // TODO check permissions
 
+        var conf;
+        const toSend = {code: 5, op: 0, data: data};
+
         // delete data[id];  // idk why I did this
-        const conf = await dbo.insertOne(data);
+        if (op == MACROS.SERVER.OPS.DELETE_MESSAGE) {
+            conf = await dbo.deleteOne({$and: [{channelId: data.channelId}, {id: data.id}]});
+            toSend.code = 7;
+        }
+        else if (op == MACROS.SERVER.OPS.EDIT_MESSAGE) {
+            conf = await dbo.updateOne({$and: [{channelId: data.channelId}, {id: data.id}]}, {$set: {content: data.content}});
+            toSend.code = 6;
+        }
+        else if (op == MACROS.SERVER.OPS.SEND_MESSAGE) {
+            conf = await dbo.insertOne(data);
+        }
+        
         if (!conf) return ws.send(JSON.stringify({msgId: data.id || null, code: 500, type: 1}));
        
         // send to everyone in the channel (server notifs are not a thing at the moment)
         const inChannel = await dbo.findOne({_id: 'inChannel'});
 
-        const uconf = await client.db(data.author.uid).collection('configs').findOne({_id: "myprofile"});
+        const uconf = await client.db(user.uid).collection('configs').findOne({_id: "myprofile"});
         if (!uconf) return ws.send(JSON.stringify({type: 1, code: 401}));
         delete uconf['description'];
-        uconf['uid'] = data.author.uid;
+        uconf['uid'] = user.uid;
 
-        broadcastToSessions(client, connectionMap, inChannel.users.map(u => u.uid), {code: 5, op: 0, data: data});
+        broadcastToSessions(client, connectionMap, inChannel.users.map(u => u.uid), toSend);
     }
     catch (err) {
         console.error(err);
-        return ws.send(JSON.stringify({msgId: data.id || null, code: 500, type: 1}));
+        return ws.send(JSON.stringify({msgId: data.id || null, serverId: data.serverId, channelId: data.channelId, code: 500, type: 1}));
     }
 }
 
@@ -254,7 +270,6 @@ async function getChannel(ws, connectionMap, mongoconnection, data) {
     }
 }
 
-
 // update or delete
 async function updateChannel(ws, connectionMap, mongoconnection, data, op) {
     try {
@@ -277,12 +292,12 @@ async function updateChannel(ws, connectionMap, mongoconnection, data, op) {
         const toSend = {serverId: data.serverId, channelId: data.channelId, changer: {username: getUsernameFromUID(client, uid), uid: uid}};
 
         // edit
-        if (op == 6) {
+        if (op == MACROS.SERVER.OPS.EDIT_CHANNEL || 3) {
             await dbo.updateOne({_id: "channelConfigs"}, {$set: {name: data.newName}});
             toSend['newName'] = data.newName;
         }
         // delete
-        else if (op == 7) {
+        else if (op == MACROS.SERVER.OPS.DELETE_CHANNEL) {
             await dbo.drop();
         }
         else return ws.send(JSON.stringify({type: 1, code: 404, msg: `UNKNOWN OP ${op}`}));
@@ -305,7 +320,7 @@ async function updateChannel(ws, connectionMap, mongoconnection, data, op) {
 
 export async function handleChatServer(ws, connectionMap, mongoconnection, data) {    
     switch (data.op) {
-        case 0:
+        case MACROS.SERVER.OPS.CREATE_SERVER:
             const response = await createServer(mongoconnection, connectionMap, data.sid, data.data);
             if (!response) return ws.send(JSON.stringify({
                 code: 500
@@ -318,21 +333,23 @@ export async function handleChatServer(ws, connectionMap, mongoconnection, data)
             }));
         break;
 
-        case 2:
+        case MACROS.SERVER.OPS.CREATE_CHANNEL:
             createChannel(mongoconnection, connectionMap, data.data.sid, data.data.serverId, data.data.channelName);
             // ws.send(501);
             break;
 
-        case 4:
+        case MACROS.SERVER.OPS.GET_CHANNEL:
             getChannel(ws, connectionMap, mongoconnection, data.data);
             break;
 
-        case 5:
-            handleMessage(ws, connectionMap, mongoconnection, data.data);
+        case MACROS.SERVER.OPS.SEND_MESSAGE:
+        case MACROS.SERVER.OPS.EDIT_MESSAGE:
+        case MACROS.SERVER.OPS.DELETE_MESSAGE:
+            handleMessage(ws, connectionMap, mongoconnection, data.data, data.op);
             break;
 
-        case 6:
-        case 7:
+        case MACROS.SERVER.OPS.EDIT_CHANNEL:
+        case MACROS.SERVER.OPS.DELETE_CHANNEL:
             updateChannel(ws, connectionMap, mongoconnection, data.data, data.op);
             break;
 

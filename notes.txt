@@ -37,7 +37,8 @@ codes (server --> client):
         7: remove friend/group DM
         8: send friends
 5 - message sent
-6 - server
+
+6 - server -- WRONG (needs to be rewritten)
     op:
         0: create server response
         1: edit server response
@@ -45,7 +46,7 @@ codes (server --> client):
         3: edit channel response
         4: view channel
         5: channel edited
-        6: channel deleted
+        6: channel deleted,
 
 7 - encryption
     op:
@@ -97,11 +98,13 @@ codes (client --> server):
         0: create server
         1: edit server
         2: create channel
-        3: edit channel
+        3: NOTHING I GUESS
         4: get channel
         5: send message
-        6: edit channel
-        7: delete channel
+        6: edit message
+        7: delete message
+        8: edit channel
+        9: delete channel
 
 7 - security
     op:

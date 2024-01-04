@@ -64,79 +64,94 @@ function createPageMenu() {
 
 
 async function initializeLayout(response, dmid) {
-    const data = response.data;
-    const element = document.getElementById('dms');
-    for (const k of element.childNodes) { k.remove(); }
+    try {
+        const data = response.data;
+        const element = document.getElementById('dms');
+        for (const k of element.childNodes) { k.remove(); }
 
-    localStorage.setItem("user", JSON.stringify(data.user));
+        localStorage.setItem("user", JSON.stringify(data.user));
 
-    element.appendChild(createPageMenu());
+        element.appendChild(createPageMenu());
 
-    const dmSYS = data.dms.find((dm) => dm.uid == '0');
-    element.appendChild(await createDmLink(dmSYS));
+        const dmSYS = data.dms.find((dm) => dm.uid == '0');
+        element.appendChild(await createDmLink(dmSYS));
 
-    for (const dmRaw of data.dms) {
-        const a = await createDmLink(dmRaw);
+        for (const dmRaw of data.dms) {
+            const a = await createDmLink(dmRaw);
 
-        if (dmRaw.uid != "0") element.appendChild(a);
-    }
-
-    const profileConfigs = data.configs.find((c) => c._id == 'myprofile');
-
-    if (profileConfigs) {
-        delete profileConfigs._id;
-        localStorage.setItem('profileConfigs', JSON.stringify(profileConfigs));
-    }
-
-    const collapseBtn = document.createElement('button');
-    collapseBtn.className = 'collapseSidebarBtn';
-    collapseBtn.innerText = "<";
-    collapseBtn.onclick = () => {
-        document.getElementById("dms").classList.toggle("sidebar-collapsed");
-        const uProf = document.getElementsByClassName("userprofile")[0];
-        // uProf.classList.toggle("sidebar-collapsed");  // BROKEN
-        
-        const isCollapsed = uProf.style.width == '0px';
-        const newWidth = (isCollapsed) ? '200px' : '0px';
-
-        uProf.childNodes.forEach((c) => {if (c.style) c.style.width = newWidth});
-        document.getElementsByClassName('nopointer')[0].childNodes.forEach(e => e.style.display = (isCollapsed) ? 'inline' : 'none');
-
-        uProf.style.transition = 'width 0.3s';
-        uProf.style.setProperty('width', newWidth, 'important');
-
-        collapseBtn.style.marginLeft = (isCollapsed) ? '170px' : '0px';
-        collapseBtn.innerText = (isCollapsed) ? '<' : '>';
-        collapseBtn.style.height = (isCollapsed) ? 'calc(100% - 80px)' : '100%';
-    }
-    document.getElementById('maincontent').appendChild(collapseBtn);
-
-    setUpUser(response.data.user);
-
-    //URL Params
-    const params = new URLSearchParams(document.location.search);
-    if (params.has('dmid')) {
-        const dmid = params.get('dmid');
-        sessionStorage.setItem('waitforDM', dmid);
-        window.location.href = '/';
-    } else {
-        if (dmid) {
-            const waitloop = setInterval(() => {
-                if (document.getElementById(`dmpfp-${dmid}`)) {
-                    clearInterval(waitloop);
-                    if (dmid) requestDM(dmid);
-
-                    sessionStorage.removeItem('waitforDM');
-                    clearInterval(loadingAnimInterval);
-                    document.getElementById('loadingdiv').style.display = 'none';
-                    document.getElementById('maincontent').style.display = 'block';
-                }
-            }, 1000);
-        } else {
-            clearInterval(loadingAnimInterval);
-            document.getElementById('loadingdiv').style.display = 'none';
-            document.getElementById('maincontent').style.display = 'block';
+            if (dmRaw.uid != "0") element.appendChild(a);
         }
+
+        const profileConfigs = data.configs.find((c) => c._id == 'myprofile');
+
+        if (profileConfigs) {
+            delete profileConfigs._id;
+            localStorage.setItem('profileConfigs', JSON.stringify(profileConfigs));
+        }
+
+        const collapseBtn = document.createElement('button');
+        collapseBtn.className = 'collapseSidebarBtn';
+        const mainElement = document.querySelector('.main');
+        const inpelement = document.querySelector('.msginp');
+        const oldMainMarLeft = mainElement?.style.marginLeft;
+        const oldInpWidth = inpelement?.style.width;
+
+        collapseBtn.innerText = "<";
+        collapseBtn.onclick = () => {
+            document.getElementById("dms").classList.toggle("sidebar-collapsed");
+            const uProf = document.getElementsByClassName("userprofile")[0];
+            // uProf.classList.toggle("sidebar-collapsed");  // BROKEN
+            
+            const isCollapsed = uProf.style.width == '0px';
+            const newWidth = (isCollapsed) ? '200px' : '0px';
+
+            uProf.childNodes.forEach((c) => {if (c.style) c.style.width = newWidth});
+            document.getElementsByClassName('nopointer')[0].childNodes.forEach(e => e.style.display = (isCollapsed) ? 'inline' : 'none');
+
+            uProf.style.transition = 'width 0.3s';
+            uProf.style.setProperty('width', newWidth, 'important');
+
+            collapseBtn.style.marginLeft = (isCollapsed) ? '170px' : '0px';
+            collapseBtn.innerText = (isCollapsed) ? '<' : '>';
+            collapseBtn.style.height = (isCollapsed) ? 'calc(100% - 80px)' : '100%';
+
+            // resize and move the input box and chat
+
+            mainElement.style.marginLeft = (!isCollapsed) ? '0px' : oldMainMarLeft;
+            inpelement.style.width = (!isCollapsed) ? '93%' : oldInpWidth;
+        }
+        document.getElementById('maincontent').appendChild(collapseBtn);
+
+        setUpUser(response.data.user);
+
+        //URL Params
+        const params = new URLSearchParams(document.location.search);
+        if (params.has('dmid')) {
+            const dmid = params.get('dmid');
+            sessionStorage.setItem('waitforDM', dmid);
+            window.location.href = '/';
+        } else {
+            if (dmid) {
+                const waitloop = setInterval(() => {
+                    if (document.getElementById(`dmpfp-${dmid}`)) {
+                        clearInterval(waitloop);
+                        if (dmid) requestDM(dmid);
+
+                        sessionStorage.removeItem('waitforDM');
+                        clearInterval(loadingAnimInterval);
+                        document.getElementById('loadingdiv').style.display = 'none';
+                        document.getElementById('maincontent').style.display = 'block';
+                    }
+                }, 1000);
+            } else {
+                clearInterval(loadingAnimInterval);
+                document.getElementById('loadingdiv').style.display = 'none';
+                document.getElementById('maincontent').style.display = 'block';
+            }
+        }
+    }
+    catch(err) {
+        console.error(err);
     }
 }
 
@@ -407,4 +422,5 @@ async function setupDM(response) {
     element.appendChild(messages);
     element.appendChild(inpwrapper);
     element.style = 'display: block;';
+    
 }

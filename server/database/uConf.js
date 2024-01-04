@@ -5,7 +5,7 @@ import crypto from 'crypto';
 import { createNewUser } from './newConnection.js';
 
 
-function sendConfEmail(password, other_email, confCode) {
+export const sendEmail = async (password, other_email, subject, content) => {
 	if (!other_email) return;
 
 	const transporter = nodemailer.createTransport({
@@ -20,8 +20,8 @@ function sendConfEmail(password, other_email, confCode) {
 	const toSend = {
 		from: 'customdiscordwebapp@gmail.com',
 		to: other_email,
-		subject: 'Confirm your new account!',
-		text: `Confirmation code: ${confCode}\n\nThis code will expire in 5 minutes ;-;`
+		subject: subject,
+		text: content
 	}
 
 	transporter.sendMail(toSend, (err, data) => {
@@ -58,7 +58,8 @@ export async function createUConf(ws, mongoconnection, emailPass, data) {
 
 		await cdbo.insertOne({ email: email, username: username, password: password, code: confCode, created: new Date(), expires: expDate });
 
-		sendConfEmail(emailPass, email, confCode);
+		if (!email) return;
+		sendEmail(emailPass, email, 'Confirm your new account!', `Confirmation code: ${confCode}\n\nThis code will expire in 5 minutes ;-;`);
 
 		ws.send(JSON.stringify({
 			code: 0,

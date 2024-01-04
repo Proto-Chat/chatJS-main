@@ -65,10 +65,19 @@
 
                     case 5: messageRecieved(response);
                     break;
+
+                    case 6: edit(response.data);
+                    break;
+                    
+                    case 7: deleteMsg(response.data.id);
+                    break;
                     
                     case 10: break;
 
                     case 500: window.location.href = '/';
+                    break;
+
+                    case 503: ws.close(1006); connectSocket();
                     break;
                     
                     default: console.log("UNKNOWN RESPONSE ", response);

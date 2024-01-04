@@ -145,7 +145,7 @@ function saveChannelChanges(channelId, serverId) {
     if (newChannelName) {
         ws.send(JSON.stringify({
             code: 6,
-            op: 6,
+            op: 8,
             data: {
                 sid: localStorage.getItem('sessionid'),
                 serverId: serverId,
@@ -162,7 +162,7 @@ function saveChannelChanges(channelId, serverId) {
 function deleteChannel(channelId, serverId) {
     ws.send(JSON.stringify({
         code: 6,
-        op: 7,
+        op: 9,
         data: {
             sid: localStorage.getItem('sessionid'),
             serverId: serverId,
@@ -193,13 +193,17 @@ function createCollapsable(toColl, collLeft = true) {
     collapseBtn.innerText = (collLeft) ? "<" : ">";
     const oldWidth = toColl.style.width || '200px';
 
+    const mainElement = document.querySelector('.main');
+    const inpelement = document.querySelector('.msginp');
+    const oldMainMarLeft = mainElement?.style.marginLeft;
+    const oldInpWidth = inpelement?.style.width;
+
     if (!collLeft) {
         collapseBtn.style.right = '0px';
         // collapseBtn.style.top = '75px';
     }
 
     collapseBtn.style.top = '20px';
-
     collapseBtn.style.height = 'calc(100% - 150px)';
 
     const posBtn = (isCollapsed) => {
@@ -215,7 +219,22 @@ function createCollapsable(toColl, collLeft = true) {
         const newWidth = (isCollapsed) ? oldWidth : '0px';
 
         toColl.childNodes.forEach((c) => { if (c.style) c.style.display = (isCollapsed) ? 'block' : 'none' });
-        if (collLeft) document.getElementsByClassName('backBtn')[0].style.display = (isCollapsed) ? 'block' : 'none';
+        if (collLeft) {
+            document.getElementsByClassName('backBtn')[0].style.display = (isCollapsed) ? 'block' : 'none';
+
+            // resize and move the input box and chat
+            if (!isCollapsed) {
+                // move the main box over
+                mainElement.style.marginLeft = '0px';
+
+                // resize the input box
+                inpelement.style.width = '93%';
+            }
+            else {
+                mainElement.style.marginLeft = oldMainMarLeft;
+                inpelement.style.width = oldInpWidth;
+            }
+        }
 
         toColl.style.transition = 'width 0.3s';
         toColl.style.setProperty('width', newWidth, 'important');
@@ -233,6 +252,7 @@ function createUCard(uObj) {
     // Create the main card container
     const userCard = document.createElement('div');
     userCard.className = 'user-card';
+    userCard.id = uObj.uid;
 
     // Create the image element
     const icon = document.createElement('img');
@@ -241,6 +261,25 @@ function createUCard(uObj) {
     icon.className = 'user-icon';
     if (!uObj.icon) icon.src = 'https://github.com/ION606/chatJS/blob/main/client/assets/nopfp.jpg?raw=true';
     else setPFP(undefined, icon, uObj.icon);
+
+    userCard.onclick = async () => {
+        const user = inChannel.find(m => (m.uid == userCard.id));
+
+        const img = await getFriendPFP(user.uid);
+        const uProfResponse = await getUProf(user.uid);
+        if (uProfResponse == 'Not Found') return alert("User Not Found!");
+        const uProf = JSON.parse(uProfResponse);
+        
+        createProfilePopup({
+            icourl: img.src,
+            editing: false,
+            username: uProf.username,
+            status: uProf.status,
+            description: uProf.description,
+            icon: true,
+            me: false
+        });
+    }
 
     // Create the user info container
     const userInfo = document.createElement('div');

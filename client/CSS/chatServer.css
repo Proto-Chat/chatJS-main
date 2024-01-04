@@ -186,6 +186,19 @@
     text-decoration: underline;
 }
 
+.ceditico {
+    /* display: inline-block;  // ignored due to loaf */
+    margin-left: 5px;
+    font-size: 28px;
+    text-decoration: none;
+    color: white;
+    float: right;
+    outline: none;
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 0px;
+    cursor: pointer;
+}
+
 @media screen and (max-height: 450px) {
     .channelMenu {
         padding-top: 15px;

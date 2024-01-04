@@ -16,6 +16,7 @@ import {
     bodyParser,
     createUConf,
     processUConf,
+    sendEmail,
     toggleDM,
     systemMsgAll,
     validateGDM, getDMID,
@@ -26,15 +27,24 @@ import {
 import { broadcastToSessions } from './database/newMessage.js';
 import { handleChatServer } from './chatServer.js';
 
+// MACROS
+import { SERVERMACROS as MACROS } from './macros.js';
+
 const config = (configImp) ? configImp : process.env;
 
 //Stores clients by userId
 const webSocketClients = new Map();
-
+var mongoConnected;
 
 const client = new MongoClient(config.mongouri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 client.on('error', (err) => { console.log(err); throw "N O" });
+
 const mongoconnection = client.connect();
+mongoconnection.then(() => { mongoConnected = true; console.log("MongoDB Connected") }).catch((err) => {
+    console.error(err);
+    mongoConnected = false;
+    sendEmail(config.emailPass, config.devEmail, 'ChatJS Error!', `ERROR:\n${JSON.stringify(err)}`);
+});
 
 const port = process.env.PORT || 3000;
 // const wss = new WebSocketServer({ port: port, path: '/websocket' });
@@ -98,8 +108,8 @@ app.put('/msgImg', async (req, res) => {
     
         const buf = Buffer.from(req.body, 'base64');
         const filename = Math.random().toString(36).slice(2);
-    
-        const response = await handleMessage(mongoconnection, webSocketClients, {files: req.body, sid: sid, username: username, channelid: channelid, filename: `${filename}.${fext}`, buf: buf}, 3, CDNManager);
+
+        const response = await handleMessage(mongoconnection, webSocketClients, {files: req.body, sid: sid, username: username, channelid: channelid, filename: `${filename}.${fext}`, buf: buf}, MACROS.MESSAGE.OPS.IMAGE, CDNManager);
         if (!response) return res.sendStatus(500);
         res.sendStatus(200);
     }
@@ -310,13 +320,22 @@ app.ws('/call', async (ws, req) => {
 });
 */
 
+const blockWSConnection = (ws) => {
+    if (mongoConnected == undefined) { ws.send(JSON.stringify({type: 1, code: 503, err: "server is still booting up!"})); return true; }
+    else if (mongoConnected == false) { ws.send(JSON.stringify({type: 1, code: 503, err: "server is down!"})); return true; }
+    return false;
+}
 
 app.ws('/websocket', async (ws, req) => {
+    // if (blockWSConnection(ws)) return;
+
 	// console.log("CONNECTION RECIEVED");
     ws.on('error', console.error);
 
     ws.on('message', async (dataRaw) => {
         try {
+            if (blockWSConnection(ws)) return console.log("BLOCKED");
+
             try {
                 JSON.parse(dataRaw);
             }
@@ -326,73 +345,78 @@ app.ws('/websocket', async (ws, req) => {
             
             const data = JSON.parse(dataRaw);
             const code = data['code'];
-// if (code != 10) console.log(code, data);
+
             switch (code) {
-                case 0:
-                    if (data.op == 0) {
+                case MACROS.NEW_CONNECTION.CODE:
+                    if (data.op == MACROS.NEW_CONNECTION.OPS.INITIAL_LOGIN) {
                         const toSend = await createSession(ws, mongoconnection, data);
                         if (toSend.sid) webSocketClients.set(toSend.sid, ws);
                         ws.send(JSON.stringify(toSend));
                     }
-                    else if (data.op == 1) createUConf(ws, mongoconnection, config.emailPass, data);
-                    else if (data.op == 2) processUConf(ws, mongoconnection, data);
+                    else if (data.op == MACROS.NEW_CONNECTION.OPS.ACCOUNT_CREATION) createUConf(ws, mongoconnection, config.emailPass, data);
+                    else if (data.op == MACROS.NEW_CONNECTION.OPS.CONFIRMATION_CODE) processUConf(ws, mongoconnection, data);
                 break;
 
-                case 1:
+
+                case MACROS.RESUME_SESSION.CODE:
                     const response = await resumeSesion(ws, mongoconnection, data, getUidFromSid(data.sid));
                     if (response) webSocketClients.set(data.sid, ws);
                 break;
 
-                case 2:
+
+                case MACROS.LOGOUT.CODE:
                     if (!data.data || !data.data.sid) return ws.send(JSON.stringify({type: 1, code: 400}));
                     
-                    if (data.op == 0) logoutAllSessions(webSocketClients, ws, mongoconnection, data.data.sid);
-                    else if (data.op == 1) logout(webSocketClients, ws, mongoconnection, data.data.sid);
+                    if (data.op == MACROS.LOGOUT.OPS.ALL_SESSIONS) logoutAllSessions(webSocketClients, ws, mongoconnection, data.data.sid);
+                    else if (data.op == MACROS.LOGOUT.OPS.THIS_SESSION) logout(webSocketClients, ws, mongoconnection, data.data.sid);
                 break;
                 
-                case 3:
-                    if (data.op == 0) {
-                        const messages = await getMessages(mongoconnection, data.sid, data.uid);
+
+                case MACROS.MESSAGES_WITH_USER.CODE:
+                    if (data.op == MACROS.MESSAGES_WITH_USER.OPS.GET_MESSAGES) {
+                        const messages = await getMessages(mongoconnection, ws, data.sid, data.uid);
                         ws.send(JSON.stringify({code: 3, op: 0, data: messages}));
                     }
-                    else if (data.op == 1 || data.op == 2) {
-                        const isClosing = (data.op == 2);
+                    else if (data.op == MACROS.MESSAGES_WITH_USER.OPS.CLOSED_DM || data.op == MACROS.MESSAGES_WITH_USER.OPS.OPEN_DM) {
+                        const isClosing = (data.op == MACROS.MESSAGES_WITH_USER.OPS.OPEN_DM);
+
                         const response = await toggleDM(mongoconnection, data.data.sid, data.data.other_id, isClosing);
                         if (response) ws.send(JSON.stringify({code: 3, op: 1, data: {other_id: data.data.other_id}}));
                         else ws.send(JSON.stringify({type: 1, code: 500, op: 3}));
                     }
-                    else if (data.op == 3) {
+                    else if (data.op == MACROS.MESSAGES_WITH_USER.OPS.DM_READ) {
                         markDMAsRead(mongoconnection, webSocketClients, data);
                     }
                 break;
 
-                case 4:
+
+                case MACROS.SOCIALS.CODE:
                     handleSocials(ws, mongoconnection, data, webSocketClients);
                     webSocketClients.set(data.sid, ws);
                 break;
+                
 
-                case 5:
+                case MACROS.MESSAGE.CODE:
                     handleMessage(mongoconnection, webSocketClients, data.data, data.op);
                 break;
 
-                case 6:
+
+                case MACROS.SERVER.CODE:
                     handleChatServer(ws, webSocketClients, mongoconnection, data);
                     break;
 
-                case 7:
-                    if (data.op == 0) recieveKeysInit(mongoconnection, ws, data);
+
+                case MACROS.SECURITY.CODE:
+                    if (data.op == MACROS.SECURITY.OPS.NEW_KEYS_CREATED) recieveKeysInit(mongoconnection, ws, data);
                     else console.log(`unknown op for code 7 (op == ${data.op})`);
                     break;
 
-                case 10:
+
+                case MACROS.PING:
                     ws.send(JSON.stringify({code: 10}));
                 break;
-
-                case 500:
-                    alert('REQUEST FAILED!');
-                    window.location.reload();
-                    break;
                     
+                
                 default: ws.send(403);
             }
         } catch (err) {

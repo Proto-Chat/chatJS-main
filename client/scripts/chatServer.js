@@ -130,6 +130,21 @@ function createServerSideBar(data) {
         // edit the channel if has perms
 // TODO: have this sent from the back-end
         if (isOwner) {
+            const editico = document.createElement('button');
+            editico.innerText = '⚙';
+            editico.className = 'ceditico'
+            
+            editico.onclick = (e) => {
+                if (document.getElementsByClassName('msgdropdown').length != 0) {
+                    document.getElementsByClassName('msgdropdown')[0].remove();
+                }
+                
+                showEditChannelPopup(e.target.parentNode.id, e.target.parentNode.innerText.replace(e.target.innerText, ""));
+                e.preventDefault();
+            }
+            channelLink.appendChild(editico);
+
+            // make this a context menu and an icon
             channelLink.addEventListener('contextmenu', (e) => {
                 if (document.getElementsByClassName('msgdropdown').length != 0) {
                     document.getElementsByClassName('msgdropdown')[0].remove();
