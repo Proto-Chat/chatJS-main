@@ -117,7 +117,7 @@ export async function createChannel(mongoconnection, connectionMap, sid, serverI
 
         broadcastToSessions(client, connectionMap, uDoc.users.map(u => u.uid), {
             code: 6,
-            op: 2,
+            op: 6,
             data: {serverId: serverId, channelId: channelId, creator: {username: getUsernameFromUID(client, uid), uid: uid}}
         });
 
@@ -183,16 +183,16 @@ async function handleMessage(ws, connectionMap, mongoconnection, data, op) {
 // TODO check permissions
 
         var conf;
-        const toSend = {code: 5, op: 0, data: data};
+        const toSend = {code: 6, op: 3, data: data};
 
         // delete data[id];  // idk why I did this
         if (op == MACROS.SERVER.OPS.DELETE_MESSAGE) {
             conf = await dbo.deleteOne({$and: [{channelId: data.channelId}, {id: data.id}]});
-            toSend.code = 7;
+            toSend.op = 4;
         }
         else if (op == MACROS.SERVER.OPS.EDIT_MESSAGE) {
             conf = await dbo.updateOne({$and: [{channelId: data.channelId}, {id: data.id}]}, {$set: {content: data.content}});
-            toSend.code = 6;
+            toSend.op = 5;
         }
         else if (op == MACROS.SERVER.OPS.SEND_MESSAGE) {
             conf = await dbo.insertOne(data);
@@ -259,7 +259,8 @@ async function getChannel(ws, connectionMap, mongoconnection, data) {
         channelConfigs[confInd]['serverId'] = data.serverId;
 
         ws.send(JSON.stringify({
-            code: 2,
+            code: 6,
+            op: 2,
             messages: doc,
             channelconfs: channelConfigs
         }));
@@ -291,8 +292,8 @@ async function updateChannel(ws, connectionMap, mongoconnection, data, op) {
 
         const toSend = {serverId: data.serverId, channelId: data.channelId, changer: {username: getUsernameFromUID(client, uid), uid: uid}};
 
-        // edit
-        if (op == MACROS.SERVER.OPS.EDIT_CHANNEL || 3) {
+        // edit (3 is needed for the legacy version)
+        if (op == MACROS.SERVER.OPS.EDIT_CHANNEL || op == 3) {
             await dbo.updateOne({_id: "channelConfigs"}, {$set: {name: data.newName}});
             toSend['newName'] = data.newName;
         }
@@ -307,7 +308,7 @@ async function updateChannel(ws, connectionMap, mongoconnection, data, op) {
 
         broadcastToSessions(client, connectionMap, uDoc.users.map(u => u.uid), {
             code: 6,
-            op: op - 1,
+            op: (op == MACROS.SERVER.OPS.DELETE_CHANNEL) ? 7 : 6,
             data: toSend
         });
     }
@@ -318,7 +319,7 @@ async function updateChannel(ws, connectionMap, mongoconnection, data, op) {
 }
 
 
-export async function handleChatServer(ws, connectionMap, mongoconnection, data) {    
+export async function handleChatServer(ws, connectionMap, mongoconnection, data) {
     switch (data.op) {
         case MACROS.SERVER.OPS.CREATE_SERVER:
             const response = await createServer(mongoconnection, connectionMap, data.sid, data.data);

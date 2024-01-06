@@ -73,6 +73,9 @@ export async function getMessages(mongoconnection, ws, sid, other_id) {
             delete document._id;
             return document;
         });
+
+        if (configs.tokens) delete configs.tokens;
+
         return {other: configs, messages: doc, chatID: dmId, symmKeyEnc: encDoc.keyObj[userid]};
     }
     catch (err) {

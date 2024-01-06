@@ -27,6 +27,7 @@ export function generateSymmKeyset(keyObj1, keyObj2) {
     }
 
     const buffer = Buffer.from(symmKey, 'utf8');
+
     const uOnePemkeyPub = jwkToPem(keyObj1.keyPub);
     const uTwoPemkeyPub = jwkToPem(keyObj2.keyPub);
 

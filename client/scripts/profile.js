@@ -246,10 +246,11 @@ async function createProfilePopup(udata) {
         outlineDiv.appendChild(unamesDiv);
     }
 
-
+// BROKEN
     if (!udata.me) {
         const cid = localStorage.getItem('currentChatID');
         const uid = JSON.parse(localStorage.getItem('user')).uid;
+        
         if (cid != `${uid}|${uid}` && !cid.split('|').includes('0')) {
             const removeFriendBtn = document.createElement('button');
             removeFriendBtn.className = 'removeFriendBtn';

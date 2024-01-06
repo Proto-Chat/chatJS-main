@@ -38,15 +38,20 @@ codes (server --> client):
         8: send friends
 5 - message sent
 
-6 - server -- WRONG (needs to be rewritten)
+6 - server
     op:
         0: create server response
-        1: edit server response
-        2: create channel response
-        3: edit channel response
-        4: view channel
-        5: channel edited
-        6: channel deleted,
+        1: view server page
+        2: view channel
+        3: recieve message
+        4: edit message
+        5: delete message
+        6: channel edited
+        7: channel deleted
+
+        // NOT DONE
+        8: server edited
+        9: server deleted
 
 7 - encryption
     op:

@@ -150,7 +150,7 @@ function createServerSideBar(data) {
                     document.getElementsByClassName('msgdropdown')[0].remove();
                 }
                 
-                showEditChannelPopup(e.target.id, e.target.innerText);
+                showEditChannelPopup(channelLink.id, channelLink.innerText);
                 e.preventDefault();
             });
         }

@@ -8,34 +8,40 @@ import { SERVERMACROS as MACROS } from "./macros.js";
 
 
 async function getSocials(ws, mongoconnection, data, getAll = true) {
-	if (!data.sid) {
-		ws.send(401);
-		return false;
+	try {
+		if (!data.sid) {
+			ws.send(401);
+			return false;
+		}
+
+		const doc = await getConnection(mongoconnection, data.sid, true);
+
+		doc.friends = doc.friends.filter((f) => (!f.system && !f.bot));
+
+		if (!doc) ws.send(JSON.stringify({ type: 1, code: 0, op: 404 }));
+		else if (doc.type == 1) {
+			ws.send(JSON.stringify(doc));
+			return false;
+		}
+		else {
+			const uid = getUidFromSid(data.sid);
+			const username = await getCurrentUsername(mongoconnection, uid);
+			ws.send(JSON.stringify({
+				type: 0,
+				code: 4,
+				op: (getAll) ? 0 : 8,
+				data: {
+					friends: doc.friends,
+					user: { username: username, uid: uid },
+					requests: (getAll) ? doc.invites : null
+				}
+			}));
+			return true;
+		}
 	}
-
-	const doc = await getConnection(mongoconnection, data.sid, true);
-
-	doc.friends = doc.friends.filter((f) => (!f.system && !f.bot));
-
-	if (!doc) ws.send(JSON.stringify({ type: 1, code: 0, op: 404 }));
-	else if (doc.type == 1) {
-		ws.send(JSON.stringify(doc));
-		return false;
-	}
-	else {
-		const uid = getUidFromSid(data.sid);
-		const username = await getCurrentUsername(mongoconnection, uid);
-		ws.send(JSON.stringify({
-			type: 0,
-			code: 4,
-			op: (getAll) ? 0 : 8,
-			data: {
-				friends: doc.friends,
-				user: { username: username, uid: uid },
-				requests: (getAll) ? doc.invites : null
-			}
-		}));
-		return true;
+	catch(err) {
+		console.error(err);
+		ws.send(500);
 	}
 }
 

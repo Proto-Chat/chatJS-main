@@ -50,8 +50,8 @@ export async function resumeSesion(ws, mongoconnection, data, uid) {
 
             ws.send(JSON.stringify({
                 type: 0,
-                code: 1,
-                op: 0,
+                code: 6,
+                op: 1,
                 data: {
                     serverInfo: serverInfo,
                     user: {username: username, uid: uid},

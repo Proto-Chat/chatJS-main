@@ -413,19 +413,16 @@ async function addMessage(msg, author = null) {
     }
 
     const uid = JSON.parse(localStorage.getItem('user')).uid;
-    var other_id = msg.channelId.split('|').filter((o) => (o && o != uid)).join("|");
+    const otherid = localStorage.getItem('currentChatID');
 
-    //account for "not-to-self" dm
-    if (!other_id && msg.channelId.split('|').indexOf(uid) != -1) other_id = uid;
-
-    const otherSplit = other_id.split("|");
-    if (otherSplit[0] == otherSplit[1]) other_id = otherSplit[0];
-    if (!other_id) return console.log(`ID "${msg.author.uid}" not found!`);
+    // if (!otherid) return console.log(`ID "${msg.author.uid}" not found!`);
+    
 
     //DM is not the current DM
-    if (msg.channelId != localStorage.getItem('currentChatID') || !document.hasFocus()) {
-        const dmToHighlight = document.getElementById(other_id);
-        dmToHighlight.classList.add('unread');
+    //  || !document.hasFocus()
+    if (msg.channelId != localStorage.getItem('currentChatID')) {
+        const dmToHighlight = document.getElementById(otherid);
+        dmToHighlight?.classList?.add('unread');
 
         showNotif(msg.author.username, msg.content);
         return;
@@ -436,12 +433,12 @@ async function addMessage(msg, author = null) {
         code: 3,
         op: 3,
         data: {
-            dmid: other_id,
+            dmid: otherid,
             sid: localStorage.getItem('sessionid')
         }
     }));
 
-    const dmToDeHighlight = document.getElementById(other_id);
+    const dmToDeHighlight = document.getElementById(otherid);
     if (dmToDeHighlight) dmToDeHighlight.classList.remove('unread');
 
     //If the user is not on top, say smth

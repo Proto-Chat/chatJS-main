@@ -1,5 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 import { delay } from '../utils/timers.js';
+import { generateSymmKeyset } from '../utils/encryption.js';
 
 
 export async function newConnection(connection, data) {
@@ -95,12 +96,26 @@ export async function createNewUser(mongoconnection, ws, dataFull) {
         await dbo.updateOne({username: data.username}, { $push: { sids: sid } });
 
         const sysdmid = (await import('crypto')).randomUUID();
+
         //Create the "note to self" dm
-        client.db('dms').createCollection(ntsdmid);
-        client.db('dms').createCollection(sysdmid);
+        const mySymmKeyEnc = generateSymmKeyset({uid: uid, keyPub: JSON.parse(dataFull.keyPub)}, {uid: uid, keyPub: JSON.parse(dataFull.keyPub)});
+        
+        await client.db('dms').collection(ntsdmid).insertOne({
+            _id: 'configs',
+			users: `${uid}|${uid}`,
+			isSystem: false,
+			keyObj: mySymmKeyEnc
+        });
+        
+        await client.db('dms').collection(sysdmid).insertOne({
+			_id: 'configs',
+			users: `${sysdmid}|${uid}`,
+			isSystem: true,
+			keyObj: mySymmKeyEnc  // you can not send messages to the system
+        });
 
         // add SYSTEM as a friend
-        client.db(`${uid}`).collection('dm_keys').insertOne({
+        await client.db(uid).collection('dm_keys').insertOne({
             uid: "0",
             username: "SYSTEM",
             notetoself: false,
