@@ -7,6 +7,7 @@
     <script src="/scripts/send.js"></script>
     <script src="/scripts/chatServer.js"></script>
     <script src="/scripts/chatServerChannel.js"></script>
+    <script src="/scripts/chatServerUserActions.js"></script>
     <script src="/scripts/initialize.js"></script>
     <script src="/scripts/profile.js"></script>
     <script src="/scripts/gifs.js"></script>
@@ -80,7 +81,7 @@
                     case 2: setUpChannel(response);
                     break;
 
-                    case 3: messageRecieved(response);
+                    case 3: addMessage(response.data);
                     break;
 
                     case 4: edit(response.data);
@@ -93,6 +94,16 @@
                     break;
 
                     case 7: console.log("CHANNEL DELETED: "); console.log(response.data);
+                    break;
+
+                    case 8: console.log("SERVER EDITED: "); console.log(response.data);
+                    break;
+                    
+                    case 9: console.log("SERVER DELETED: "); console.log(response.data);
+                    break;
+
+                    case 10: handleActionCode(response);
+                    break;
                     
                     default: console.log("UNKNOWN RESPONSE ", response);
                 }
@@ -155,7 +166,7 @@
             </div>
             <div class="backBtn" onclick="window.location.href = '/'">
                 <h1>Home</h1>
-            </div>
+            </div>       
         </div>
     </span>
     <span id="errWrapper">

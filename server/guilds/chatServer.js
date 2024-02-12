@@ -1,7 +1,19 @@
 import * as crypto from 'crypto';
-import { getUidFromSid, getUsernameFromUID } from './utils/decodesid.js';
-import { broadcastToSessions } from './database/newMessage.js';
-import { SERVERMACROS as MACROS } from './macros.js';
+import { getUidFromSid, getUsernameFromUID } from '../utils/decodesid.js';
+import { broadcastToSessions } from '../database/newMessage.js';
+import { SERVERMACROS as MACROS } from '../macros.js';
+import { handleUserAction, checkPerms } from './guildUser.js';
+
+
+function pingEveryoneInChannel(connectionMap, client, op, data, uconf, users, code = 6) {
+    try {
+        const toSend = {code: code, op: op, data: {serverId: data.serverId, channelId: data.channelId, user: uconf}};
+        broadcastToSessions(client, connectionMap, users.map(u => u.uid), toSend);
+    }
+    catch(err) {
+        console.error(err);
+    }
+}
 
 
 async function generateServerId(client) {
@@ -21,11 +33,12 @@ async function generateServerId(client) {
 
 const findAndStripUConf = async (client, uid) => {
     const uconf = await client.db(uid).collection('configs').findOne({_id: "myprofile"});
-    if (!uconf) return ws.send(JSON.stringify({type: 1, code: 401}));
+    if (!uconf) return null; // ws.send(JSON.stringify({type: 1, code: 401}));
     delete uconf['description'];
     uconf['uid'] = uid;
     return uconf;
 }
+
 
 export async function createServer(mongoconnection, connectionMap, sid, data) {
     try {
@@ -53,6 +66,7 @@ export async function createServer(mongoconnection, connectionMap, sid, data) {
         });
 
         const uconf = findAndStripUConf(client, uid);
+        if (!uconf) return;
 
         await sdbo.insertOne({_id: 'classifications', roles: [{'admin': [uid]}], users: [uconf]});
         await createChannel(mongoconnection, connectionMap, sid, serverId, 'general');
@@ -63,30 +77,6 @@ export async function createServer(mongoconnection, connectionMap, sid, data) {
         console.error(err);
         return null;
     }
-}
-
-
-function pingEveryoneInChannel(connectionMap, client, op, data, uconf, users, code = 6) {
-    try {
-        const toSend = {code: code, op: op, data: {serverId: data.serverId, channelId: data.channelId, user: uconf}};
-        broadcastToSessions(client, connectionMap, users.map(u => u.uid), toSend);
-    }
-    catch(err) {
-        console.error(err);
-    }
-}
-
-// modify this as needed later (check perms in dbo)
-// maybe add an input for the action being done?
-const checkPerms = async (db, uid, dbo = undefined) => {
-    const serverDoc = await db.collection('settings').findOne({_id: 'serverConfigs'});
-
-    if (dbo) {
-// TODO: check channel perms
-    }
-
-    // for now, only the server owner can manage channels
-    return (!serverDoc || serverDoc.owner != uid);
 }
 
 
@@ -102,9 +92,10 @@ export async function createChannel(mongoconnection, connectionMap, sid, serverI
         const db = client.db(`S|${serverId}`);
 
         // for now, only the server owner can manage channels
-        if (!checkPerms(db, uid)) return null;
+        if (!checkPerms(db, uid, MACROS.SERVER.OPS.CREATE_CHANNEL)) return null;
 
         const uconf = findAndStripUConf(client, uid);
+        if (!uconf) return;
 
         // insert the channel
         const channelId = crypto.randomUUID();
@@ -128,6 +119,46 @@ export async function createChannel(mongoconnection, connectionMap, sid, serverI
         return false;
     }
 }
+
+
+async function editServer(ws, mongoconnection, connectionMap, data) {
+    try {
+        const client = await mongoconnection;
+        const db = client.db(`S|${data.serverConfs.serverId}`);
+        const dbo = db.collection('settings');
+
+        const uid = getUidFromSid(data.sid);
+        const sConf = await dbo.findOne({_id: 'serverConfigs'});
+        if (!sConf) return ws.send(JSON.stringify({type: 1, code: 404}));
+
+
+        // for now, only the server owner can manage channels
+        if (!checkPerms(db, uid, MACROS.SERVER.OPS.EDIT_SERVER)) return ws.send(JSON.stringify({type: 1, code: 401}));
+
+        const toSend = {};
+        if (data.serverPrivacy) {
+            const sPriv = (data.serverPrivacy == 'private');
+            await dbo.updateOne({_id: 'serverConfigs'}, {$set: {isPublic: sPriv}});
+            toSend['serverPrivacy'] = sPriv;
+        }
+
+        if (data.serverName) {
+            toSend['serverName'] = data.serverName;
+            await dbo.updateOne({_id: 'serverConfigs'}, {$set: { name: data.serverName }});
+        }
+
+        // NOT IMPLEMENTED
+        if (data.serverIcon) return ws.send(JSON.stringify({type: 1, code: 501}));
+
+        const usersInServer = (await db.collection('settings').findOne({_id: classifications})).users;
+        broadcastToSessions(client, connectionMap, usersInServer, toSend);
+    }
+    catch (err) {
+        console.error(err);
+        ws.send(JSON.stringify({code: 500}));
+    }
+}
+
 
 // testing server: http://localhost:3000/server/Y0Td7hn4
 
@@ -154,7 +185,16 @@ export async function getServerInfo(mongoconnection, sid, serverId) {
             channels[doc.name] = {channelId: channelRaw.name, vis: doc.visibility};
         }
 
-// TODO: check if the person has admin privilages
+        // check server privacy settings
+        if (!configs.isPublic) return {type: 1, code: 501, msg: "This server is private!"};
+
+        // if the user isn't in the server, add them to the server
+        const uInServer = (await db.collection('settings').findOne({_id: 'classifications'})).users.find(u => (u.uid == uid));
+        if (!uInServer) {
+            const uConfStripped = await findAndStripUConf(client, uid);
+            if (uConfStripped) await db.collection.updateOne({_id: 'classifications'}, {$set: {$push: {users: uConfStripped}}});
+            else return {type: 1, code: 404, msg: "user not found"};
+        }
 
         return {
             configs: configs,
@@ -188,11 +228,11 @@ async function handleMessage(ws, connectionMap, mongoconnection, data, op) {
         // delete data[id];  // idk why I did this
         if (op == MACROS.SERVER.OPS.DELETE_MESSAGE) {
             conf = await dbo.deleteOne({$and: [{channelId: data.channelId}, {id: data.id}]});
-            toSend.op = 4;
+            toSend.op = 5;
         }
         else if (op == MACROS.SERVER.OPS.EDIT_MESSAGE) {
             conf = await dbo.updateOne({$and: [{channelId: data.channelId}, {id: data.id}]}, {$set: {content: data.content}});
-            toSend.op = 5;
+            toSend.op = 4;
         }
         else if (op == MACROS.SERVER.OPS.SEND_MESSAGE) {
             conf = await dbo.insertOne(data);
@@ -271,6 +311,7 @@ async function getChannel(ws, connectionMap, mongoconnection, data) {
     }
 }
 
+
 // update or delete
 async function updateChannel(ws, connectionMap, mongoconnection, data, op) {
     try {
@@ -288,7 +329,7 @@ async function updateChannel(ws, connectionMap, mongoconnection, data, op) {
         const sessionDoc = await client.db(uid).collection('sessions').findOne({sid: data.sid});
         if (!sessionDoc) return null;
 
-        if (!checkPerms(db, uid, data.channelId, dbo)) return null;
+        if (!checkPerms(db, uid, MACROS.SERVER.OPS.EDIT_CHANNEL, dbo)) return null; // had data.channelId as a param
 
         const toSend = {serverId: data.serverId, channelId: data.channelId, changer: {username: getUsernameFromUID(client, uid), uid: uid}};
 
@@ -334,6 +375,10 @@ export async function handleChatServer(ws, connectionMap, mongoconnection, data)
             }));
         break;
 
+        case MACROS.SERVER.OPS.EDIT_SERVER:
+            editServer(ws, mongoconnection, connectionMap, data.data);
+            break;
+
         case MACROS.SERVER.OPS.CREATE_CHANNEL:
             createChannel(mongoconnection, connectionMap, data.data.sid, data.data.serverId, data.data.channelName);
             // ws.send(501);
@@ -352,6 +397,10 @@ export async function handleChatServer(ws, connectionMap, mongoconnection, data)
         case MACROS.SERVER.OPS.EDIT_CHANNEL:
         case MACROS.SERVER.OPS.DELETE_CHANNEL:
             updateChannel(ws, connectionMap, mongoconnection, data.data, data.op);
+            break;
+
+        case MACROS.SERVER.OPS.USER_ACTION.CODE:
+            handleUserAction(ws, connectionMap, mongoconnection, data);
             break;
 
         default: console.log(data);

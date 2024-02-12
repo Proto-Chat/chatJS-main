@@ -1,9 +1,7 @@
 //This file contains code for either creating or resuming a session
 import { newConnection } from './database/newConnection.js';
 import { getConnection } from './database/getConnection.js';
-import { getUIDFromUsername, getUidFromSid, getUsernameFromUID } from './utils/decodesid.js';
-import { broadcastToSessions } from './database/newMessage.js';
-import { getServerInfo } from './chatServer.js';
+import { getServerInfo } from './guilds/chatServer.js';
 
 
 export async function getCurrentUsername(mongoconnection, uid) {

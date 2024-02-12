@@ -25,7 +25,7 @@ import {
     recieveKeysInit
 } from './imports.js';
 import { broadcastToSessions } from './database/newMessage.js';
-import { handleChatServer } from './chatServer.js';
+import { handleChatServer } from './guilds/chatServer.js';
 
 // MACROS
 import { SERVERMACROS as MACROS } from './macros.js';

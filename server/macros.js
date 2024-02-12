@@ -70,7 +70,16 @@ const SERVER = {
         EDIT_MESSAGE: 6,
         DELETE_MESSAGE: 7,
         EDIT_CHANNEL: 8,
-        DELETE_CHANNEL: 9
+        DELETE_CHANNEL: 9,
+        USER_ACTION: {
+            CODE: 10,
+            ACTION_CODES: {
+                KICK: 0,
+                BAN: 1,
+                UNBAN: 2,
+                GET_BANNED: 3
+            }
+        }
     }
 };
 

@@ -88,6 +88,169 @@ function newServerPopup() {
 }
 
 
+function createServerSettingsModal(serverInfo) {
+	// Create modal container
+	const modal = document.createElement("div");
+	modal.setAttribute("id", "serverSettingsModal");
+	modal.setAttribute("class", "modal");
+
+	// Create modal content container
+	const modalContent = document.createElement("div");
+	modalContent.setAttribute("class", "modal-content");
+
+	// Close button
+	const closeButton = document.createElement("span");
+	closeButton.setAttribute("class", "close");
+	closeButton.innerHTML = "&times;";
+	closeButton.onclick = function () {
+		modal.remove();
+	};
+
+	// Add title
+	const title = document.createElement("h2");
+	title.textContent = "Server Settings";
+
+	// Add form
+	const form = document.createElement("form");
+
+	// Server Name
+	form.appendChild(createInputField("Server Name:", "serverName", "text", serverInfo.configs.name));
+
+	// Server Icon
+	form.appendChild(createFileInputField("New Server Icon:", "serverIcon"));
+
+	// Server Privacy
+	form.appendChild(createSelectField("Server Privacy:", "serverPrivacy", ["Public", "Private"]));
+
+	// View Banned Members Button
+    const btnDiv = document.createElement('div');
+    btnDiv.style.textAlign = 'center';
+
+	const viewBannedButton = document.createElement("button");
+	viewBannedButton.setAttribute("type", "button");
+	viewBannedButton.innerText = "Edit Bans";
+	viewBannedButton.id = "viewBanned";
+    viewBannedButton.onclick = (e) => {
+        e.preventDefault();
+
+        // get banned users
+        ws.send(JSON.stringify({
+            code: 6,
+            op: 10,
+            actioncode: 3,
+            data: {
+                sid: localStorage.getItem('sessionid'),
+                serverConfs: serverInfo.configs
+            }
+        }));
+    };
+
+	btnDiv.appendChild(viewBannedButton);
+
+	// Submit Button
+	const submitButton = document.createElement("button");
+	submitButton.innerText = "Save Changes";
+    submitButton.className = 'saveBtn';
+	submitButton.onclick = (e) => {
+        e.preventDefault();
+
+		const serverName = document.getElementById("serverName").value || serverInfo.configs.name;
+		const serverIcon = document.getElementById("serverIcon").files[0]; // This will be a File object
+		const serverPrivacy = document.getElementById("serverPrivacy").value;
+
+        // send the file here
+        console.log('%c TODO: SEND SERVER FILE', 'color: #c061cb');
+
+		ws.send(JSON.stringify({
+            code: 6,
+            op: 1,
+            data: {
+                sid: localStorage.getItem('sessionid'),
+                serverConfs: serverInfo.configs,
+                serverName: serverName,
+                serverIcon: serverIcon?.name,
+                serverPrivacy: serverPrivacy
+            }
+		}));
+	}
+	btnDiv.appendChild(submitButton);
+	form.appendChild(btnDiv);
+
+	// Append elements
+	modalContent.appendChild(closeButton);
+	modalContent.appendChild(title);
+	modalContent.appendChild(form);
+	modal.appendChild(modalContent);
+
+	document.body.appendChild(modal);
+}
+
+
+function createInputField(labelText, id, type, placeholder = undefined) {
+	var label = document.createElement("label");
+	label.setAttribute("for", id);
+    label.style.marginRight = '5px';
+	label.textContent = labelText;
+
+	var input = document.createElement("input");
+	input.setAttribute("type", type);
+	input.setAttribute("id", id);
+	input.setAttribute("name", id);
+	if (placeholder) input.placeholder = placeholder;
+
+	var container = document.createElement("div");
+    container.className = 'serverSettingContainer';
+	container.appendChild(label);
+	container.appendChild(input);
+	return container;
+}
+
+
+const createFileInputField = (labelText, id) => createInputField(labelText, id, "file");
+
+
+function createSelectField(labelText, id, options) {
+	const label = document.createElement("label");
+	label.setAttribute("for", id);
+	label.textContent = labelText;
+    label.style.marginRight = '5px';
+
+	const select = document.createElement("select");
+	select.setAttribute("id", id);
+	select.setAttribute("name", id);
+
+	options.forEach((optionText) => {
+		var option = document.createElement("option");
+		option.setAttribute("value", optionText.toLowerCase());
+		option.textContent = optionText;
+		select.appendChild(option);
+	});
+
+	const container = document.createElement("div");
+    container.className = 'serverSettingContainer';
+	container.appendChild(label);
+	container.appendChild(select);
+	return container;
+}
+
+
+/**
+ * @param {function} f 
+ */
+const createServerConfBtn = (f, btntxt, serverInfo = undefined) => {
+	const newChannelLink = document.createElement('a');
+	newChannelLink.href = '';
+	newChannelLink.classList.add('pageSwitchLink');
+	newChannelLink.classList.add('unselectable');
+	newChannelLink.innerText = btntxt;
+	newChannelLink.onclick = (e) => {
+		e.preventDefault();
+		f(serverInfo);
+	}
+	return newChannelLink;
+}
+
+
 function createServerSideBar(data) {
     const info = data.serverInfo;
     const sidebar = document.getElementById('channels');
@@ -96,16 +259,8 @@ function createServerSideBar(data) {
     const isOwner = JSON.parse(localStorage.getItem('user')).uid == data.serverInfo.configs.owner;
     if (isOwner) {
         // admin stuff
-        const newChannelLink = document.createElement('a');
-        newChannelLink.href = '';
-        newChannelLink.classList.add('pageSwitchLink');
-        newChannelLink.classList.add('unselectable');
-        newChannelLink.innerText = 'NEW CHANNEL';
-        newChannelLink.onclick = (e) => {
-            e.preventDefault();
-            showNewChannelPopup();
-        }
-        sidebar.appendChild(newChannelLink);
+        sidebar.appendChild(createServerConfBtn(showNewChannelPopup, 'NEW CHANNEL'));
+        sidebar.appendChild(createServerConfBtn(createServerSettingsModal, 'SETTINGS', data.serverInfo));
     }
 
     for (const channelRaw in info.channels) {

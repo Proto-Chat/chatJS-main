@@ -1,4 +1,7 @@
 function messageRecieved(response) {
+    // transform for server
+    if (response.code == 6) return console.error("SERVER MESSAGES SHOULD NOT GO THROUGH HERE!");
+
     if (response.op != 0 && response.data.channelId != localStorage.getItem('currentChatID')) return;
 
     switch (response.op) {
@@ -51,7 +54,7 @@ function deleteMsg(msgid) {
 
 async function edit(data) {
     const element = document.getElementById(data.id);
-    if (element.tagName != 'TEXTAREA') return;
+    if (!element || element.tagName != 'TEXTAREA') return;
 
     // encryption
     const symmKeyEnc = await getSymmKey();

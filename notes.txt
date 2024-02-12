@@ -53,6 +53,14 @@ codes (server --> client):
         8: server edited
         9: server deleted
 
+        10: USER ACTION RESPONSE
+            actioncode:
+                0: kick
+                1: ban
+                2: unban
+                3: get all banned users
+                
+
 7 - encryption
     op:
         0: create new keys
@@ -110,6 +118,12 @@ codes (client --> server):
         7: delete message
         8: edit channel
         9: delete channel
+        10: user action
+            actioncode:
+                0: kick
+                1: ban
+                2: unban
+                3: get all banned users
 
 7 - security
     op:
