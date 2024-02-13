@@ -163,3 +163,13 @@ USER
 USER NOTES:
 when first creating a user, open a DM with the user to
 itself with "notetoself = true";
+
+
+GUILD ROLES:
+    {
+        id: string,
+		name: string,
+		pos: number,
+        color: string,
+        users: [{name: string, uid: string}],
+    }

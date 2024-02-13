@@ -235,8 +235,31 @@
     cursor: pointer;
 }
 
-#viewBanned {
+.viewBanned {
     background-color: #E74C3C; /* Red background */
+}
+
+.viewBanned:hover, #viewBanned:focus {
+    background-color: #C0392B; /* Darker red background on hover/focus */
+}
+
+.viewBanned:active {
+    background-color: #922B21; /* Even darker red when button is clicked */
+}
+
+#viewRoles {
+    background-color: #FFD700; /* Yellow background */
+}
+
+#viewRoles:hover, #viewRoles:focus {
+    background-color: #FFC200; /* Darker yellow background on hover/focus */
+}
+
+#viewRoles:active {
+    background-color: #DAA520; /* Even darker yellow when button is clicked */
+}
+
+.viewBaseBtn {
     color: white; /* White text */
     margin-right: 10px;
     padding: 10px; /* Padding around the text */
@@ -247,14 +270,12 @@
     transition: background-color 0.3s, box-shadow 0.3s; /* Smooth transition for hover and focus */
 }
 
-#viewBanned:hover, #viewBanned:focus {
-    background-color: #C0392B; /* Darker red background on hover/focus */
+.viewBaseBtn:hover, .viewBaseBtn:focus {
     box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2); /* Shadow effect for depth */
     outline: none; /* Remove outline to avoid default browser styles */
 }
 
-#viewBanned:active {
-    background-color: #922B21; /* Even darker red when button is clicked */
+.viewBaseBtn:active {
     box-shadow: 0 2px 4px 0 rgba(0,0,0,0.2); /* Smaller shadow for a "pressed" effect */
 }
 

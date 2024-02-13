@@ -427,4 +427,10 @@ app.ws('/websocket', async (ws, req) => {
 });
 
 
+app.get('*', async (req, res) => {
+    console.error(`UNKNOWN URL: ${req.url}`);
+    res.sendStatus(404);
+})
+
+
 app.listen(port, () => console.log(`App listening on port ${port}`));

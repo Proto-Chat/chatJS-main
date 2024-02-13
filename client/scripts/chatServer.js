@@ -130,6 +130,7 @@ function createServerSettingsModal(serverInfo) {
 	viewBannedButton.setAttribute("type", "button");
 	viewBannedButton.innerText = "Edit Bans";
 	viewBannedButton.id = "viewBanned";
+    viewBannedButton.classList = 'viewBaseBtn viewBanned';
     viewBannedButton.onclick = (e) => {
         e.preventDefault();
 
@@ -144,8 +145,26 @@ function createServerSettingsModal(serverInfo) {
             }
         }));
     };
-
 	btnDiv.appendChild(viewBannedButton);
+
+    const roleBtn = document.createElement('button');
+    roleBtn.innerText = 'Roles';
+    roleBtn.id = 'viewRoles';
+    roleBtn.className = 'viewBaseBtn';
+    roleBtn.onclick = (e) => {
+        e.preventDefault();
+        // get banned users
+        ws.send(JSON.stringify({
+            code: 6,
+            op: 11,
+            actioncode: 3,
+            data: {
+                sid: localStorage.getItem('sessionid'),
+                serverConfs: serverInfo.configs
+            }
+        }));
+    };
+    btnDiv.appendChild(roleBtn);
 
 	// Submit Button
 	const submitButton = document.createElement("button");

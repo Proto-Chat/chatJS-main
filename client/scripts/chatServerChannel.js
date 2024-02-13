@@ -248,7 +248,7 @@ function createCollapsable(toColl, collLeft = true) {
 }
 
 
-function createUCard(uObj) {
+function createUCard(uObj, serverConfs, isOwner) {
     // Create the main card container
     const userCard = document.createElement('div');
     userCard.className = 'user-card';
@@ -279,6 +279,30 @@ function createUCard(uObj) {
             icon: true,
             me: false
         });
+
+        if (isOwner) {
+            const uEl = document.getElementsByClassName('profileoutlinediv')[0];
+            if (!uEl) return;
+            const addRoleBtn = document.createElement('button');
+            addRoleBtn.className = 'saveBtn';
+            addRoleBtn.innerText = 'Add Role';
+            addRoleBtn.onclick = (e) => {
+                e.preventDefault();
+
+                e.preventDefault();
+                ws.send(JSON.stringify({
+                    code: 6,
+                    op: 11,
+                    actioncode: 3,
+                    data: {
+                        sid: localStorage.getItem('sessionid'),
+                        serverConfs: serverConfs,
+                    }
+                }));
+                console.log("ADDING ROLE TO", user.uid);
+            }
+            uEl.appendChild(addRoleBtn);
+        }
     }
 
     // Create the user info container
@@ -305,10 +329,13 @@ function createUCard(uObj) {
 }
 
 
-async function fillUSideBar() {
+async function fillUSideBar(serverConfs) {
+    const { serverOwner } = serverConfs;
+    const isOwner = JSON.parse(localStorage.getItem('user')).uid == serverOwner;
+
     return new Promise((resolve) => {
         try {
-            for (const uObj of inChannel) createUCard(uObj);
+            for (const uObj of inChannel) createUCard(uObj, serverConfs, isOwner);
             resolve(true);
         } catch(err) {
             console.error(err);
@@ -504,7 +531,7 @@ function setUpChannel(response) {
     createCollapsable(memberSideBar, false);
     
     // add the users asynchronously
-    fillUSideBar(inChannel).then((res) => console.log((res) ? 'added all users to sidebar!' : 'failed to add all users to sidebar!'));
+    fillUSideBar(channelConfigs).then((res) => console.log((res) ? 'added all users to sidebar!' : 'failed to add all users to sidebar!'));
 
     if (messages && messages.lastChild) {
         if (lastVideo) {

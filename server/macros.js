@@ -77,9 +77,20 @@ const SERVER = {
                 KICK: 0,
                 BAN: 1,
                 UNBAN: 2,
-                GET_BANNED: 3
+                GET_BANNED: 3,
+                CHANGEROLES: 4,
+                GETROLES: 5
             }
-        }
+        },
+        ROLE: {
+            CODE: 11,
+            ACTION_CODES: {
+                CREATE: 0,
+                EDIT: 1,
+                DELETE: 2,
+                GET: 3
+            }
+        },
     }
 };
 

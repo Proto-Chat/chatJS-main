@@ -119,10 +119,14 @@ function handleEnter(e, oldmsg) {
 const pfpCloseFnct = () => {
     const outlineDiv = document.getElementsByClassName('profileoutlinediv')[0];
     const udivCorner = document.getElementsByClassName('userprofile')[0];
+
+    const btnHovering = Array.from(outlineDiv.querySelectorAll('button')).find(e => e.matches(":hover"));
+    if (btnHovering) return;
+
     if (!udivCorner) {
         closeUserPopup(outlineDiv);
     }
-    else if (!outlineDiv.matches(":hover") && !udivCorner.matches(":hover")) {
+    else if (!outlineDiv.matches(":hover") && !udivCorner.matches(":hover") && !btnHovering) {
         // window.location.reload();
         closeUserPopup(outlineDiv, udivCorner);
         const uClickable = document.getElementsByClassName('userprofile')[0];

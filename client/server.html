@@ -104,6 +104,9 @@
 
                     case 10: handleActionCode(response);
                     break;
+
+                    case 11: (document.getElementsByClassName('profileoutlinediv').length > 0) ? createRolePopup(response) : displayRoles(response);
+                    break;
                     
                     default: console.log("UNKNOWN RESPONSE ", response);
                 }

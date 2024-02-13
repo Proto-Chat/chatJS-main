@@ -18,5 +18,11 @@ export const getUIDFromUsername = (client, username) => {
 }
 
 export const getUsernameFromUID = (client, uid) => {
-    // const dbo = client
+    return new Promise(async (resolve) => {
+        const dbo = client.db('main').collection('accounts');
+        const doc = await dbo.findOne({uid: uid});
+        if (!doc) return resolve(null);
+
+        resolve(doc.username);
+    });
 }
