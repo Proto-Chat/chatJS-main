@@ -55,6 +55,7 @@
             var inChannel = [];
             ws.addEventListener('message', (message) => {
                 const response = JSON.parse(message.data);
+                if (response.code != 10) console.log(response);
 
                 if (response.code != 6) {
                     switch(response.code) {
@@ -90,7 +91,7 @@
                     case 5: deleteMsg(response.data.id);
                     break;
 
-                    case 6: console.log("NEW CHANNEL HERE: "); console.log(response.data);
+                    case 6: createChannelLink(data.channelName, data.serverId, data.cid, data.isOwner); console.log("NEW CHANNEL HERE: "); console.log(response.data);
                     break;
 
                     case 7: console.log("CHANNEL DELETED: "); console.log(response.data);

@@ -70,7 +70,7 @@
                 }
             });
 
-            ws.addEventListener('message', (message) => {
+            ws.addEventListener('message', async (message) => {
                 // if (message instanceof Buffer && !sessionStorage.getItem('pfp')) {
                 //     return setPFP(message);
                 // }
@@ -100,7 +100,13 @@
                         }
                         break;
 
-                    case 1: initializeLayout(response, sessionStorage.getItem('waitforDM'));
+                    case 1: {
+                        const uPass = sessionStorage.getItem('pass');
+                        // sessionStorage.removeItem('pass');
+
+                        await checkPassword(uPass, response.data.configs.find(o => o._id == 'encryption'));
+                        initializeLayout(response, sessionStorage.getItem('waitforDM'));
+                    }
                     break;
 
                     case 2: localStorage.removeItem('sessionid');

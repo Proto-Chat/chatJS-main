@@ -67,20 +67,48 @@ async function initializeLayout(response, dmid) {
     try {
         const data = response.data;
         const element = document.getElementById('dms');
-        for (const k of element.childNodes) { k.remove(); }
+		for (const k of element.childNodes) { k.remove(); }
 
         localStorage.setItem("user", JSON.stringify(data.user));
-
         element.appendChild(createPageMenu());
 
-        const dmSYS = data.dms.find((dm) => dm.uid == '0');
-        element.appendChild(await createDmLink(dmSYS));
+		const dmEls = document.createElement('div');
+		dmEls.id = 'pms';
 
+        const dmSYS = data.dms.find((dm) => dm.uid == '0');
+        dmEls.appendChild(await createDmLink(dmSYS));
+		
+		const serverEls = document.createElement('div');
+		serverEls.id = 'servers';
+		serverEls.style.display = 'none';
+
+		const toggleBtn = document.createElement('a');
+		toggleBtn.classList.add('pageSwitchLink');
+		toggleBtn.classList.add('unselectable');
+		toggleBtn.onclick = (e) => {
+			e.preventDefault();
+			if (toggleBtn.dataset.shown == 'servers') {
+				toggleBtn.dataset.shown = 'dms';
+				dmEls.style.display = 'block';
+				serverEls.style.display = 'none';
+				toggleBtn.innerText = 'Show Servers';
+			} else {
+				toggleBtn.dataset.shown = 'servers';
+				dmEls.style.display = 'none';
+				serverEls.style.display = 'block';
+				toggleBtn.innerText = 'Show DMs';
+			}
+		}
+		toggleBtn.innerText = 'Show Servers';
+		element.appendChild(toggleBtn);
+		
         for (const dmRaw of data.dms) {
             const a = await createDmLink(dmRaw);
-
-            if (dmRaw.uid != "0") element.appendChild(a);
+            if (dmRaw.uid != "0") dmEls.appendChild(a);
         }
+		
+        for (const serverRaw of data.servers) serverEls.appendChild(await createDmLink(serverRaw, true));
+		element.append(dmEls, serverEls);
 
         const profileConfigs = data.configs.find((c) => c._id == 'myprofile');
 
@@ -266,6 +294,7 @@ async function setupDM(response) {
 
     // decryption
     const symmKeyEnc = await getSymmKey();
+	if (!symmKeyEnc) return alert("SYMMETRIC KEY NOT FOUND");
 
     const decHelper = async(msg) => {
         if (msg.content['filename']) return msg;
@@ -277,7 +306,8 @@ async function setupDM(response) {
     let lastVideo;
     var counter = 0;
     for (const msg of data.messages) {
-        const msgElement = createNewMessage(await decHelper(msg));
+        // const msgElement = createNewMessage(await decHelper(msg));
+        const msgElement = createNewMessage(msg);
         messages.appendChild(msgElement);
 
         if (msgElement.lastChild.lastChild && msgElement.lastChild.lastChild.tagName == 'VIDEO') {

@@ -2,7 +2,7 @@ import { getUidFromSid, wasabiManager } from "../imports.js";
 import { randomUUID } from 'crypto';
 import { SERVERMACROS as MACROS } from "../macros.js";
 
-export async function broadcastToSessions(client, connectionMap, others, toSend, encDoc) {
+export async function broadcastToSessions(client, connectionMap, others, toSend, encDoc, checkPerms = undefined) {
     try {
         for (const k of others) {
             const dbo = client.db(k).collection('sessions');
@@ -11,6 +11,10 @@ export async function broadcastToSessions(client, connectionMap, others, toSend,
             if (encDoc) {
                 const symmEncKeyEnc = encDoc[k];
                 toSend['data']['encSymmKey'] = symmEncKeyEnc;
+            }
+
+            if (checkPerms && checkPerms.includes(k)) {
+                toSend['hasPerms'] = hasPerms;
             }
 
             for (const doc of docs) {

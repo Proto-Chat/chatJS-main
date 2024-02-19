@@ -346,6 +346,8 @@ app.ws('/websocket', async (ws, req) => {
             const data = JSON.parse(dataRaw);
             const code = data['code'];
 
+            // if (data.code != 10) console.log(data)
+
             switch (code) {
                 case MACROS.NEW_CONNECTION.CODE:
                     if (data.op == MACROS.NEW_CONNECTION.OPS.INITIAL_LOGIN) {

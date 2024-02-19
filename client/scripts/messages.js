@@ -57,9 +57,9 @@ async function edit(data) {
     if (!element || element.tagName != 'TEXTAREA') return;
 
     // encryption
-    const symmKeyEnc = await getSymmKey();
+    // const symmKeyEnc = await getSymmKey();
 
-    const msgContent = (data.serverId) ? data.content : await decryptMsg(symmKeyEnc, data.content);
+    const msgContent = data.content; //(data.serverId) ? data.content : await decryptMsg(symmKeyEnc, data.content);
     data.content = msgContent;
     if (!data.author && data.user) data.author = data.user;
 
@@ -225,7 +225,7 @@ async function createContextMenu(e, editable = true) {
                             code: 5,
                             op: 2,
                             data: {
-                                content: await encryptMsg(symmEncKey, newinpdiv.value),
+                                content: newinpdiv.value, //await encryptMsg(symmEncKey, newinpdiv.value),
                                 user: JSON.parse(userRaw),
                                 chatid: localStorage.getItem('currentChatID'),
                                 id: target.id
@@ -400,13 +400,13 @@ async function addMessage(msg, author = null) {
     const element = document.getElementById('messages');
 
     // encryption
-    if (!msg.content['filename'] && !msg.serverId) {
+    /* if (!msg.content['filename'] && !msg.serverId) {
         const symmKeyEnc = await getSymmKey();
 
         const msgContent = await decryptMsg(symmKeyEnc, msg.content);
         msg.content = msgContent;
     }
-
+    */
 
     //DM is not open
     if (!document.getElementById(msg.author.uid)) {
@@ -495,26 +495,32 @@ function openDM(id) {
 }
 
 
-async function createDmLink(dmRaw) {
+async function createDmLink(dmRaw, isServer = false) {
     const a = document.createElement('a');
-    a.innerText = dmRaw.username;
-    a.id = dmRaw.uid;
+    a.innerText = (!isServer) ? dmRaw.username : dmRaw.name;
+    a.id = (!isServer) ? dmRaw.uid : dmRaw.serverId.replace('S|', '');
     a.onclick = (e) => {
         if (!closeDMBtn.contains(e.target)) {
-            requestDM(a.id);
+            if (!isServer) requestDM(a.id);
+            else window.location.pathname = `/server/${a.id}`;
         }
         else {
-            const closeDMWSObj = {
-                code: 3,
-                op: 1,
-                data: {
-                    other_id: e.target.parentElement.id,
-                    sid: localStorage.getItem('sessionid')
-                }
-            };
-
-            ws.send(JSON.stringify(closeDMWSObj));
-        }
+            if (isServer) {
+                const conf = confirm(`Are you sure you'd like to leave "${dmRaw.name}"?`)
+            }
+            else {
+                const closeDMWSObj = {
+                    code: 3,
+                    op: 1,
+                    data: {
+                        other_id: e.target.parentElement.id,
+                        sid: localStorage.getItem('sessionid')
+                    }
+                };
+    
+                ws.send(JSON.stringify(closeDMWSObj));
+            }
+        }   
     };
     a.classList.add('unselectable');
 

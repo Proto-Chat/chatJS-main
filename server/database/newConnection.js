@@ -88,7 +88,7 @@ export async function createNewUser(mongoconnection, ws, dataFull) {
 
         const configs = ab.collection('configs');
         configs.insertOne({_id: 'myprofile', status: "", description: "", icon: "", username: data.username});
-        configs.insertOne({_id: 'encryption', keyPub: dataFull.keyPub, iv: dataFull.iv, salt: dataFull.salt, prvKeyEnc: dataFull.keyPrvtEnc});
+        configs.insertOne({_id: 'encryption', keyPub: dataFull.keyPub, iv: dataFull.iv, salt: dataFull.salt, prvKeyEnc: dataFull.prvKeyEnc});
         
         //Session stuff
         const sid = uuidv4() + "?" + Buffer.from(uid).toString('base64');

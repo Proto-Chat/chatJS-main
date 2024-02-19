@@ -18,7 +18,7 @@ async function send(serverId = undefined) {
     const channelId = localStorage.getItem('currentChatID');
 
     // encrypt the data
-    const encContent = (serverId) ? content : await encryptMsg(await getSymmKey(), content);
+    const encContent = content; //(serverId) ? content : await encryptMsg(await getSymmKey(), content);
 
     var msg = {author: {username: username, uid: authorID}, id: crypto.randomUUID(), channelId: channelId, content: encContent, timestamp: (new Date()).toISOString()};
 

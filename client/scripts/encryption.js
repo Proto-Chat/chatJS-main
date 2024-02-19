@@ -8,7 +8,7 @@ const symmEncIDBKey = 'symmenc';
 function getDB() {
     return new Promise(async (resolve, reject) => {
         if (!('indexedDB' in window)) {
-            console.warn('IndexedDB not supported!');
+            console.error('IndexedDB not supported!');
             return reject();
         }
 
@@ -60,21 +60,27 @@ async function demo() {
  * @returns {Object | CryptoKey}
  */
 async function getPrivKey(asCrypto = false) {
-    const jwkKey = await (await getDB())?.transaction(storeName).objectStore(storeName).get(prvtIDBKey) || null;
+    try {
+        const jwkKey = await (await getDB())?.transaction(storeName).objectStore(storeName).get(prvtIDBKey) || null;
 
-    if (!asCrypto) return jwkKey;
-
-    else return await crypto.subtle.importKey(
-        "jwk",
-        jwkKey,
-        {
-            name: "RSA-OAEP",
-            hash: { name: "SHA-256" },
-        },
-        true,
-        ["decrypt"]
-    );
+        if (!asCrypto) return jwkKey;
+        else return await crypto.subtle.importKey(
+            "jwk",
+            jwkKey,
+            {
+                name: "RSA-OAEP",
+                hash: { name: "SHA-256" },
+            },
+            true,
+            ["decrypt"]
+        );
+    }
+    catch(err) {
+        alert("ENCRYPTION ERROR");
+        await logout();
+    }
 }
+
 
 async function getSymmKey() {
     try {
@@ -101,16 +107,17 @@ async function getSymmKey() {
 
 
 async function checkPassword(password, encryptedPrivateKeyData) {
-    const { salt, iv, encryptedPrivateKey } = encryptedPrivateKeyData;
-    if (!salt || !iv || !encryptedPrivateKey) return console.error("Missing data for password check!");
+    const { salt, iv, prvKeyEnc } = encryptedPrivateKeyData;
+    if (!salt || !iv || !prvKeyEnc) return console.error("Missing data for password check!");
 
     try {
         const { keyFromPass } = await deriveKeyFromPass(password, salt);
-        const decryptedPrivateKey = await decryptPrivateKey(keyFromPass, encryptedPrivateKey, iv);
+        const decryptedPrivateKey = await decryptPrivateKey(keyFromPass, prvKeyEnc, iv);
 
         // password is correct and we get the private key
-        writeKeyToIDB(decryptedPrivateKey);
-
+// TODO: COMMENT BACK IN
+        // writeKeyToIDB(decryptedPrivateKey);
+return console.log(decryptedPrivateKey);
         return true;
     } catch (error) {
         console.error("Incorrect password or decryption error:", error);
@@ -147,15 +154,36 @@ async function deriveKeyFromPass(password, saltInp = undefined) {
 }
 
 
-async function decryptPrivateKey(derivedKey, encryptedPrivateKey, iv) {
-    const decryptedData = await window.crypto.subtle.decrypt(
-        { name: "AES-GCM", iv: iv },
-        derivedKey,
-        encryptedPrivateKey
-    );
+async function decryptPrivateKey(derivedKey, encryptedPrivateKeyHex, ivHex) {
+    // Convert hex to ArrayBuffer for the encrypted private key and iv
+    const encryptedPrivateKey = encryptedPrivateKeyHex// hexStringToArrayBuffer(encryptedPrivateKeyHex);
+    const iv = ivHex//hexStringToArrayBuffer(ivHex);
 
-    const decodedPrivateKey = new TextDecoder().decode(decryptedData);
-    return JSON.parse(decodedPrivateKey);
+    try {
+        const decryptedData = await window.crypto.subtle.decrypt(
+            { name: "AES-GCM", iv: iv },
+            derivedKey,
+            encryptedPrivateKey
+        );
+
+        // Convert decrypted data to a text string
+        const decodedPrivateKey = new TextDecoder().decode(decryptedData);
+        
+        // Parse the JSON string into an object
+        return JSON.parse(decodedPrivateKey);
+    } catch (e) {
+        console.error('Decryption failed:', e);
+        throw e; // Re-throw the error to be handled by the caller
+    }
+}
+
+// Helper function to convert a hex string to an ArrayBuffer
+function hexStringToArrayBuffer(hexString) {
+    const result = new Uint8Array(hexString.length / 2);
+    for (let i = 0, j = 0; i < hexString.length; i += 2, j++) {
+        result[j] = parseInt(hexString.substr(i, 2), 16);
+    }
+    return result.buffer;
 }
 
 
@@ -184,8 +212,11 @@ async function generateSymmetricKey() {
 }
 
 
+// IT'S ALL BROKEN
 async function createAndStoreKey(data) {
     try {
+        const passwordEncrypted = String(data.data.password);
+
         const keyPair = await window.crypto.subtle.generateKey({
             name: "RSA-OAEP",
             modulusLength: 2048,
@@ -212,6 +243,18 @@ async function createAndStoreKey(data) {
             encodedPrivateKey
         );
 
+        // BROKEN
+        /*
+        const pKey = JSON.parse(new TextDecoder().decode((await window.crypto.subtle.decrypt(
+            {name: 'AES-GCM', iv: iv},
+            keyFromPass,
+            encodedPrivateKey
+        ))));
+
+        console.log(pKey);
+        console.log(privateKey);
+        */
+
         // not secure?
         writeKeyToIDB(privateKey);
 
@@ -222,17 +265,16 @@ async function createAndStoreKey(data) {
         //     keyPair.privateKey,
         //     encoder.encode(data.password)
         // );
-        const passwordEncrypted = data.password
 
 
         // replace the unencrypted password
         data['password'] = passwordEncrypted;
 
         // new entries
-        data['keyPrvtEnc'] = bufferToHex(encryptedPrivateKey);
+        data['prvKeyEnc'] = encryptedPrivateKey; //bufferToHex(encryptedPrivateKey);
         data['keyPub'] = JSON.stringify(publicKey);
-        data['iv'] = bufferToHex(iv);
-        data['salt'] = bufferToHex(salt);
+        data['iv'] = bufferToHex(iv.buffer);
+        data['salt'] = bufferToHex(salt.buffer);
 
         // data already has code 7 and op 0
         ws.send(JSON.stringify(data));
@@ -263,6 +305,14 @@ function arrayBufferToBase64(buffer) {
         binary += String.fromCharCode(bytes[i]);
     }
     return window.btoa(binary);
+}
+
+function hexStringToArrayBuffer(hexString) {
+    const result = new Uint8Array(hexString.length / 2);
+    for (let i = 0, j = 0; i < hexString.length; i += 2, j++) {
+        result[j] = parseInt(hexString.substr(i, 2), 16);
+    }
+    return result.buffer;
 }
 
 
@@ -320,7 +370,7 @@ async function init() {
     if (!localStorage.getItem('sessionid')) return;
     else if (!(await getPrivKey())) {
         // LOG OUT HERE
-        logout();
+        // logout();
     }
 };
 

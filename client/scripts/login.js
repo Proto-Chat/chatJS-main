@@ -24,6 +24,7 @@ function showLogin() {
         const password = upass.value;
 
         if (!username || !password) return;
+        sessionStorage.setItem('pass', password);
         ws.send(JSON.stringify({code: 0, op: 0, username: username, password: password }));
     }
     submitbtn.style.marginLeft = '10px';
@@ -58,13 +59,28 @@ function showLogin() {
 }
 
 
-function logout() {
-    const sid = localStorage.getItem('sessionid')
+async function logout() {
+    const db = await getDB();
+    if (db) {
+        await db.close();
+        console.log(db);
+        await idb.deleteDB(db.name, {
+            async blocked() {
+                // window.location.reload();
+                await db.close();
+                idb.deleteDB(db.name, {});
+            }
+        });
+    }
+
+    const sid = localStorage.getItem('sessionid');
     if (!sid || sid.length == 0) {
         localStorage.removeItem('sessionid');
         window.location.reload();
         return;
     }
+
+    localStorage.clear();
 
     ws.send(JSON.stringify({
         code: 2,

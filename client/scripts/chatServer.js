@@ -270,6 +270,57 @@ const createServerConfBtn = (f, btntxt, serverInfo = undefined) => {
 }
 
 
+function createChannelLink(channelName, serverId, cid, hasPerms) {
+    const channelLink = document.createElement('a');
+    channelLink.innerText = channelName;
+    channelLink.id = cid;
+
+    channelLink.onclick = (e) => {
+        const openChannel = {
+            code: 6,
+            op: 4,
+            data: {
+                serverId: serverId,
+                channelId: e.target.id,
+                sid: localStorage.getItem('sessionid')
+            }
+        };
+
+        ws.send(JSON.stringify(openChannel));
+    }
+
+    // edit the channel if has perms
+    // check if the user has perms
+    if (hasPerms) {
+        const editico = document.createElement('button');
+        editico.innerText = '⚙';
+        editico.className = 'ceditico'
+        
+        editico.onclick = (e) => {
+            if (document.getElementsByClassName('msgdropdown').length != 0) {
+                document.getElementsByClassName('msgdropdown')[0].remove();
+            }
+            
+            showEditChannelPopup(e.target.parentNode.id, e.target.parentNode.innerText.replace(e.target.innerText, ""));
+            e.preventDefault();
+        }
+        channelLink.appendChild(editico);
+
+        // make this a context menu and an icon
+        channelLink.addEventListener('contextmenu', (e) => {
+            if (document.getElementsByClassName('msgdropdown').length != 0) {
+                document.getElementsByClassName('msgdropdown')[0].remove();
+            }
+            
+            showEditChannelPopup(channelLink.id, channelLink.innerText);
+            e.preventDefault();
+        });
+    }
+
+    return channelLink;
+}
+
+
 function createServerSideBar(data) {
     const info = data.serverInfo;
     const sidebar = document.getElementById('channels');
@@ -283,52 +334,7 @@ function createServerSideBar(data) {
     }
 
     for (const channelRaw in info.channels) {
-        const channelLink = document.createElement('a');
-        channelLink.innerText = channelRaw;
-        channelLink.id = info.channels[channelRaw].channelId;
-
-        channelLink.onclick = (e) => {
-            const openChannel = {
-                code: 6,
-                op: 4,
-                data: {
-                    serverId: serverId,
-                    channelId: e.target.id,
-                    sid: localStorage.getItem('sessionid')
-                }
-            };
-
-            ws.send(JSON.stringify(openChannel));
-        }
-
-        // edit the channel if has perms
-// TODO: have this sent from the back-end
-        if (isOwner) {
-            const editico = document.createElement('button');
-            editico.innerText = '⚙';
-            editico.className = 'ceditico'
-            
-            editico.onclick = (e) => {
-                if (document.getElementsByClassName('msgdropdown').length != 0) {
-                    document.getElementsByClassName('msgdropdown')[0].remove();
-                }
-                
-                showEditChannelPopup(e.target.parentNode.id, e.target.parentNode.innerText.replace(e.target.innerText, ""));
-                e.preventDefault();
-            }
-            channelLink.appendChild(editico);
-
-            // make this a context menu and an icon
-            channelLink.addEventListener('contextmenu', (e) => {
-                if (document.getElementsByClassName('msgdropdown').length != 0) {
-                    document.getElementsByClassName('msgdropdown')[0].remove();
-                }
-                
-                showEditChannelPopup(channelLink.id, channelLink.innerText);
-                e.preventDefault();
-            });
-        }
-
+        const channelLink = createChannelLink(channelRaw, serverId, info.channels[channelRaw].channelId, isOwner);
         sidebar.appendChild(channelLink);
     }
 }

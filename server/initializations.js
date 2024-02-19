@@ -61,6 +61,7 @@ export async function resumeSesion(ws, mongoconnection, data, uid) {
         else {
             ws.send(JSON.stringify({type: 0, code: 1, op: 0, data: {
                 dms: doc.dms,
+                servers: doc.servers,
                 user: {username: username, uid: uid},
                 configs: doc.configs
             }}));

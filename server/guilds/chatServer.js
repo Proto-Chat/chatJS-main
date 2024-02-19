@@ -46,8 +46,6 @@ export async function createServer(mongoconnection, connectionMap, sid, data) {
 		const uid = getUidFromSid(sid);
 		if (!sid) return null;
 
-		const username = await getUsernameFromUID(client, uid);
-
 		const client = await mongoconnection;
 		const sessionDoc = await client.db(uid).collection('sessions').findOne({ sid: sid });
 		if (!sessionDoc) return null;
@@ -56,19 +54,21 @@ export async function createServer(mongoconnection, connectionMap, sid, data) {
 		const serverId = await generateServerId(client);
 		if (!serverId) return;
 
-		dbo.insertOne({ serverId: serverId, timeCreated: (new Date()).toISOString(), isPublic: data.isPrivate, name: data.title });
+		dbo.insertOne({ serverId: serverId, timeCreated: (new Date()).toISOString(), isPublic: !data.isPrivate, name: data.title });
 		const sdbo = client.db(serverId).collection('settings');
+
+		const username = await getUsernameFromUID(client, uid);
 
 		// 0 - private, 1 - public
 		await sdbo.insertOne({
 			_id: 'serverConfigs',
 			owner: uid,
 			dateCreated: (new Date()).toISOString(),
-			isPublic: data.isPrivate,
+			isPublic: !data.isPrivate,
 			name: data.name,
 		});
 
-		const uconf = findAndStripUConf(client, uid);
+		const uconf = await findAndStripUConf(client, uid);
 		if (!uconf) return;
 
 		await sdbo.insertOne({
@@ -85,7 +85,7 @@ export async function createServer(mongoconnection, connectionMap, sid, data) {
 			users: [uconf]
 		});
 
-		await createChannel(mongoconnection, connectionMap, sid, serverId, 'general');
+		await createChannel(mongoconnection, connectionMap, sid, serverId.replace('S|', ''), 'general');
 
 		return serverId;
 	}
@@ -200,14 +200,16 @@ export async function getServerInfo(mongoconnection, sid, serverId) {
 			channels[doc.name] = { channelId: channelRaw.name, vis: doc.visibility };
 		}
 
-		// check server privacy settings
-		if (!configs.isPublic) return { type: 1, code: 501, msg: "This server is private!" };
+		// get the users in the server
+		const uInServer = (await db.collection('settings').findOne({ _id: 'classifications' })).users.find(u => (u.uid == uid));
 
 		// if the user isn't in the server, add them to the server
-		const uInServer = (await db.collection('settings').findOne({ _id: 'classifications' })).users.find(u => (u.uid == uid));
 		if (!uInServer) {
+			// check server privacy settings
+			if (!configs.isPublic) return { type: 1, code: 501, msg: "This server is private!" };
+
 			const uConfStripped = await findAndStripUConf(client, uid);
-			if (uConfStripped) await db.collection.updateOne({ _id: 'classifications' }, { $set: { $push: { users: uConfStripped } } });
+			if (uConfStripped) await db.collection('settings').updateOne({ _id: 'classifications' }, { $set: { $push: { users: uConfStripped } } });
 			else return { type: 1, code: 404, msg: "user not found" };
 		}
 
@@ -347,7 +349,7 @@ async function updateChannel(ws, connectionMap, mongoconnection, data, op) {
 		const sessionDoc = await client.db(uid).collection('sessions').findOne({ sid: data.sid });
 		if (!sessionDoc) return null;
 
-		if (!checkPerms(db, uid, MACROS.SERVER.OPS.EDIT_CHANNEL, dbo)) return null; // had data.channelId as a param
+		if (!(await checkPerms(db, uid, MACROS.SERVER.OPS.EDIT_CHANNEL, dbo))) return null; // had data.channelId as a param
 
 		const toSend = { serverId: data.serverId, channelId: data.channelId, changer: { username: getUsernameFromUID(client, uid), uid: uid } };
 
@@ -365,11 +367,15 @@ async function updateChannel(ws, connectionMap, mongoconnection, data, op) {
 		// ping everyone in the server
 		const uDoc = await db.collection('settings').findOne({ _id: 'classifications' });
 
+		// check the perms of each user
+		const usersWithPerms = (await Promise.all(uDoc.users.map(u => checkPerms(db, u.uid, MACROS.SERVER.OPS.EDIT_CHANNEL, dbo))))
+											.filter(u => u);
+
 		broadcastToSessions(client, connectionMap, uDoc.users.map(u => u.uid), {
 			code: 6,
 			op: (op == MACROS.SERVER.OPS.DELETE_CHANNEL) ? 7 : 6,
 			data: toSend
-		});
+		}, null, usersWithPerms);
 	}
 	catch (err) {
 		console.error(err);
