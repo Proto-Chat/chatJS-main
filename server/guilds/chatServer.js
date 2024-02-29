@@ -2,7 +2,7 @@ import * as crypto from 'crypto';
 import { getUidFromSid, getUsernameFromUID } from '../utils/decodesid.js';
 import { broadcastToSessions } from '../database/newMessage.js';
 import { SERVERMACROS as MACROS } from '../macros.js';
-import { handleUserAction, checkPerms } from './guildUser.js';
+import { handleUserAction, checkPerms, getRoles } from './guildUser.js';
 import { handleRoleReq } from './handleRoles.js';
 
 
@@ -116,11 +116,13 @@ export async function createChannel(mongoconnection, connectionMap, sid, serverI
 		// insert the channel
 		const channelId = crypto.randomUUID();
 		const dbo = db.collection(channelId);
-		await dbo.insertOne({ _id: 'channelConfigs', name: (channelName) ? channelName : 'new channel', visibility: 0, permissions: { roles: ['admin'], users: [uconf] } });
-		await dbo.insertOne({ _id: 'inChannel', users: [] }); // users = [{category/role: String, username: string, userId: string}]
 
 		// ping everyone in the server
 		const uDoc = await db.collection('settings').findOne({ _id: 'classifications' });
+		const adminId = uDoc.roles.filter(r => (r.name == 'admin'));
+
+		await dbo.insertOne({ _id: 'channelConfigs', name: (channelName) ? channelName : 'new channel', visibility: 0, permissions: { roles: [adminId], users: [uconf] } });
+		await dbo.insertOne({ _id: 'inChannel', users: [] }); // users = [{category/role: String, username: string, userId: string}]
 
 		broadcastToSessions(client, connectionMap, uDoc.users.map(u => u.uid), {
 			code: 6,
@@ -197,7 +199,13 @@ export async function getServerInfo(mongoconnection, sid, serverId) {
 		for (const channelRaw of channelObjs) {
 			const channelObj = db.collection(channelRaw.name);
 			const doc = await channelObj.findOne({ _id: 'channelConfigs' });
-			channels[doc.name] = { channelId: channelRaw.name, vis: doc.visibility };
+
+			// check user perms
+			const uRoles = await getRoles(mongoconnection, null, {sid, serverConfs: configs}, true);
+			const hasRole = doc.permissions.roles.some(o => (uRoles.some(r => (r.id == o))));
+			if (hasRole || doc.permissions.users.some(o => (o.uid == uid))) {
+				channels[doc.name] = { channelId: channelRaw.name, vis: doc.visibility };
+			}
 		}
 
 		// get the users in the server
@@ -332,6 +340,20 @@ async function getChannel(ws, connectionMap, mongoconnection, data) {
 }
 
 
+async function changeChannelRoles(dbo, role) {
+	// get role
+	const rDoc = (await dbo.findOne({_id: 'channelConfigs'})).permissions.roles
+	if (!role.isAdding) {
+		dbo.updateOne({ _id: 'channelConfigs' }, { $pull: { "permissions.roles": role.roleToChange } });
+		console.log(`removed ${role.roleToChange}`);
+	}
+	else {
+		dbo.updateOne({ _id: 'channelConfigs' }, { $push: { "permissions.roles": role.roleToChange } });
+		console.log(`added ${role.roleToChange}`);
+	}
+}
+
+
 // update or delete
 async function updateChannel(ws, connectionMap, mongoconnection, data, op) {
 	try {
@@ -351,12 +373,25 @@ async function updateChannel(ws, connectionMap, mongoconnection, data, op) {
 
 		if (!(await checkPerms(db, uid, MACROS.SERVER.OPS.EDIT_CHANNEL, dbo))) return null; // had data.channelId as a param
 
+		// ping everyone in the server
+		const uDoc = await db.collection('settings').findOne({ _id: 'classifications' });
+
 		const toSend = { serverId: data.serverId, channelId: data.channelId, changer: { username: getUsernameFromUID(client, uid), uid: uid } };
 
 		// edit (3 is needed for the legacy version)
 		if (op == MACROS.SERVER.OPS.EDIT_CHANNEL || op == 3) {
-			await dbo.updateOne({ _id: "channelConfigs" }, { $set: { name: data.newName } });
-			toSend['newName'] = data.newName;
+			// role stuff
+			if (data.roleToChange) {
+				// check roles
+				const adminRole = uDoc.roles.find(r => r.name == 'admin');
+				if (!adminRole || (adminRole.id == data.roleToChange)) return ws.send(JSON.stringify({type: 1, code: 409}));
+				await changeChannelRoles(dbo, data);
+			}
+			else {
+				await dbo.updateOne({ _id: "channelConfigs" }, { $set: { name: data.newName } });
+				toSend['newName'] = data.newName;
+			}
+
 		}
 		// delete
 		else if (op == MACROS.SERVER.OPS.DELETE_CHANNEL) {
@@ -364,8 +399,6 @@ async function updateChannel(ws, connectionMap, mongoconnection, data, op) {
 		}
 		else return ws.send(JSON.stringify({ type: 1, code: 404, msg: `UNKNOWN OP ${op}` }));
 
-		// ping everyone in the server
-		const uDoc = await db.collection('settings').findOne({ _id: 'classifications' });
 
 		// check the perms of each user
 		const usersWithPerms = (await Promise.all(uDoc.users.map(u => checkPerms(db, u.uid, MACROS.SERVER.OPS.EDIT_CHANNEL, dbo))))

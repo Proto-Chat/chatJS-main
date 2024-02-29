@@ -116,6 +116,25 @@ function createEditChannelPopup(serverId) {
     });
     popup.appendChild(deleteButton);
 
+    const roleButton = document.createElement('button');
+    roleButton.innerText = 'Roles';
+    roleButton.onclick = (e) => {
+        e.preventDefault();
+        const channelId = document.getElementById('editChannelPopupContainer').dataset.channelId;
+
+        ws.send(JSON.stringify({
+            code: 6,
+            op: 11,
+            actioncode: 3,
+            data: {
+                sid: localStorage.getItem('sessionid'),
+                serverConfs: {serverId},
+                channelId
+            }
+        }));
+    }
+    popup.appendChild(roleButton);
+
     // Add Close button
     const closeButton = document.createElement('button');
     closeButton.id = 'editChannelCloseBtn';
@@ -134,6 +153,84 @@ function showEditChannelPopup(channelId, channelName) {
     document.getElementById('editChannelInput').value = channelName;
     document.getElementById('editChannelPopupContainer').style.display = 'block';
     document.getElementById('editChannelPopupContainer').dataset.channelId = channelId;
+}
+
+
+function dispChannelRoles(data) {
+    document.getElementById("rolepopup").style.display = "block";
+    const usersAll = data.serverConfs.usersAll;
+    const roleContainer = document.getElementById("dataContainer");
+    roleContainer.innerHTML = '<h1 style="text-align: center; margin-bottom: 0px;">Users and Roles</h1>';
+
+    // roleContainer.innerHTML = '<h3>Roles</h3>';
+    const rolesSorted = data.roles.sort((r1, r2) => (r2.pos < r1.pos));
+    for (const role of rolesSorted) {
+        const div = document.createElement('div');
+        div.dataset.roleid = role.id;
+
+        const h3 = document.createElement('h3');
+        h3.style = `color: ${role.color}; margin-bottom: 0px;`;
+        h3.innerText = role.name;
+
+        const rembtn = document.createElement('button');
+        rembtn.innerText = (role.isInChannel) ? 'remove' : 'add';
+        h3.appendChild(rembtn);
+
+        rembtn.classList = 'viewBanned';
+        rembtn.style = 'display: inline; border: none; margin: 10px; cursor: pointer;';
+        
+        if (!role.isInChannel) rembtn.style.backgroundColor = 'green';
+        div.appendChild(h3);
+        div.dataset.isinchannel = role.isInChannel;
+        
+        const uList = document.createElement('ul');
+        uList.style.maxHeight = '100px';
+        uList.style.overflowY = 'scroll';
+        uList.style.marginTop = '0px';
+        uList.style.border = 'solid black 1px';
+
+        role.users.forEach(user => {
+            const li = document.createElement('li');
+            li.dataset.uid = user.uid;
+            li.innerText = user.name
+            uList.appendChild(li);
+        });
+
+        // div.innerHTML += '<h4 style="margin: 0px 0px 1px 30px;">Users in Role</h4>';
+        div.appendChild(uList);
+        roleContainer.appendChild(div);
+    }
+
+    const remfnct = (e) => {
+        if (!e.target.classList.contains('viewBanned')) return;
+        const btn = e.target.parentElement.parentElement;
+        const {roleid, isinchannel} = btn.dataset;
+        if (!roleid) return alert("ERROR!");
+        
+        ws.send(JSON.stringify({
+            code: 6,
+            op: 8,
+            data: {
+                roleToChange: roleid,
+                serverId: data.serverConfs.serverId,
+                channelId: data.channelId,
+                sid: localStorage.getItem('sessionid'),
+                isAdding: (isinchannel != 'true')
+            }
+        }));
+    }
+
+    document.addEventListener('click', remfnct);
+
+    roleContainer.innerHTML += '<h3>Users</h3>';
+    data.users.forEach(user => {
+        roleContainer.innerHTML += `<div data-uid="${user.uid}">${user.uname}</div>`;
+    });
+
+    document.getElementsByClassName("close-btn")[0].addEventListener("click", function () {
+        document.getElementById("rolepopup").style.display = "none";
+        document.removeEventListener('click', remfnct)
+    });
 }
 
 function hidePopup(popupId) {

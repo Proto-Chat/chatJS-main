@@ -153,7 +153,6 @@ function createServerSettingsModal(serverInfo) {
     roleBtn.className = 'viewBaseBtn';
     roleBtn.onclick = (e) => {
         e.preventDefault();
-        // get banned users
         ws.send(JSON.stringify({
             code: 6,
             op: 11,

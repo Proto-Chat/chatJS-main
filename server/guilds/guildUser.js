@@ -109,7 +109,7 @@ async function addRole(mongoconnection, ws, connectionMap, data) {
 }
 
 
-async function getRoles(mongoconnection, ws, data) {
+export async function getRoles(mongoconnection, ws, data, ret = false) {
 	try {
 		const uid = getUidFromSid(data.sid);
         const client = await mongoconnection;
@@ -117,6 +117,8 @@ async function getRoles(mongoconnection, ws, data) {
         const dbo = client.db(`S|${data.serverConfs.serverId}`).collection('settings');
         const roles = (await dbo.findOne({ _id: "classifications" })).roles;
 		const uRoles = roles.filter((role) => role.users.find((u) => u.uid == uid));
+
+		if (ret) return uRoles;
 
         ws.send(JSON.stringify({
 			code: 6,
@@ -126,7 +128,7 @@ async function getRoles(mongoconnection, ws, data) {
 	}
 	catch(err) {
 		console.error(err);
-		ws.send(500);
+		return (ret) ? ret : ws.send(500);
 	}
 }
 

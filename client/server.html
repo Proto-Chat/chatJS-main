@@ -61,6 +61,9 @@
                     switch(response.code) {
                         case 10: break;
 
+                        case 409: alert("you can not remove the admin role!");
+                        break;
+
                         case 500: window.location.href = '/';
                         break;
 
@@ -107,6 +110,9 @@
                     break;
 
                     case 11: (document.getElementsByClassName('profileoutlinediv').length > 0) ? createRolePopup(response) : displayRoles(response);
+                    break;
+
+                    case 12: dispChannelRoles(response);
                     break;
                     
                     default: console.log("UNKNOWN RESPONSE ", response);
@@ -171,6 +177,13 @@
             <div class="backBtn" onclick="window.location.href = '/'">
                 <h1>Home</h1>
             </div>       
+        </div>
+
+        <div id="rolepopup" class="rolepopup">
+            <div class="rolepopup-content">
+                <span class="close-btn">&times;</span>
+                <div id="dataContainer"></div>
+            </div>
         </div>
     </span>
     <span id="errWrapper">

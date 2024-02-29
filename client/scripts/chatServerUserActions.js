@@ -155,73 +155,78 @@ async function displayBanned(data) {
 }
 
 
-async function createRolePopup(data) {
-	const modal = document.createElement("div");
-    modal.setAttribute("class", "modal");
-    modal.setAttribute("id", "roledispmodal");
+async function createRolePopup(data, shouldRet = false) {
+	return new Promise((resolve) => {
+		const modal = document.createElement("div");
+		modal.setAttribute("class", "modal");
+		modal.setAttribute("id", "roledispmodal");
 
-	// Create modal content container
-    const modalContent = document.createElement("div");
-    modalContent.setAttribute("class", "modal-content");
-	modalContent.style.textAlign = 'center';
+		// Create modal content container
+		const modalContent = document.createElement("div");
+		modalContent.setAttribute("class", "modal-content");
+		modalContent.style.textAlign = 'center';
 
-	const closeButton = document.createElement("span");
-    closeButton.setAttribute("class", "close");
-    closeButton.innerHTML = "&times;";
-    closeButton.onclick = () => (document.getElementById('roledispmodal').remove());
-	modalContent.append(closeButton);
+		const closeButton = document.createElement("span");
+		closeButton.setAttribute("class", "close");
+		closeButton.innerHTML = "&times;";
+		closeButton.onclick = () => (document.getElementById('roledispmodal').remove());
+		modalContent.append(closeButton);
 
-	const h3 = document.createElement('h3');
-	h3.innerText = 'Change Roles';
-	h3.style.textAlign = 'center';
-	h3.style.marginBottom = '0px';
-	modalContent.appendChild(h3);
+		const h3 = document.createElement('h3');
+		h3.innerText = 'Change Roles';
+		h3.style.textAlign = 'center';
+		h3.style.marginBottom = '0px';
+		modalContent.appendChild(h3);
 
-	for (const role of data.roles) {
-		const roleInp = document.createElement('input');
-		roleInp.type = 'checkbox';
-		roleInp.id = `roleInp${role.id}`;
-		roleInp.name = `roleInp${role.id}`;
-		
-		const tag = document.createElement('label');
-		tag.innerText = role.name;
-		tag.for = `roleInp${role.id}`;
-		tag.style.fontSize = '20px';
+		for (const role of data.roles) {
+			const roleInp = document.createElement('input');
+			roleInp.type = 'checkbox';
+			roleInp.id = `roleInp${role.id}`;
+			roleInp.name = `roleInp${role.id}`;
+			
+			const tag = document.createElement('label');
+			tag.innerText = role.name;
+			tag.for = `roleInp${role.id}`;
+			tag.style.fontSize = '20px';
 
-		modalContent.append(tag, roleInp, document.createElement('br'));
-	}
-
-	const submitbtn = document.createElement('button');
-	submitbtn.className = 'saveBtn';
-	submitbtn.innerText = 'Save';
-	submitbtn.onclick = (e) => {
-		e.preventDefault();
-
-		for (const el of modalContent.querySelectorAll('input')) {
-			ws.send(JSON.stringify({
-				code: 6,
-				op: 10,
-				actioncode: 4,
-				data: {
-					sid: localStorage.getItem('sessionid'),
-					serverConfs: data.serverConfs,
-					roleId: el.id.replace('roleInp', ''),
-					adding: el.checked
-				}
-			}));
+			modalContent.append(tag, roleInp, document.createElement('br'));
 		}
 
-		closeButton.click();
-	}
-	modalContent.appendChild(submitbtn);
+		const submitbtn = document.createElement('button');
+		submitbtn.className = 'saveBtn';
+		submitbtn.innerText = 'Save';
+		submitbtn.onclick = (e) => {
+			e.preventDefault();
+			const toRet = [];
 
-	const pEl = document.getElementById('chatMain');
-	pfpCloseFnct();
+			for (const el of modalContent.querySelectorAll('input')) {
+				if (shouldRet) toRet.push({roleId: el.id.replace('roleInp', ''), adding: el.checked});
+				else ws.send(JSON.stringify({
+					code: 6,
+					op: 10,
+					actioncode: 4,
+					data: {
+						sid: localStorage.getItem('sessionid'),
+						serverConfs: data.serverConfs,
+						roleId: el.id.replace('roleInp', ''),
+						adding: el.checked
+					}
+				}));
+			}
 
-	setTimeout(() => {
-		modal.appendChild(modalContent);
-		pEl.appendChild(modal);
-	}, 500);
+			closeButton.click();
+			if (shouldRet) resolve(toRet);
+		}
+		modalContent.appendChild(submitbtn);
+
+		const pEl = document.getElementById('chatMain');
+		pfpCloseFnct();
+
+		setTimeout(() => {
+			modal.appendChild(modalContent);
+			pEl.appendChild(modal);
+		}, 500);
+	});
 }
 
 
