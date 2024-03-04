@@ -9,7 +9,7 @@ import { handleRoleReq } from './handleRoles.js';
 function pingEveryoneInChannel(connectionMap, client, op, data, uconf, users, code = 6) {
 	try {
 		const toSend = { code: code, op: op, data: { serverId: data.serverId, channelId: data.channelId, user: uconf } };
-		broadcastToSessions(client, connectionMap, users.map(u => u.uid), toSend);
+		broadcastToSessions(client, connectionMap, users, toSend);
 	}
 	catch (err) {
 		console.error(err);
@@ -124,7 +124,7 @@ export async function createChannel(mongoconnection, connectionMap, sid, serverI
 		await dbo.insertOne({ _id: 'channelConfigs', name: (channelName) ? channelName : 'new channel', visibility: 0, permissions: { roles: [adminId], users: [uconf] } });
 		await dbo.insertOne({ _id: 'inChannel', users: [] }); // users = [{category/role: String, username: string, userId: string}]
 
-		broadcastToSessions(client, connectionMap, uDoc.users.map(u => u.uid), {
+		broadcastToSessions(client, connectionMap, uDoc.users, {
 			code: 6,
 			op: 6,
 			data: { serverId: serverId, channelId: channelId, creator: { username: await getUsernameFromUID(client, uid), uid: uid } }
@@ -142,7 +142,8 @@ export async function createChannel(mongoconnection, connectionMap, sid, serverI
 async function editServer(ws, mongoconnection, connectionMap, data) {
 	try {
 		const client = await mongoconnection;
-		const db = client.db(`S|${data.serverConfs.serverId}`);
+		const fullSID = `S|${data.serverConfs.serverId}`;
+		const db = client.db(fullSID);
 		const dbo = db.collection('settings');
 
 		const uid = getUidFromSid(data.sid);
@@ -151,23 +152,26 @@ async function editServer(ws, mongoconnection, connectionMap, data) {
 
 		// for now, only the server owner can manage channels
 		if (!checkPerms(db, uid, MACROS.SERVER.OPS.EDIT_SERVER)) return ws.send(JSON.stringify({ type: 1, code: 401 }));
+		const usersInServer = (await db.collection('settings').findOne({ _id: 'classifications' })).users;
 
-		const toSend = {};
+		const toSend = {code: 6, op: 8, data: {}};
 		if (data.serverPrivacy) {
 			const sPriv = (data.serverPrivacy == 'private');
 			await dbo.updateOne({ _id: 'serverConfigs' }, { $set: { isPublic: sPriv } });
-			toSend['serverPrivacy'] = sPriv;
+			toSend.data['serverPrivacy'] = sPriv;
 		}
 
 		if (data.serverName) {
-			toSend['serverName'] = data.serverName;
+			toSend.data['serverName'] = data.serverName;
 			await dbo.updateOne({ _id: 'serverConfigs' }, { $set: { name: data.serverName } });
+
+			// add the change to every user
+			usersInServer.forEach(u => client.db(u).collection('servers').updateOne({serverId: fullSID}, {$set: {name: data.serverName}}).catch((err) => {}));
 		}
 
 		// NOT IMPLEMENTED
 		if (data.serverIcon) return ws.send(JSON.stringify({ type: 1, code: 501 }));
 
-		const usersInServer = (await db.collection('settings').findOne({ _id: classifications })).users;
 		broadcastToSessions(client, connectionMap, usersInServer, toSend);
 	}
 	catch (err) {
@@ -273,7 +277,7 @@ async function handleMessage(ws, connectionMap, mongoconnection, data, op) {
 		delete uconf['description'];
 		uconf['uid'] = user.uid;
 
-		broadcastToSessions(client, connectionMap, inChannel.users.map(u => u.uid), toSend);
+		broadcastToSessions(client, connectionMap, inChannel.users, toSend);
 	}
 	catch (err) {
 		console.error(err);
@@ -307,12 +311,12 @@ async function getChannel(ws, connectionMap, mongoconnection, data) {
 		if (data.currentChannel) {
 			// remove user from the old channel
 			const dboOld = client.client.db(`S|${data.serverId}`).collection(data.currentChannel);
-			dboOld.updateOne({ _id: 'inChannel' }, { $pull: { users: { uid: uid } } });
+			dboOld.updateOne({ _id: 'inChannel' }, { $pull: { users: uid } });
 		}
 
-		const uFromPresList = (await dbo.findOne({ _id: 'inChannel' })).users.find(u => (u.uid == uid));
+		const uFromPresList = (await dbo.findOne({ _id: 'inChannel' })).users.find(u => (u == uid));
 		if (!uFromPresList) {
-			dbo.updateOne({ _id: 'inChannel' }, { $push: { users: uconf } });
+			dbo.updateOne({ _id: 'inChannel' }, { $push: { users: uid } });
 		}
 
 		// update member list for everyone else in that channel
@@ -325,6 +329,16 @@ async function getChannel(ws, connectionMap, mongoconnection, data) {
 		channelConfigs[confInd]['channelId'] = data.channelId;
 		channelConfigs[confInd]['serverId'] = data.serverId;
 		channelConfigs[confInd]['serverOwner'] = serverConfigs.owner;
+
+		// TODO: change to like the first 30 users or smth to avoid load
+		const UICInd = channelConfigs.findIndex(o => o._id == 'inChannel');
+
+		const uConfs = await Promise.all(channelConfigs[UICInd].users.map(async (uid) => {
+			const doc = await client.db(uid).collection('configs').findOne({_id: 'myprofile'});
+			doc['uid'] = uid;
+			return doc;
+		}));
+		channelConfigs[UICInd]['users'] = uConfs;
 
 		ws.send(JSON.stringify({
 			code: 6,
@@ -404,7 +418,7 @@ async function updateChannel(ws, connectionMap, mongoconnection, data, op) {
 		const usersWithPerms = (await Promise.all(uDoc.users.map(u => checkPerms(db, u.uid, MACROS.SERVER.OPS.EDIT_CHANNEL, dbo))))
 											.filter(u => u);
 
-		broadcastToSessions(client, connectionMap, uDoc.users.map(u => u.uid), {
+		broadcastToSessions(client, connectionMap, uDoc.users, {
 			code: 6,
 			op: (op == MACROS.SERVER.OPS.DELETE_CHANNEL) ? 7 : 6,
 			data: toSend

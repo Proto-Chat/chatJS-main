@@ -73,7 +73,7 @@ async function changeRoles(mongoconnection, ws, connectionMap, data) {
         await dbo.updateOne({ _id: "classifications", "roles.id": data.roleId }, { $pull: { "roles.$.users": { uid: uid } } });
 
         const uDoc = await dbo.findOne({ _id: 'classifications' });
-		broadcastToSessions(client, connectionMap, uDoc.users.map(u => u.uid), {
+		broadcastToSessions(client, connectionMap, uDoc.users, {
 			code: 6,
 			op: 6,
 			data: { serverId: serverId, channelId: channelId, creator: { username: await getUsernameFromUID(client, uid), uid: uid } }
@@ -96,7 +96,7 @@ async function addRole(mongoconnection, ws, connectionMap, data) {
         await dbo.updateOne({ _id: "classifications", "roles.id": data.roleId }, { $push: { "roles.$.users": { name: username, uid: uid } } });
 
         const uDoc = await dbo.findOne({ _id: 'classifications' });
-		broadcastToSessions(client, connectionMap, uDoc.users.map(u => u.uid), {
+		broadcastToSessions(client, connectionMap, uDoc.users, {
 			code: 6,
 			op: 6,
 			data: { serverId: data.serverConfs.serverId, channelId: null, creator: { username: await getUsernameFromUID(client, uid), uid: uid } }

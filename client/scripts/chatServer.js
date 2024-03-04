@@ -112,9 +112,10 @@ function createServerSettingsModal(serverInfo) {
 
 	// Add form
 	const form = document.createElement("form");
+    const sname = sessionStorage.getItem('sname') ? sessionStorage.getItem('sname') : serverInfo.configs.name;
 
 	// Server Name
-	form.appendChild(createInputField("Server Name:", "serverName", "text", serverInfo.configs.name));
+	form.appendChild(createInputField("Server Name:", "serverName", "text", sname));
 
 	// Server Icon
 	form.appendChild(createFileInputField("New Server Icon:", "serverIcon"));
@@ -172,7 +173,7 @@ function createServerSettingsModal(serverInfo) {
 	submitButton.onclick = (e) => {
         e.preventDefault();
 
-		const serverName = document.getElementById("serverName").value || serverInfo.configs.name;
+        const serverName = document.getElementById("serverName").value || sname;
 		const serverIcon = document.getElementById("serverIcon").files[0]; // This will be a File object
 		const serverPrivacy = document.getElementById("serverPrivacy").value;
 
@@ -376,6 +377,25 @@ function createServerConfMain(serverInfo) {
 
     rootElement.appendChild(channelsList);
 }
+
+
+function editServer(obj) {
+    // update the name
+    const sInf = document.getElementById('serverInfoContainer');
+
+    if (obj.serverName) {
+        sInf.querySelector('h1').innerText = `Welcome to ${obj.serverName}`;
+        sessionStorage.setItem('sname', obj.serverName);
+    }
+    else if (obj.serverPrivacy) {
+        // TODO
+    }
+    else if (obj.serverIcon) {
+        // edit the server icon
+    }
+    document.getElementsByClassName('close')[0]?.click();
+}
+
 
 
 function initializeServersPage(response) {

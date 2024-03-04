@@ -567,7 +567,7 @@ function getFriendPFP(uid) {
             img.className = 'pfpsmall';
             img.id = `dmpfp-${uid}`;
 
-            resolve(img);;
+            resolve(img);
         };
 
         req.setRequestHeader('sessionid', localStorage.getItem('sessionid'));

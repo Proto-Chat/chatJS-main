@@ -66,7 +66,7 @@ function addNewChannel(serverId) {
 
         hideNewChannelPopup();
     } else {
-        alert("Please enter a channel name.");
+        alert("Please enter a channel name!");
     }
 }
 
@@ -345,7 +345,7 @@ function createCollapsable(toColl, collLeft = true) {
 }
 
 
-function createUCard(uObj, serverConfs, isOwner) {
+async function createUCard(uObj, serverConfs, isOwner) {
     // Create the main card container
     const userCard = document.createElement('div');
     userCard.className = 'user-card';
@@ -357,7 +357,11 @@ function createUCard(uObj, serverConfs, isOwner) {
     icon.alt = 'User Icon';
     icon.className = 'user-icon';
     if (!uObj.icon) icon.src = 'https://github.com/ION606/chatJS/blob/main/client/assets/nopfp.jpg?raw=true';
-    else setPFP(undefined, icon, uObj.icon);
+    else {
+        const i2 = await getFriendPFP(uObj.uid);
+        icon.src = i2.src;
+    }
+    console.log(uObj);
 
     userCard.onclick = async () => {
         const user = inChannel.find(m => (m.uid == userCard.id));
