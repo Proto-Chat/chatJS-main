@@ -43,7 +43,7 @@ export async function resumeSesion(ws, mongoconnection, data, uid) {
 
         //deal with server stuff
         if (data.serverId) {
-            const serverInfo = await getServerInfo(mongoconnection, data.sid, `S|${data.serverId}`);
+            const serverInfo = await getServerInfo(mongoconnection, data.sid, data.serverId);
             if (!serverInfo) return false;
 
             ws.send(JSON.stringify({

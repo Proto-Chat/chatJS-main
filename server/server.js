@@ -22,10 +22,11 @@ import {
     validateGDM, getDMID,
     initCallSockets,
     createMetaTags,
-    recieveKeysInit
+    recieveKeysInit,
+    favicon
 } from './imports.js';
 import { broadcastToSessions } from './database/newMessage.js';
-import { handleChatServer } from './guilds/chatServer.js';
+import { getServerInfo, handleChatServer } from './guilds/chatServer.js';
 
 // MACROS
 import { SERVERMACROS as MACROS } from './macros.js';
@@ -57,8 +58,9 @@ app.use(bodyParser.raw({type: 'application/octet-stream', limit: '10mb'}));
 app.use('/assets', express.static('../assets'));
 app.use('/CSS', express.static('../CSS'));
 app.use('/scripts', express.static('../scripts'));
+app.use(favicon('./client/assets/favicon.ico'));
 const wsInstance = expressWs(app);
-  
+
 
 // TURN code
 /*
@@ -233,6 +235,22 @@ app.get('/getUser', async (req, res) => {
     }
 });
 
+
+app.post('/serverroles', async (req, res) => {
+    try {
+        const {sessionid, serverid} = req.headers;
+        if (!sessionid || !serverid) return res.sendStatus(404);
+
+        const users = await getServerInfo(mongoconnection, sessionid, serverid, true);
+        if (!users) res.sendStatus(401);
+        else res.send(JSON.stringify(users));
+    }
+    catch(err) {
+        console.error(err);
+        res.sendStatus(500);
+    }
+});
+
 /* THIS WILL BREAK THE WS SERVER
 app.get('/*', async (req, res) => {   
     if (req.path == '/favicon.ico') {
@@ -248,10 +266,6 @@ app.post('/systemmsgall', async (req, res) => {
     if (!token || !content) return;
 
     systemMsgAll(mongoconnection, webSocketClients, res, token, content);
-});
-
-app.get('/favicon.ico', (req, res) => {
-    res.sendFile('favicon.ico', {root: './client/assets'});
 });
 
 

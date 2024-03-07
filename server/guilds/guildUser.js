@@ -2,6 +2,7 @@ import { broadcastToSessions } from "../database/newMessage.js";
 import { getUidFromSid, validateSession } from "../imports.js";
 import { SERVERMACROS } from '../macros.js';
 import { getUsernameFromUID } from "../utils/decodesid.js";
+import { uidsToUsers } from "./handleRoles.js";
 const UMACROS = SERVERMACROS.SERVER.OPS.USER_ACTION.ACTION_CODES;
 
 
@@ -70,13 +71,14 @@ async function changeRoles(mongoconnection, ws, connectionMap, data) {
 		const isAuth = await checkPerms(db, uid, UMACROS.CHANGEROLES);
 		if (!isAuth) return ws.send(401);
 
-        await dbo.updateOne({ _id: "classifications", "roles.id": data.roleId }, { $pull: { "roles.$.users": { uid: uid } } });
+        await dbo.updateOne({ _id: "classifications", "roles.id": data.roleId }, { $pull: { "roles.$.users": uid } });
 
         const uDoc = await dbo.findOne({ _id: 'classifications' });
 		broadcastToSessions(client, connectionMap, uDoc.users, {
 			code: 6,
-			op: 6,
-			data: { serverId: serverId, channelId: channelId, creator: { username: await getUsernameFromUID(client, uid), uid: uid } }
+			op: 13,
+			actioncode: 0,
+			data: { roleId: data.roleId, serverInfo: data.serverConfs, creator: (await uidsToUsers([uid], client))[0] }
 		});
 	}
 	catch(err) {
@@ -89,17 +91,21 @@ async function changeRoles(mongoconnection, ws, connectionMap, data) {
 async function addRole(mongoconnection, ws, connectionMap, data) {
 	try {
 		const uid = getUidFromSid(data.sid);
+		if (!uid) return ws.send(JSON.stringify({type: 1, code: 404}));
+
         const client = await mongoconnection;
 		const username = await getUsernameFromUID(client, uid);
+		if (!username) return ws.send(JSON.stringify({type: 1, code: 404}));
 
         const dbo = client.db(`S|${data.serverConfs.serverId}`).collection('settings');
-        await dbo.updateOne({ _id: "classifications", "roles.id": data.roleId }, { $push: { "roles.$.users": { name: username, uid: uid } } });
+        await dbo.updateOne({ _id: "classifications", "roles.id": data.roleId }, { $push: { "roles.$.users": uid } });
 
         const uDoc = await dbo.findOne({ _id: 'classifications' });
 		broadcastToSessions(client, connectionMap, uDoc.users, {
 			code: 6,
-			op: 6,
-			data: { serverId: data.serverConfs.serverId, channelId: null, creator: { username: await getUsernameFromUID(client, uid), uid: uid } }
+			op: 13,
+			actioncode: 1,
+			data: { roleId: data.roleId, serverInfo: data.serverConfs, creator: (await uidsToUsers([uid], client))[0] }
 		});
 	}
 	catch(err) {
@@ -116,7 +122,7 @@ export async function getRoles(mongoconnection, ws, data, ret = false) {
 
         const dbo = client.db(`S|${data.serverConfs.serverId}`).collection('settings');
         const roles = (await dbo.findOne({ _id: "classifications" })).roles;
-		const uRoles = roles.filter((role) => role.users.find((u) => u.uid == uid));
+		const uRoles = roles.filter((role) => role.users.find((u) => u == uid));
 
 		if (ret) return uRoles;
 

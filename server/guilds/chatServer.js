@@ -3,7 +3,7 @@ import { getUidFromSid, getUsernameFromUID } from '../utils/decodesid.js';
 import { broadcastToSessions } from '../database/newMessage.js';
 import { SERVERMACROS as MACROS } from '../macros.js';
 import { handleUserAction, checkPerms, getRoles } from './guildUser.js';
-import { handleRoleReq } from './handleRoles.js';
+import { handleRoleReq, uidsToUsers } from './handleRoles.js';
 
 
 function pingEveryoneInChannel(connectionMap, client, op, data, uconf, users, code = 6) {
@@ -79,10 +79,10 @@ export async function createServer(mongoconnection, connectionMap, sid, data) {
 					name: 'admin',
 					pos: 0,
 					color: 'grey',
-					users: [{ name: username, uid: uid }]
+					users: [uid]
 				}
 			],
-			users: [uconf]
+			users: [uid]
 		});
 
 		await createChannel(mongoconnection, connectionMap, sid, serverId.replace('S|', ''), 'general');
@@ -110,7 +110,7 @@ export async function createChannel(mongoconnection, connectionMap, sid, serverI
 		// for now, only the server owner can manage channels
 		if (!checkPerms(db, uid, MACROS.SERVER.OPS.CREATE_CHANNEL)) return null;
 
-		const uconf = findAndStripUConf(client, uid);
+		const uconf = await findAndStripUConf(client, uid);
 		if (!uconf) return;
 
 		// insert the channel
@@ -121,7 +121,7 @@ export async function createChannel(mongoconnection, connectionMap, sid, serverI
 		const uDoc = await db.collection('settings').findOne({ _id: 'classifications' });
 		const adminId = uDoc.roles.filter(r => (r.name == 'admin'));
 
-		await dbo.insertOne({ _id: 'channelConfigs', name: (channelName) ? channelName : 'new channel', visibility: 0, permissions: { roles: [adminId], users: [uconf] } });
+		await dbo.insertOne({ _id: 'channelConfigs', name: (channelName) ? channelName : 'new channel', visibility: 0, permissions: { roles: [adminId], users: [uid] } });
 		await dbo.insertOne({ _id: 'inChannel', users: [] }); // users = [{category/role: String, username: string, userId: string}]
 
 		broadcastToSessions(client, connectionMap, uDoc.users, {
@@ -140,7 +140,7 @@ export async function createChannel(mongoconnection, connectionMap, sid, serverI
 
 
 async function editServer(ws, mongoconnection, connectionMap, data) {
-	try {
+	try {		
 		const client = await mongoconnection;
 		const fullSID = `S|${data.serverConfs.serverId}`;
 		const db = client.db(fullSID);
@@ -183,20 +183,36 @@ async function editServer(ws, mongoconnection, connectionMap, data) {
 
 // testing server: http://localhost:3000/server/Y0Td7hn4
 
-export async function getServerInfo(mongoconnection, sid, serverId) {
+export async function getServerInfo(mongoconnection, sid, serverId, getUsers = false) {
 	try {
 		const uid = getUidFromSid(sid);
 		if (!uid) return;
 
 		const client = await mongoconnection;
 		const sessionDoc = await client.db(uid).collection('sessions').findOne({ sid: sid });
-		if (!sessionDoc) return null;
+		if (!sessionDoc) return {type: 1, code: 404, msg: "session not found!"};
 
-		const db = client.db(serverId);
+		const db = client.db(`S|${serverId}`);
 		const configs = await db.collection('settings').findOne({ _id: 'serverConfigs' });
-		if (!configs) return null;
+		if (!configs) return {type: 1, code: 404, msg: "server not found!"};
 
 		configs.serverId = serverId.replace('S|', '');
+
+		// get the users in the server
+		const usersInServer = (await db.collection('settings').findOne({ _id: 'classifications' }))?.users;
+		const uInServer = usersInServer?.find(u => (u == uid));
+
+		// if the user isn't in the server, add them to the server
+		if (!uInServer) {
+			// check server privacy settings
+			if (!configs.isPublic) return { type: 1, code: 501, msg: "This server is private!" };
+			else if (getUsers) return await uidsToUsers(usersInServer, client);
+
+			const uConfStripped = await findAndStripUConf(client, uid);
+			if (uConfStripped) await db.collection('settings').updateOne({ _id: 'classifications' }, { $set: { $push: uid } });
+			else return { type: 1, code: 404, msg: "user not found" };
+		}
+		else if (getUsers) return await uidsToUsers(usersInServer, client);
 
 		const channelObjs = (await db.listCollections().toArray()).filter((col) => col.name != 'settings');
 		const channels = {};
@@ -207,23 +223,11 @@ export async function getServerInfo(mongoconnection, sid, serverId) {
 			// check user perms
 			const uRoles = await getRoles(mongoconnection, null, {sid, serverConfs: configs}, true);
 			const hasRole = doc.permissions.roles.some(o => (uRoles.some(r => (r.id == o))));
-			if (hasRole || doc.permissions.users.some(o => (o.uid == uid))) {
+			if (hasRole || doc.permissions.users.some(o => (o == uid))) {
 				channels[doc.name] = { channelId: channelRaw.name, vis: doc.visibility };
 			}
 		}
 
-		// get the users in the server
-		const uInServer = (await db.collection('settings').findOne({ _id: 'classifications' })).users.find(u => (u.uid == uid));
-
-		// if the user isn't in the server, add them to the server
-		if (!uInServer) {
-			// check server privacy settings
-			if (!configs.isPublic) return { type: 1, code: 501, msg: "This server is private!" };
-
-			const uConfStripped = await findAndStripUConf(client, uid);
-			if (uConfStripped) await db.collection('settings').updateOne({ _id: 'classifications' }, { $set: { $push: { users: uConfStripped } } });
-			else return { type: 1, code: 404, msg: "user not found" };
-		}
 
 		return {
 			configs: configs,
@@ -356,12 +360,14 @@ async function getChannel(ws, connectionMap, mongoconnection, data) {
 
 async function changeChannelRoles(dbo, role) {
 	// get role
-	const rDoc = (await dbo.findOne({_id: 'channelConfigs'})).permissions.roles
+	const rDoc = (await dbo.findOne({_id: 'channelConfigs'})).permissions.roles;
 	if (!role.isAdding) {
+		if (!rDoc.permissions.roles.includes(role.roleToChange)) return;
 		dbo.updateOne({ _id: 'channelConfigs' }, { $pull: { "permissions.roles": role.roleToChange } });
 		console.log(`removed ${role.roleToChange}`);
 	}
 	else {
+		if (rDoc.permissions.roles.includes(role.roleToChange)) return;
 		dbo.updateOne({ _id: 'channelConfigs' }, { $push: { "permissions.roles": role.roleToChange } });
 		console.log(`added ${role.roleToChange}`);
 	}
@@ -415,7 +421,7 @@ async function updateChannel(ws, connectionMap, mongoconnection, data, op) {
 
 
 		// check the perms of each user
-		const usersWithPerms = (await Promise.all(uDoc.users.map(u => checkPerms(db, u.uid, MACROS.SERVER.OPS.EDIT_CHANNEL, dbo))))
+		const usersWithPerms = (await Promise.all(uDoc.users.map(u => checkPerms(db, u, MACROS.SERVER.OPS.EDIT_CHANNEL, dbo))))
 											.filter(u => u);
 
 		broadcastToSessions(client, connectionMap, uDoc.users, {

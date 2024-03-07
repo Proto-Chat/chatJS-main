@@ -96,6 +96,7 @@
     padding: 20px;
     border-radius: 8px;
     text-align: center;
+    width: 100%;
 }
 
 .popup h2 {
@@ -262,7 +263,8 @@
 .viewBaseBtn {
     color: white; /* White text */
     margin-right: 10px;
-    padding: 10px; /* Padding around the text */
+    /* padding: 10px; Padding around the text */
+    padding: 7px 20px;
     border: none; /* No border */
     border-radius: 4px; /* Rounded corners */
     cursor: pointer; /* Pointer cursor on hover */
@@ -370,4 +372,86 @@
     color: black;
     text-decoration: none;
     cursor: pointer;
+}
+
+.newrolediv {
+    justify-content: center;
+    display: table;
+    width: fit-content;
+    border-collapse: separate;
+    border-spacing: 0 1em;
+}
+
+.newrolediv input, label, h2 {
+    display: table-cell;
+}
+
+.newrolediv label { text-align: right; padding-right: 10px; }
+
+
+#uSearchInp {
+    box-sizing: border-box;
+    font-size: 16px;
+    padding: 14px 20px 12px 45px;
+    border: 1px solid #ccc; /* Changed to a lighter border */
+    border-radius: 5px; /* Added for rounded corners */
+    outline: none; /* Removes the default outline to use custom focus style */
+}
+
+#uSearchInp:focus {
+    border: 2px solid #aaa; /* Custom focus style */
+}
+
+.dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.dropdown-content {
+    /* display: none; */
+    position: absolute;
+    background-color: #f9f9f9; /* Light grey background for dropdown */
+    min-width: 230px;
+    overflow: auto;
+    border: 1px solid #ccc; /* Lighter border */
+    border-radius: 5px; /* Rounded corners */
+    box-shadow: 0 8px 16px 0 rgba(0,0,0,0.2); /* Added shadow for depth */
+    z-index: 1;
+}
+
+.dropdown-content a {
+    color: black;
+    padding: 12px 16px;
+    text-decoration: none;
+    display: block;
+    transition: background-color 0.3s; /* Smooth transition for hover effect */
+}
+
+.dropdown-content a:hover {
+    background-color: #ddd; /* Lighter grey for hover */
+}
+
+
+.role-item h3 {
+    width: fit-content;
+    background-color: #ffffff5e;
+    padding: 5px;
+    border-radius: 10px;
+}
+
+
+.addubtn {
+    color: #ffffff;
+    background-color: #00379e;
+    font-size: 16px;
+    border: 1px solid #2d63c8;
+    border-radius: 10px;
+    padding: 7px 20px;
+    cursor: pointer;
+    margin-bottom: 10px;
+}
+
+.addubtn:hover {
+    color: #ffffff;
+    background-color: #001764;
 }

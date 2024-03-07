@@ -67,7 +67,11 @@
                         case 500: window.location.href = '/';
                         break;
 
-                        case 503: ws.close(1006); connectSocket();
+                        case 503: {
+                            alert("Server is still booting up!");
+                            setTimeout(connectSocket, 1000);
+                            ws.close(1006);
+                        }
                         break;
 
                         default: console.log("UNKNOWN RESPONSE ", response);
@@ -94,7 +98,7 @@
                     case 5: deleteMsg(response.data.id);
                     break;
 
-                    case 6: createChannelLink(data.channelName, data.serverId, data.cid, data.isOwner); console.log("NEW CHANNEL HERE: "); console.log(response.data);
+                    case 6: createChannelLink(response.data.channelName, response.data.serverId, response.data.cid, response.data.isOwner); console.log("NEW CHANNEL HERE: "); console.log(response.data);
                     break;
 
                     case 7: console.log("CHANNEL DELETED: "); console.log(response.data);
@@ -112,7 +116,19 @@
                     case 11: (document.getElementsByClassName('profileoutlinediv').length > 0) ? createRolePopup(response) : displayRoles(response);
                     break;
 
-                    case 12: dispChannelRoles(response);
+                    case 12: dispChannelRoles(response.data);
+                    break;
+
+                    case 13: {
+                        const {roleId, creator: user, serverInfo} = response.data;
+                        const userList = document.querySelector(`[data-roleid="${roleId}"]`)?.querySelector('.user-list');
+
+                        if (response.actioncode == 0) userList.querySelector(`[data-uid="${user.uid}"]`)?.remove();
+                        else if (response.actioncode == 1) addUcardToRole(roleId, user, userList, serverInfo);
+                        else if (response.actioncode == 2) {
+                            
+                        }
+                    }
                     break;
                     
                     default: console.log("UNKNOWN RESPONSE ", response);

@@ -148,6 +148,13 @@
                     case 500:
                         alert('REQUEST FAILED!');
                         window.location.reload();
+
+                    case 503: {
+                        alert("Server is still booting up!");
+                        setTimeout(connectSocket, 1000);
+                        ws.close(1006);
+                    }
+                    break;
                     
                     default: console.log("UNKNOWN RESPONSE ", response);
                 }

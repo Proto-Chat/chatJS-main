@@ -20,6 +20,7 @@ import enableWs from 'express-ws';
 import { toggleDM } from './database/logout.js';
 import { systemMsgAll } from './admin/systemmsgall.js';
 import { validateGDM, getDMID } from './groupDM.js';
+import favicon from 'serve-favicon';
 
 // call stuff
 import { initCallSockets } from './call.js'
@@ -54,5 +55,6 @@ export {
     systemMsgAll,
     initCallSockets,
     createMetaTags,
-    recieveKeysInit
+    recieveKeysInit,
+    favicon
 }

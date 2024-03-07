@@ -158,7 +158,6 @@ function showEditChannelPopup(channelId, channelName) {
 
 function dispChannelRoles(data) {
     document.getElementById("rolepopup").style.display = "block";
-    const usersAll = data.serverConfs.usersAll;
     const roleContainer = document.getElementById("dataContainer");
     roleContainer.innerHTML = '<h1 style="text-align: center; margin-bottom: 0px;">Users and Roles</h1>';
 
@@ -189,12 +188,16 @@ function dispChannelRoles(data) {
         uList.style.marginTop = '0px';
         uList.style.border = 'solid black 1px';
 
+        role.users = role.users.map((uid => data.users.find(u => u.uid == uid)));
         role.users.forEach(user => {
             const li = document.createElement('li');
             li.dataset.uid = user.uid;
-            li.innerText = user.name
+            li.innerText = user.username;
             uList.appendChild(li);
         });
+
+        const addUBtn = document.createElement('button');
+        addUBtn.className = "gobtn"
 
         // div.innerHTML += '<h4 style="margin: 0px 0px 1px 30px;">Users in Role</h4>';
         div.appendChild(uList);

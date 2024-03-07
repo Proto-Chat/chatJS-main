@@ -24,6 +24,7 @@
     "mongodb": "^5.2.0",
     "node-turn": "^0.0.6",
     "nodemailer": "^6.9.2",
+    "serve-favicon": "^2.5.0",
     "socket.io": "^4.6.1",
     "streamifier": "^0.1.1",
     "uuid": "^9.0.0",
