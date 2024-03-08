@@ -62,6 +62,8 @@
 
             ws.addEventListener('open', () => {
                 console.log("websocket connection established!");
+                document.getElementById('loadingstatus').innerText = `Connected!`;
+
                 if (localStorage.getItem('sessionid') && localStorage.getItem('sessionid') != "undefined") {
                     ws.send(JSON.stringify({ code: 1, op: 0, sid: localStorage.getItem('sessionid') }));
                     getPFP();
@@ -75,7 +77,7 @@
                 //     return setPFP(message);
                 // }
                 const response = JSON.parse(message.data);
-                console.log(response);
+                if (response.op != 10) console.log(response);
 
                 switch (response.code) {
                     case 0:
@@ -150,7 +152,7 @@
                         window.location.reload();
 
                     case 503: {
-                        alert("Server is still booting up!");
+                        document.getElementById('loadingstatus').innerText = "Server is still booting up!";
                         setTimeout(connectSocket, 1000);
                         ws.close(1006);
                     }
@@ -168,14 +170,22 @@
                 bar.style.display = 'block';
 
                 // try reconnecting
+                var inter = 1000;
                 const timer = setInterval(() => {
                     connectSocket();
+                    clearInterval(countdowninter);
 
                     ws.addEventListener('open', () => {
                         clearInterval(timer);
                         window.location.reload();
                     });
-                }, 1000);
+
+                    if (inter < 5000) {
+                        inter += 1000;
+                        const el = document.getElementById('loadingstatus');
+                        el.innerText = `Retrying...`;
+                    }
+                }, inter);
             });
         }
 
@@ -234,6 +244,7 @@
         <div id="loadingdiv">
             <div id="loader"></div>
             <h1>L O A D I N G . . .</h1>
+            <h2 id="loadingstatus"></h2>
         </div>
         <div id="loginDiv">
 

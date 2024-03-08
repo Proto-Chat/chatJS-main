@@ -358,19 +358,21 @@ async function getChannel(ws, connectionMap, mongoconnection, data) {
 }
 
 
-async function changeChannelRoles(dbo, role) {
+async function changeChannelRoles(dbo, role, ws) {
 	// get role
 	const rDoc = (await dbo.findOne({_id: 'channelConfigs'})).permissions.roles;
 	if (!role.isAdding) {
-		if (!rDoc.permissions.roles.includes(role.roleToChange)) return;
+		if (!rDoc.includes(role.roleToChange)) return;
 		dbo.updateOne({ _id: 'channelConfigs' }, { $pull: { "permissions.roles": role.roleToChange } });
 		console.log(`removed ${role.roleToChange}`);
 	}
 	else {
-		if (rDoc.permissions.roles.includes(role.roleToChange)) return;
+		if (rDoc.includes(role.roleToChange)) return;
 		dbo.updateOne({ _id: 'channelConfigs' }, { $push: { "permissions.roles": role.roleToChange } });
 		console.log(`added ${role.roleToChange}`);
 	}
+
+	ws.send(JSON.stringify({code: 6, op: 13, actioncode: 2, data: {roleId: role.roleToChange, adding: role.isAdding}}));
 }
 
 
@@ -405,7 +407,7 @@ async function updateChannel(ws, connectionMap, mongoconnection, data, op) {
 				// check roles
 				const adminRole = uDoc.roles.find(r => r.name == 'admin');
 				if (!adminRole || (adminRole.id == data.roleToChange)) return ws.send(JSON.stringify({type: 1, code: 409}));
-				await changeChannelRoles(dbo, data);
+				await changeChannelRoles(dbo, data, ws);
 			}
 			else {
 				await dbo.updateOne({ _id: "channelConfigs" }, { $set: { name: data.newName } });
@@ -484,6 +486,6 @@ export async function handleChatServer(ws, connectionMap, mongoconnection, data)
 			handleRoleReq(ws, mongoconnection, connectionMap, data);
 			break;
 
-		default: console.log(data);
+		default: console.log("HANDLECHATSERVER: UNKNOWN DATA -->", data);
 	}
 }

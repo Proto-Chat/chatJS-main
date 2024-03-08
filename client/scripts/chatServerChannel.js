@@ -155,6 +155,19 @@ function showEditChannelPopup(channelId, channelName) {
     document.getElementById('editChannelPopupContainer').dataset.channelId = channelId;
 }
 
+function createRoleChangeBtn(role) {
+    const rembtn = document.createElement('button');
+    rembtn.innerText = (role.isInChannel) ? 'remove' : 'add';
+
+    rembtn.classList = 'viewBaseBtn viewBanned';
+    rembtn.style = 'display: inline; border: none; margin: 10px; cursor: pointer;';
+    rembtn.id = `changeRoleInChannel${role.id}`;
+
+    if (!role.isInChannel) rembtn.style.backgroundColor = '#06bf06';
+    rembtn.style.padding = '5px 15px';
+    rembtn.style.fontSize = '13px';
+    return rembtn;
+}
 
 function dispChannelRoles(data) {
     document.getElementById("rolepopup").style.display = "block";
@@ -171,14 +184,7 @@ function dispChannelRoles(data) {
         h3.style = `color: ${role.color}; margin-bottom: 0px;`;
         h3.innerText = role.name;
 
-        const rembtn = document.createElement('button');
-        rembtn.innerText = (role.isInChannel) ? 'remove' : 'add';
-        h3.appendChild(rembtn);
-
-        rembtn.classList = 'viewBanned';
-        rembtn.style = 'display: inline; border: none; margin: 10px; cursor: pointer;';
-        
-        if (!role.isInChannel) rembtn.style.backgroundColor = 'green';
+        h3.appendChild(createRoleChangeBtn(role));
         div.appendChild(h3);
         div.dataset.isinchannel = role.isInChannel;
         
@@ -624,15 +630,24 @@ function setUpChannel(response) {
     // messages.onchange = () => {messages.lastChild.lastChild.scrollIntoView();}
 
     // create the "inChannel" sidebar
-    const memberSideBar = document.createElement('div');
-    memberSideBar.className = 'member-sidebar';
-    const memTitle = document.createElement('div');
-    memTitle.innerText = 'users';
-    memTitle.className = 'memTitle';
-    memberSideBar.appendChild(memTitle);
-
-    document.getElementById('maincontent').appendChild(memberSideBar);
-    createCollapsable(memberSideBar, false);
+    const memsidebar = document.getElementsByClassName('member-sidebar')[0];
+    if (!memsidebar) {
+        const memberSideBar = document.createElement('div');
+        memberSideBar.className = 'member-sidebar';
+        const memTitle = document.createElement('div');
+        memTitle.innerText = 'users';
+        memTitle.className = 'memTitle';
+        memberSideBar.appendChild(memTitle);
+    
+        document.getElementById('maincontent').appendChild(memberSideBar);
+        createCollapsable(memberSideBar, false);
+    }
+    else {
+        console.log("EXISTS");
+        // clear sidebar
+        memsidebar.querySelectorAll('.user-card').forEach((el) => el.remove());
+    }
+    
     
     // add the users asynchronously
     fillUSideBar(channelConfigs).then((res) => console.log((res) ? 'added all users to sidebar!' : 'failed to add all users to sidebar!'));
@@ -663,7 +678,7 @@ function setUpChannel(response) {
 
     element.appendChild(messages);
     element.appendChild(inpwrapper);
-    createCollapsable(document.getElementById('channels'));
+    if (!memsidebar) createCollapsable(document.getElementById('channels'));
     element.style = 'display: block;';
 }
 

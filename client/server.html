@@ -42,6 +42,8 @@
 
             ws.addEventListener('open', () => {
                 console.log("websocket connection established!");
+                document.getElementById('loadingstatus').innerText = `Connected!`;
+
                 if (localStorage.getItem('sessionid') && localStorage.getItem('sessionid') != "undefined") {
                     const serverId = window.location.href.substr(window.location.href.lastIndexOf('/') + 1);
                     if (!serverId) window.location.href = '/';
@@ -68,7 +70,7 @@
                         break;
 
                         case 503: {
-                            alert("Server is still booting up!");
+                            document.getElementById('loadingstatus').innerText = "Server is still booting up!";
                             setTimeout(connectSocket, 1000);
                             ws.close(1006);
                         }
@@ -126,7 +128,10 @@
                         if (response.actioncode == 0) userList.querySelector(`[data-uid="${user.uid}"]`)?.remove();
                         else if (response.actioncode == 1) addUcardToRole(roleId, user, userList, serverInfo);
                         else if (response.actioncode == 2) {
-                            
+                            const {roleId, adding} = response.data;
+                            alert(`${(adding) ? 'Added role to' : 'Removed role from'} channel!`);
+                            document.getElementById(`changeRoleInChannel${roleId}`)
+                                    .replaceWith(createRoleChangeBtn({id: roleId, isInChannel: adding}));
                         }
                     }
                     break;
@@ -143,6 +148,7 @@
                 bar.style.display = 'block';
 
                 // try reconnecting
+                var inter = 1000;
                 const timer = setInterval(() => {
                     connectSocket();
 
@@ -150,7 +156,11 @@
                         clearInterval(timer);
                         window.location.reload();
                     });
-                }, 1000);
+
+                    if (inter < 5000) inter += 1000;
+                    const el = document.getElementById('loadingstatus');
+                    el.innerText = `Retrying...`;
+                }, inter);
             });
         }
 
@@ -176,6 +186,8 @@
         <div id="loadingdiv">
             <div id="loader"></div>
             <h1>L O A D I N G . . .</h1>
+
+            <h2 style="margin: auto; color: white !important; text-align: center; display: block;" id="loadingstatus"></h2>
         </div>
         <div id="maincontent" style="display: none">
             <div id="reconnectingbar" class="reconnectingbar">R E C O N N E C T I N G . . .</div>

@@ -61,7 +61,6 @@ async function editRole(mongoconnection, ws, connectionMap, data) {
 
 export const uidsToUsers = (uids, client) => {
     return Promise.all(uids.map(async (uid) => {
-        console.log(uid);
         const doc = await client.db(uid).collection('configs').findOne({_id: 'myprofile'});
         doc['uid'] = uid;
         return doc;

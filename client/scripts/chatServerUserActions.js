@@ -358,10 +358,12 @@ async function createRolePopup(data, shouldRet = false) {
 
 			const tag = document.createElement('label');
 			tag.innerText = role.name;
-			tag.for = `roleInp${role.id}`;
+			tag.setAttribute('for', `roleInp${role.id}`);
 			tag.style.fontSize = '20px';
 
-			modalContent.append(tag, roleInp, br());
+			const container = document.createElement('div');
+			container.append(tag, roleInp);
+			modalContent.append(container, br());
 		}
 
 		const submitbtn = document.createElement('button');

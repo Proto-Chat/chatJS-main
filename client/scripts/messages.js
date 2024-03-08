@@ -502,11 +502,19 @@ async function createDmLink(dmRaw, isServer = false) {
     a.onclick = (e) => {
         if (!closeDMBtn.contains(e.target)) {
             if (!isServer) requestDM(a.id);
-            else window.location.pathname = `/server/${a.id}`;
+            else {
+                // don't show the reconnecting bar
+                document.getElementById('reconnectingbar')?.remove();
+                window.location.pathname = `/server/${a.id}`;
+            }
         }
         else {
             if (isServer) {
-                const conf = confirm(`Are you sure you'd like to leave "${dmRaw.name}"?`)
+                const conf = confirm(`Are you sure you'd like to leave "${dmRaw.name}"?`);
+                if (!conf) return;
+
+                // TODO: implement this
+                console.log(`leaving server: "${dmRaw.name}" (ID: "${a.id}")`);
             }
             else {
                 const closeDMWSObj = {
