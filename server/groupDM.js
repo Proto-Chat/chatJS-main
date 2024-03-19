@@ -41,7 +41,7 @@ export async function createGroupDM(ws, mongoconnection, response, connectionMap
             users: unameObj,
             owner: uid,
             dmId: gdmid,
-            dateCreated: (new Date()).toISOString(),
+            timeCreated: (new Date()).toISOString(),
             icon: "",
             displayname: unames.join(', ')
         });

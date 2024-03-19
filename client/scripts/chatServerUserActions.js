@@ -452,21 +452,24 @@ async function displayRoles(data) {
 }
 
 
+/*
+{
+	banned: [
+		{
+			"status": "ehe >:3",
+			"icon": "",
+			"username": "ION606",
+			"uid": "5aa9b536-e0fb-4d61-9145-07f192ca2cf3",
+			"reasonforban": "too gay"
+		}
+	]
+}
+*/
 async function handleActionCode(data) {
 	console.log(data);
 
 	switch (data.actioncode) {
-		case 3: displayBanned({
-			banned: [
-				{
-					"status": "ehe >:3",
-					"icon": "",
-					"username": "ION606",
-					"uid": "5aa9b536-e0fb-4d61-9145-07f192ca2cf3",
-					"reasonforban": "too gay"
-				}
-			]
-		});
+		case 3: displayBanned(data.banned);
 			break;
 	}
 }

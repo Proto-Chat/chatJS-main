@@ -20,7 +20,7 @@ async function send(serverId = undefined) {
     // encrypt the data
     const encContent = content; //(serverId) ? content : await encryptMsg(await getSymmKey(), content);
 
-    var msg = {author: {username: username, uid: authorID}, id: crypto.randomUUID(), channelId: channelId, content: encContent, timestamp: (new Date()).toISOString()};
+    var msg = {author: {username: username, uid: authorID}, id: crypto.randomUUID(), channelId: channelId, content: encContent, timestamp: (new Date()).toISOString(), sid: localStorage.getItem('sessionid')};
 
     if (serverId) {
         msg['serverId'] = serverId;

@@ -1,9 +1,11 @@
 import * as crypto from 'crypto';
 import { getUidFromSid, getUsernameFromUID } from '../utils/decodesid.js';
 import { broadcastToSessions } from '../database/newMessage.js';
-import { SERVERMACROS as MACROS } from '../macros.js';
-import { handleUserAction, checkPerms, getRoles } from './guildUser.js';
+import { SERVERMACROS as MACROS, SERVERMACROS } from '../macros.js';
+import { handleUserAction, getRoles } from './guildUser.js';
+import { checkPerms } from "./checkPerms.js";
 import { handleRoleReq, uidsToUsers } from './handleRoles.js';
+import { validateSession } from '../imports.js';
 
 
 function pingEveryoneInChannel(connectionMap, client, op, data, uconf, users, code = 6) {
@@ -57,13 +59,11 @@ export async function createServer(mongoconnection, connectionMap, sid, data) {
 		dbo.insertOne({ serverId: serverId, timeCreated: (new Date()).toISOString(), isPublic: !data.isPrivate, name: data.title });
 		const sdbo = client.db(serverId).collection('settings');
 
-		const username = await getUsernameFromUID(client, uid);
-
 		// 0 - private, 1 - public
 		await sdbo.insertOne({
 			_id: 'serverConfigs',
 			owner: uid,
-			dateCreated: (new Date()).toISOString(),
+			timeCreated: (new Date()).toISOString(),
 			isPublic: !data.isPrivate,
 			name: data.name,
 		});
@@ -79,7 +79,16 @@ export async function createServer(mongoconnection, connectionMap, sid, data) {
 					name: 'admin',
 					pos: 0,
 					color: 'grey',
-					users: [uid]
+					users: [uid],
+					perms: [MACROS.SERVER.PERMS.ADMIN]
+				},
+				{
+					id: crypto.randomUUID(),
+					name: 'everyone',
+					pos: 0,
+					color: 'grey',
+					users: [uid],
+					perms: [MACROS.SERVER.PERMS.EVERYONE]
 				}
 			],
 			users: [uid]
@@ -108,7 +117,7 @@ export async function createChannel(mongoconnection, connectionMap, sid, serverI
 		const db = client.db(`S|${serverId}`);
 
 		// for now, only the server owner can manage channels
-		if (!checkPerms(db, uid, MACROS.SERVER.OPS.CREATE_CHANNEL)) return null;
+		if (!(await checkPerms(db, uid, MACROS.SERVER.OPS.CREATE_CHANNEL))) return null;
 
 		const uconf = await findAndStripUConf(client, uid);
 		if (!uconf) return;
@@ -151,7 +160,7 @@ async function editServer(ws, mongoconnection, connectionMap, data) {
 		if (!sConf) return ws.send(JSON.stringify({ type: 1, code: 404 }));
 
 		// for now, only the server owner can manage channels
-		if (!checkPerms(db, uid, MACROS.SERVER.OPS.EDIT_SERVER)) return ws.send(JSON.stringify({ type: 1, code: 401 }));
+		if (!(await checkPerms(db, uid, MACROS.SERVER.OPS.EDIT_SERVER))) return ws.send(JSON.stringify({ type: 1, code: 401 }));
 		const usersInServer = (await db.collection('settings').findOne({ _id: 'classifications' })).users;
 
 		const toSend = {code: 6, op: 8, data: {}};
@@ -181,25 +190,30 @@ async function editServer(ws, mongoconnection, connectionMap, data) {
 }
 
 
-// testing server: http://localhost:3000/server/Y0Td7hn4
-
-export async function getServerInfo(mongoconnection, sid, serverId, getUsers = false) {
+export async function getServerInfo(mongoconnection, sid, serverId, getUsers = false, getMeta = false) {
 	try {
 		const uid = getUidFromSid(sid);
-		if (!uid) return;
+		if (!uid && !getMeta) return;
 
 		const client = await mongoconnection;
-		const sessionDoc = await client.db(uid).collection('sessions').findOne({ sid: sid });
-		if (!sessionDoc) return {type: 1, code: 404, msg: "session not found!"};
+		
+		if (!getMeta) {
+			const sessionDoc = await client.db(uid).collection('sessions').findOne({ sid: sid });
+			if (!sessionDoc) return {type: 1, code: 404, msg: "session not found!"};
+		}
 
 		const db = client.db(`S|${serverId}`);
 		const configs = await db.collection('settings').findOne({ _id: 'serverConfigs' });
 		if (!configs) return {type: 1, code: 404, msg: "server not found!"};
 
 		configs.serverId = serverId.replace('S|', '');
+		const classifications = await db.collection('settings').findOne({ _id: 'classifications' });
 
 		// get the users in the server
-		const usersInServer = (await db.collection('settings').findOne({ _id: 'classifications' }))?.users;
+		const usersInServer = classifications?.users;
+		if (!usersInServer) return {type: 1, code: 404, msg: "server not found!"};
+		const isChannelManager = await checkPerms(db, uid, MACROS.SERVER.OPS.EDIT_CHANNEL);
+
 		const uInServer = usersInServer?.find(u => (u == uid));
 
 		// if the user isn't in the server, add them to the server
@@ -208,9 +222,7 @@ export async function getServerInfo(mongoconnection, sid, serverId, getUsers = f
 			if (!configs.isPublic) return { type: 1, code: 501, msg: "This server is private!" };
 			else if (getUsers) return await uidsToUsers(usersInServer, client);
 
-			const uConfStripped = await findAndStripUConf(client, uid);
-			if (uConfStripped) await db.collection('settings').updateOne({ _id: 'classifications' }, { $set: { $push: uid } });
-			else return { type: 1, code: 404, msg: "user not found" };
+			return {type: 1, code: 451, msg: "NOT IN SERVER"};
 		}
 		else if (getUsers) return await uidsToUsers(usersInServer, client);
 
@@ -224,19 +236,57 @@ export async function getServerInfo(mongoconnection, sid, serverId, getUsers = f
 			const uRoles = await getRoles(mongoconnection, null, {sid, serverConfs: configs}, true);
 			const hasRole = doc.permissions.roles.some(o => (uRoles.some(r => (r.id == o))));
 			if (hasRole || doc.permissions.users.some(o => (o == uid))) {
-				channels[doc.name] = { channelId: channelRaw.name, vis: doc.visibility };
+				channels[doc.name] = { channelId: channelRaw.name, vis: doc.visibility, canEdit: isChannelManager };
 			}
 		}
 
-
 		return {
 			configs: configs,
-			channels: channels
+			channels: channels,
+			roles: classifications.roles
 		};
 	}
 	catch (err) {
 		console.error(err);
 		return null;
+	}
+}
+
+
+export async function addToServer(mongoconnection, uid, serverId) {
+	try {
+		const client = await mongoconnection;
+		const db = client.db(`S|${serverId}`);
+		const uConfStripped = await findAndStripUConf(client, uid);
+
+		// check bans
+		const bdbo = db.collection('bans');
+		if (await bdbo.findOne({_id: uid})) return {code: 404, msg: "invalid invite!"};
+
+		const dbo = db.collection('settings');
+		const sConf = await dbo.findOne({_id: 'serverConfigs'});
+		
+		// check if the user is already in the server
+		const users = await dbo.findOne({ _id: 'classifications', users: [uid] });
+		if (users) return {code: 200};		
+
+		if (!uConfStripped) return { type: 1, code: 404, msg: "user not found" };
+
+		await dbo.updateOne({ _id: 'classifications' }, { $push: {users: uid} } );
+		dbo.updateOne(
+			{ _id: "classifications", "roles.name": "everyone" },
+			{ $push: { "roles.$.users": uid } }
+		  );
+
+		delete sConf['id'];
+		sConf['serverId'] = `S|${serverId}`;
+		client.db(uid).collection('servers').insertOne(sConf);
+
+		return {code: 200};
+	}
+	catch(err) {
+		console.error(err);
+		return {type: 1, code: 500};
 	}
 }
 
@@ -248,26 +298,32 @@ async function handleMessage(ws, connectionMap, mongoconnection, data, op) {
 		if (!data.id || !user || !data.serverId || !data.channelId) return ws.send(JSON.stringify({ msgId: data.id || null, code: 400, type: 1 }));
 
 		const client = await mongoconnection;
-		const dbo = client.db(`S|${data.serverId}`).collection(data.channelId);
+		const db = client.db(`S|${data.serverId}`);
+		const dbo = db.collection(data.channelId);
 
 		const doc = await dbo.findOne({ _id: 'channelConfigs' });
 		if (!doc) return ws.send(JSON.stringify({ code: 404, serverId: data.serverId, channelId: data.channelId }));
 
-		// TODO check permissions
+		// check permissions
+		const uid = getUidFromSid(data.sid);
+		if (!uid) return {type: 1, code: 404, msg: "user not found!"};
 
 		var conf;
 		const toSend = { code: 6, op: 3, data: data };
 
 		// delete data[id];  // idk why I did this
 		if (op == MACROS.SERVER.OPS.DELETE_MESSAGE) {
+			if (uid != user.uid && !(await checkPerms(db, uid, op))) return {type: 1, code: 401};
 			conf = await dbo.deleteOne({ $and: [{ channelId: data.channelId }, { id: data.id }] });
 			toSend.op = 5;
 		}
 		else if (op == MACROS.SERVER.OPS.EDIT_MESSAGE) {
+			if (uid != user.uid) return {type: 1, code: 401};
 			conf = await dbo.updateOne({ $and: [{ channelId: data.channelId }, { id: data.id }] }, { $set: { content: data.content } });
 			toSend.op = 4;
 		}
 		else if (op == MACROS.SERVER.OPS.SEND_MESSAGE) {
+			if (!(await checkPerms(db, uid, op, dbo))) return {type: 1, code: 401};
 			conf = await dbo.insertOne(data);
 		}
 
@@ -296,7 +352,8 @@ async function getChannel(ws, connectionMap, mongoconnection, data) {
 		else if (!data.sid) return ws.send(JSON.stringify({ type: 1, code: 401 }));
 
 		const client = await mongoconnection;
-		const dbo = client.db(`S|${data.serverId}`).collection(data.channelId);
+		const db = client.db(`S|${data.serverId}`);
+		const dbo = db.collection(data.channelId);
 		const doc = await dbo.find({ $nor: [{ _id: 'channelConfigs' }, { _id: 'inChannel' }] }).toArray();
 		if (!doc) return;
 
@@ -305,6 +362,9 @@ async function getChannel(ws, connectionMap, mongoconnection, data) {
 		const uid = getUidFromSid(data.sid);
 		const sessionDoc = await client.db(uid).collection('sessions').findOne({ sid: data.sid });
 		if (!sessionDoc) return null;
+
+		// check if the user can access the channel
+		if (!(await checkPerms(db, uid, MACROS.SERVER.OPS.GET_CHANNEL, dbo))) return ws.send(JSON.stringify({ type: 1, code: 401 }))
 
 		const uconf = await client.db(uid).collection('configs').findOne({ _id: "myprofile" });
 		if (!uconf) return ws.send(JSON.stringify({ type: 1, code: 401 }));
@@ -405,8 +465,12 @@ async function updateChannel(ws, connectionMap, mongoconnection, data, op) {
 			// role stuff
 			if (data.roleToChange) {
 				// check roles
-				const adminRole = uDoc.roles.find(r => r.name == 'admin');
-				if (!adminRole || (adminRole.id == data.roleToChange)) return ws.send(JSON.stringify({type: 1, code: 409}));
+				const canNotChange = uDoc.roles.find(r => {
+					if ((r.name == 'admin')) return (r.id == data.roleToChange);
+					else return false;
+				});
+
+				if (canNotChange) return ws.send(JSON.stringify({type: 1, code: 409}));
 				await changeChannelRoles(dbo, data, ws);
 			}
 			else {
@@ -440,6 +504,8 @@ async function updateChannel(ws, connectionMap, mongoconnection, data, op) {
 
 
 export async function handleChatServer(ws, connectionMap, mongoconnection, data) {
+	if (!(await validateSession(mongoconnection, data.data.sid))) return {type: 1, code: 404, msg: "session not found!"};
+	
 	switch (data.op) {
 		case MACROS.SERVER.OPS.CREATE_SERVER:
 			const response = await createServer(mongoconnection, connectionMap, data.sid, data.data);

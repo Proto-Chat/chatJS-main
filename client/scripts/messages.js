@@ -386,6 +386,9 @@ function createNewMessage(msg) {
         req.setRequestHeader('username', JSON.parse(localStorage.getItem('user')).username);
         req.send();
     }
+    else if (isValidUrl(msg.content)) {
+        msgContentContainer.innerHTML = `<a href=${msg.content} target="_blank" class="msgcontentlink">${msg.content}</a>`;
+    }
     else msgContentContainer.innerText = `${msg.content}`;
 
     container.appendChild(msgContentContainer);
@@ -506,6 +509,13 @@ async function createDmLink(dmRaw, isServer = false) {
                 // don't show the reconnecting bar
                 document.getElementById('reconnectingbar')?.remove();
                 window.location.pathname = `/server/${a.id}`;
+
+                // var req = new XMLHttpRequest();
+                // req.open('GET', `${window.location.origin}/server/${a.id}`, true);
+
+                // req.responseType = 'document';
+                // req.setRequestHeader('sessionid', localStorage.getItem('sessionid'));
+                // req.send();
             }
         }
         else {

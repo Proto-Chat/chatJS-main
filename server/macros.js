@@ -91,6 +91,15 @@ const SERVER = {
                 GET: 3
             }
         },
+    },
+    PERMS: {
+        ADMIN: 0, // same as MANAGE_SERVER
+        MANAGE_ROLES: 1,
+        MANAGE_CHANNELS: 2,
+        MANAGE_MESSAGES: 3,
+        BAN: 4,
+        KICK: 5,
+        EVERYONE: 10
     }
 };
 

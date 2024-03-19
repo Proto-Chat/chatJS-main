@@ -1,7 +1,7 @@
 import { broadcastToSessions } from '../database/newMessage.js';
 import { getUidFromSid, validateSession } from '../imports.js';
 import { SERVERMACROS } from '../macros.js';
-import { checkPerms } from './guildUser.js';
+import { checkPerms } from "./checkPerms.js";
 import crypto from 'crypto';
 
 const RMACROS = SERVERMACROS.SERVER.OPS.ROLE;
@@ -96,7 +96,7 @@ async function getRoles(mongoconnection, ws, data) {
                 data: {
                     roles: roles,
                     users,
-                    serverConfs: {serverId: data.serverConfs.serverId, usersAll: doc.users},
+                    serverConfs: {serverId: data.serverConfs.serverId, usersAll: await uidsToUsers(doc.roles.flatMap(o => o.users), client)},
                     channelId: data.channelId
                 }
             }));

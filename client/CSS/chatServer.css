@@ -160,11 +160,13 @@
     margin-right: 10px;
     margin-top: 5px;
     float: left;
+    cursor: pointer;
 }
 
 .user-info {
     display: flex;
     flex-direction: column;
+    cursor: pointer;
 }
 
 .username {

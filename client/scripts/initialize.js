@@ -293,6 +293,7 @@ async function setupDM(response) {
 
 
     // decryption
+    /*
     const symmKeyEnc = await getSymmKey();
 	if (!symmKeyEnc) return alert("SYMMETRIC KEY NOT FOUND");
 
@@ -302,6 +303,7 @@ async function setupDM(response) {
         msg.content = msgContent;
         return msg;
     }
+    */
 
     let lastVideo;
     var counter = 0;

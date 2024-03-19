@@ -18,7 +18,7 @@ export async function newConnection(connection, data) {
         let sid = uuidv4();
         sid += "?" + Buffer.from(doc.uid).toString('base64');
         
-        await sbo.insertOne({sid: sid, timeCreated: new Date(), lastAccessed: null});
+        await sbo.insertOne({sid: sid, dateCreated: new Date(), lastAccessed: null});
         await dbo.updateOne({username: data.username}, { $push: { sids: sid } });
         return sid;
     } catch (err) {

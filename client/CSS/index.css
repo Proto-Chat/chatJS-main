@@ -432,9 +432,18 @@ body {
     opacity: 1; /* Make the button fully visible on hover */
 }
 
-/* #sidebarWrapper {
-    transition: width 0.3s;
-} */
+
+.msgcontentlink {
+    color: #BB86FC; /* A light purple, visible against the dark background */
+    text-decoration: none; /* Removes underline */
+    transition: color 0.3s ease-in-out; /* Smooth transition for hover effect */
+}
+  
+
+.msgcontentlink:hover, .msgcontentlink:focus {
+    color: #3700B3; /* Darker shade of purple on hover/focus */
+    text-decoration: underline; /* Adds underline on hover/focus */
+}
 
 
 #errWrapper {

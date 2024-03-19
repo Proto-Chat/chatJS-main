@@ -1,5 +1,33 @@
+const getRoles = (serverId) => {
+    return new Promise((resolve, reject) => {
+        var req = new XMLHttpRequest();
+        req.open('POST', `${window.location.origin}/serverroles`, true);
+        req.responseType = 'text';
+    
+        req.onloadend = () => {
+            try {
+                const r = JSON.parse(req.response);
+                if (!r.roles) throw "NO ROLES";
+                resolve(r.roles);
+            }
+            catch(err) {
+                console.error(err);
+                console.log(req.response);
+                reject();
+                alert("ERROR!");
+            }
+        }
+    
+        req.setRequestHeader('sessionid', localStorage.getItem('sessionid'));
+        req.setRequestHeader('serverid', serverId);
+        req.setRequestHeader('getroles', 'true');
+        req.send();
+    });
+}
+
+
 //#region New Channel
-function createNewChannelPopup(serverId) {
+async function createNewChannelPopup(serverId) {
     // Create popup container
     const popupContainer = document.createElement('div');
     popupContainer.id = 'newChannelPopupContainer';
@@ -13,6 +41,7 @@ function createNewChannelPopup(serverId) {
     // Add header
     const header = document.createElement('h2');
     header.textContent = 'Add a New Channel';
+    header.style.display = 'block';
     popup.appendChild(header);
 
     // Add input field
@@ -21,6 +50,46 @@ function createNewChannelPopup(serverId) {
     input.id = 'newChannelInput';
     input.placeholder = 'Channel Name';
     popup.appendChild(input);
+
+    // choose roles
+    const btn = document.createElement('button');
+    btn.onclick = async (_) => {
+        const roles = await getRoles(serverId);
+        const roleDiv = document.createElement('div');
+        roleDiv.style = "position:absolute;margin-top:10px;background:#5c5c5c;padding:10px;text-align:left;border:solid black 1px;";
+
+        const rtba = (popup.dataset.rtba) ? JSON.parse(popup.dataset.rtba) : null;
+
+        for (const role of roles) {
+            const d =  document.createElement('div');
+            const opt = document.createElement("input");
+            opt.type = 'checkbox';
+            opt.name = role.id;
+            opt.value = role.id;
+
+            if (rtba && rtba.includes(role.id)) opt.checked = true;
+    
+            const label = document.createElement('label');
+            label.setAttribute("for", role.id);
+            label.innerText = role.name;
+            label.style = "display:inline;margin:10px;";
+
+            d.append(opt, label);
+            roleDiv.appendChild(d);
+        }
+        const btnDone = document.createElement('button');
+        btnDone.innerText = "done";
+        btnDone.onclick = (_) => {
+            // roles to be added
+            popup.dataset.rtba = JSON.stringify(Array.from(roleDiv.querySelectorAll("input")).map(o => (o.checked) ? o.value : undefined)
+                                        .filter(o => o));
+            roleDiv.remove();
+        }
+        roleDiv.appendChild(btnDone);
+        popup.append(roleDiv);
+    }
+    btn.innerText = "Choose Roles";
+    popup.appendChild(btn);
 
     // Add Add button
     const addButton = document.createElement('button');
@@ -51,7 +120,7 @@ function hideNewChannelPopup() {
     document.getElementById('newChannelPopupContainer').style.display = 'none';
 }
 
-function addNewChannel(serverId) {
+function addNewChannel(serverId, rolesAllowed) {
     const channelName = document.getElementById('newChannelInput').value;
     if (channelName) {
         ws.send(JSON.stringify({
@@ -60,7 +129,8 @@ function addNewChannel(serverId) {
             data: {
                 sid: localStorage.getItem('sessionid'),
                 serverId: serverId,
-                channelName: channelName
+                channelName: channelName,
+                rolesAllowed
             }
         }));
 
@@ -170,6 +240,7 @@ function createRoleChangeBtn(role) {
 }
 
 function dispChannelRoles(data) {
+    console.log("ROLES", data);
     document.getElementById("rolepopup").style.display = "block";
     const roleContainer = document.getElementById("dataContainer");
     roleContainer.innerHTML = '<h1 style="text-align: center; margin-bottom: 0px;">Users and Roles</h1>';
@@ -194,7 +265,7 @@ function dispChannelRoles(data) {
         uList.style.marginTop = '0px';
         uList.style.border = 'solid black 1px';
 
-        role.users = role.users.map((uid => data.users.find(u => u.uid == uid)));
+        role.users = role.users.map((uid => data.serverConfs.usersAll.find(u => u.uid == uid)));
         role.users.forEach(user => {
             const li = document.createElement('li');
             li.dataset.uid = user.uid;
@@ -215,7 +286,7 @@ function dispChannelRoles(data) {
         const btn = e.target.parentElement.parentElement;
         const {roleid, isinchannel} = btn.dataset;
         if (!roleid) return alert("ERROR!");
-        
+
         ws.send(JSON.stringify({
             code: 6,
             op: 8,
@@ -457,7 +528,7 @@ async function fillUSideBar(serverConfs) {
 
 // a modified setupDM
 function setUpChannel(response) {
-    console.log(response);
+    console.log("SETUPCHANNEL", response);
 
     if (!response.channelconfs || !response.messages) return alert("ERROR!");
     const channelConfigs = response.channelconfs.find(o => o._id == 'channelConfigs');
@@ -672,9 +743,41 @@ function setUpChannel(response) {
     }
 
 
-    // const observer = new MutationObserver(observerCallback);
-    // const config = { childList: true, subtree: true };
-    // observer.observe(document.body, config);
+    // modified `createContextMenu()`
+    messages.querySelectorAll('.msgauthor').forEach((el) => {
+        el.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+
+            const dropdown = document.createElement('div');
+            dropdown.className = "msgdropdown";
+
+            window.addEventListener('click', (e2) => {
+                if (e2.target == dropdown) return;
+                dropdown.remove();
+            });
+
+            const createActionBtn = (txt, actioncode) => {
+                const btn = document.createElement('a');
+                btn.onclick = () => {
+                    ws.send(JSON.stringify({
+                        code: 6,
+                        op: 10,
+                        actioncode,
+                        data: {
+                            sid: localStorage.getItem('sessionid'),
+                            target: el.id,
+                            serverId: channelConfigs.serverId,
+                        }
+                    }));
+                }
+                btn.innerText = txt;
+                return btn
+            }
+
+            dropdown.append(createActionBtn('kick', 0), createActionBtn('ban', 1)); 
+            e.target.appendChild(dropdown);
+        });
+    });
 
     element.appendChild(messages);
     element.appendChild(inpwrapper);

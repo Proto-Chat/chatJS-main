@@ -141,9 +141,11 @@
                     case 5: messageRecieved(response);
                     break;
 
-                    case 6:
-                        window.location.href = `/server/${response.serverId}`;
-                        break;
+                    case 6: {
+                        // window.location.href = `/server/${response.serverId}`;
+                        getServerDataPreview(response.serverId);
+                    }
+                    break;
 
                     case 10: break;
 
@@ -244,7 +246,7 @@
         <div id="loadingdiv">
             <div id="loader"></div>
             <h1>L O A D I N G . . .</h1>
-            <h2 id="loadingstatus"></h2>
+            <h2 id="loadingstatus" style="color: white !important;"></h2>
         </div>
         <div id="loginDiv">
 

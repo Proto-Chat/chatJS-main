@@ -26,7 +26,7 @@ import {
     favicon
 } from './imports.js';
 import { broadcastToSessions } from './database/newMessage.js';
-import { getServerInfo, handleChatServer } from './guilds/chatServer.js';
+import { addToServer, getServerInfo, handleChatServer } from './guilds/chatServer.js';
 
 // MACROS
 import { SERVERMACROS as MACROS } from './macros.js';
@@ -238,12 +238,20 @@ app.get('/getUser', async (req, res) => {
 
 app.post('/serverroles', async (req, res) => {
     try {
-        const {sessionid, serverid} = req.headers;
-        if (!sessionid || !serverid) return res.sendStatus(404);
-
-        const users = await getServerInfo(mongoconnection, sessionid, serverid, true);
-        if (!users) res.sendStatus(401);
-        else res.send(JSON.stringify(users));
+        const {sessionid, serverid, getroles} = req.headers;
+        if (!sessionid || !serverid || !(await validateSession(mongoconnection, sessionid))) return res.sendStatus(404);
+        
+        if (!getroles) {
+            const users = await getServerInfo(mongoconnection, sessionid, serverid, true);
+            if (!users) res.sendStatus(401);
+            else res.send(JSON.stringify(users));
+        }
+        else {
+            const sInf = await getServerInfo(mongoconnection, sessionid, serverid);
+            if (!sInf) res.sendStatus(401);
+            else if (!sInf.roles) res.send(JSON.stringify(sInf));
+            else res.send(JSON.stringify({roles: sInf.roles}));
+        }
     }
     catch(err) {
         console.error(err);
@@ -256,7 +264,7 @@ app.get('/*', async (req, res) => {
     if (req.path == '/favicon.ico') {
         res.sendFile('favicon.ico', {root: './client/assets'});
     } else {
-        res.sendFile(`${req.path}`, {root: './client'});
+        res.sendFile(`${req.path}`, {root: './client/'});
     }
 });
 */
@@ -271,13 +279,38 @@ app.post('/systemmsgall', async (req, res) => {
 
 app.get('/', (req, res) => {
     createMetaTags.createBaseMeta(res);
-    // res.sendFile(`index.html`, {root: './client'});
+    // res.sendFile(`index.html`, {root: './client/'});
 });
 
 app.get('/server/:sid', (req, res) => {
-    const serverId = req.path.replace('/server/', '');
-    if (!serverId) return res.sendStatus(404);
-    return res.sendFile('server.html', {root: './client'});
+    try {
+        const serverId = req.params.sid; //req.path.replace('/server/', '');
+        if (!serverId) return res.sendStatus(404);
+        const {sessionid} = req.params;
+
+        createMetaTags.createServerMeta(mongoconnection, serverId, sessionid, res);
+        // return res.sendFile('server.html', {root: './client/'});
+    }
+    catch(err) {
+        console.error(err);
+        res.sendStatus(500);
+    }
+});
+
+app.get('/invite/:sid', async (req, res) => {
+    res.sendFile(`invite.html`, {root: './client/'});
+});
+
+app.post('/invite', async (req, res) => {
+    const {serverid, sessionid} = req.headers;
+    if (!serverid || !sessionid) return res.sendStatus(404);
+    
+    const uid = getUidFromSid(sessionid);
+    if (!uid) return res.sendStatus(404);
+
+    const ret = await addToServer(mongoconnection, uid, serverid);
+    if (ret.code == 200) res.sendStatus(200);
+    else res.send(ret.msg).status(ret.code);
 });
 
 app.get('/server', async (req, res) => {
@@ -285,28 +318,28 @@ app.get('/server', async (req, res) => {
 });
 
 app.get('/social', (req, res) => {
-    res.sendFile(`social.html`, {root: './client'});
+    res.sendFile(`social.html`, {root: './client/'});
 });
 
 app.get('/join', (req, res) => {
     createMetaTags.createJoinMeta(res);
-    // res.sendFile(`join.html`, {root: './client'});
+    // res.sendFile(`join.html`, {root: './client/'});
 });
 
 app.get('/call', (req, res) => {
-    res.sendFile(`call.html`, {root: './client'});
+    res.sendFile(`call.html`, {root: './client/'});
 });
 
 app.get('/scripts/*', (req, res) => {
-    res.sendFile(`${req.path}`, {root: './client'});
+    res.sendFile(`${req.path}`, {root: './client/'});
 });
 
 app.get('/CSS/*', (req, res) => {
-    res.sendFile(`${req.path}`, {root: './client'});
+    res.sendFile(`${req.path}`, {root: './client/'});
 });
 
 app.get('/assets/*', (req, res) => {
-    res.sendFile(`${req.path}`, {root: './client'});
+    res.sendFile(`${req.path}`, {root: './client/'});
 });
 
 

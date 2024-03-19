@@ -2,6 +2,7 @@ import { broadcastToSessions } from "../database/newMessage.js";
 import { getUidFromSid, validateSession } from "../imports.js";
 import { SERVERMACROS } from '../macros.js';
 import { getUsernameFromUID } from "../utils/decodesid.js";
+import { checkPerms } from "./checkPerms.js";
 import { uidsToUsers } from "./handleRoles.js";
 const UMACROS = SERVERMACROS.SERVER.OPS.USER_ACTION.ACTION_CODES;
 
@@ -24,24 +25,6 @@ export class guildUser {
 
 	constructor(obj) { for (const i in this) this[i] = obj[i]; }
 }
-
-// modify this as needed later (check perms in dbo)
-// maybe add an input for the action being done?
-
-// action could be either an op code or {op: data.op, actioncode: actioncode}
-export async function checkPerms(db, uid, action, dbo = undefined) {
-    const serverDoc = await db.collection('settings').findOne({_id: 'serverConfigs'});
-
-    if (dbo) {
-        // TODO: check channel perms
-    }
-
-    // for now, only the server owner can manage channels
-	if (!serverDoc || serverDoc.owner != uid) return false;
-	return true;
-}
-
-
 
 /*
 {
@@ -152,29 +135,97 @@ async function getBans(ws, client, data) {
 }
 
 
+async function kickOrBan(mongoconnection, ws, connectionMap, data, actioncode) {
+	try {
+		const retRej = (msg) => ws.send(JSON.stringify({type: 1, msg}));
+
+		const initiator = getUidFromSid(data.sid);
+		if (initiator == data.target) return retRej("you can not perform this action on yourself!");
+		else if (typeof initiator == 'object') return ws.send(JSON.stringify(initiator));
+
+		const permCodeToCheck = (actioncode == SERVERMACROS.SERVER.OPS.USER_ACTION.ACTION_CODES.KICK) ? SERVERMACROS.SERVER.PERMS.KICK : SERVERMACROS.SERVER.PERMS.BAN;
+
+		const client = await mongoconnection;
+		const dbo = client.db(data.serverId).collection('settings');
+		const doc = await dbo.findOne({_id: 'classifications'});
+		const confs = await dbo.findOne({_id: 'serverConfigs'});
+
+		if (confs.owner == data.target) return retRej("insufficient permissions!");
+		else if (initiator != doc.owner) {
+			// check perms
+			const hasBasePerms = doc.roles.find(r => {
+				if (!r.users.includes(initiator)) return false;
+				const minRole = Math.min(r.perms);
+				return (minRole == permCodeToCheck);
+			});
+			if (!hasBasePerms) return retRej("insufficient permissions!");
+
+			// check if user is above the one they're trying to ban
+			const initBasePerm = doc.roles.find(r => r.users.includes(initiator));
+			const targetBasePerm = doc.roles.find(r => r.users.includes(data.target));
+			if (targetBasePerm >= initBasePerm) return retRej("insufficient permissions!");
+		}
+		
+		// has perms, proceed
+		switch (actioncode) {
+			case SERVERMACROS.SERVER.OPS.USER_ACTION.ACTION_CODES.KICK:
+				// uhhhhhhhhhhhhhhh, implement when invites work
+			break;
+
+			case SERVERMACROS.SERVER.OPS.USER_ACTION.ACTION_CODES.BAN:
+				const bdbo = client.db(data.serverId).collection('bans');
+				await bdbo.insertOne({_id: data.target, actioncode, reason: data.reason || "none"});
+			break;
+
+			case SERVERMACROS.SERVER.OPS.USER_ACTION.ACTION_CODES.UNBAN:
+				await bdbo.deleteOne({_id: data.target});
+			break;
+
+			default: console.log(`UNKNOWN USER ACTION CODE: ${actioncode}`);
+		}
+
+		broadcastToSessions(client, connectionMap, doc.users, {code: 6, op: SERVERMACROS.SERVER.OPS.USER_ACTION.CODE, actioncode, target: data.target, initiator});
+	}
+	catch(err) {
+		console.error(err);
+		ws.send(JSON.stringify({code: 500, type: 1}));
+	}
+}
+
+
 export async function handleUserAction(ws, connectionMap, mongoconnection, response) {
-	const client = await mongoconnection;
-	const { actioncode, data } = response;
-	const uid = getUidFromSid(data.sid);
-	const db = client.db(`S|${data.serverConfs.serverId}`);
+	try {
+		const client = await mongoconnection;
+		const { actioncode, data } = response;
 
-	if (!validateSession(mongoconnection, data.sid)) return ws.send(JSON.stringify({type: 1, code: 404}));
+		if (!validateSession(mongoconnection, data.sid)) return ws.send(JSON.stringify({type: 1, code: 404}));
 
-// FOR DEBUGGING
-	// else if (!(await checkPerms(db, uid, {op: data.op, actioncode: actioncode}))) {
-	// 	return ws.send(JSON.stringify({type: 1, code: 401}));
-	// }
+	// FOR DEBUGGING
+		// else if (!(await checkPerms(db, uid, {op: data.op, actioncode: actioncode}))) {
+		// 	return ws.send(JSON.stringify({type: 1, code: 401}));
+		// }
 
-	switch(actioncode) {
-		case 3: getBans(ws, client, response.data);
-		break;
+		switch(actioncode) {
+			case 3: getBans(ws, client, response.data);
+			break;
 
-		case UMACROS.CHANGEROLES: changeRoles(mongoconnection, ws, connectionMap, data);
-		break;
+			case UMACROS.CHANGEROLES: changeRoles(mongoconnection, ws, connectionMap, data);
+			break;
 
-		case UMACROS.GETROLES: getRoles(mongoconnection, ws, data);
-		break;
+			case UMACROS.GETROLES: getRoles(mongoconnection, ws, data);
+			break;
 
-		default: ws.send(JSON.stringify({type: 1, code: 404}));
+			case UMACROS.KICK:
+			case UMACROS.BAN:
+			case UMACROS.UNBAN:
+				kickOrBan(mongoconnection, ws, connectionMap, data, actioncode);
+				break;
+
+			default: ws.send(JSON.stringify({type: 1, code: 404}));
+		}
+	}
+	catch(err) {
+		console.error(err);
+		return null;
 	}
 }
