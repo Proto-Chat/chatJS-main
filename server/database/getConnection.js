@@ -8,16 +8,24 @@ import { getUidFromSid } from "../utils/decodesid.js";
  * @returns 
  */
 export async function validateSession(connection, sid) {
-    const uid = getUidFromSid(sid);
-    const client = await connection;
+    try {
+        const uid = getUidFromSid(sid);
+        if (!uid || uid.type == 1) return false;
+        
+        const client = await connection;
 
-    //Validate session
-    const db = client.db(uid);
-    const sbo = await db.collection('sessions');
-
-    const sessionObj = await sbo.findOne({sid: sid});
-    if (!sessionObj) return false;
-    return true;
+        //Validate session
+        const db = client.db(uid);
+        const sbo = await db.collection('sessions');
+    
+        const sessionObj = await sbo.findOne({sid: sid});
+        if (!sessionObj) return false;
+        return true;
+    }
+    catch(err) {
+        console.error(err);
+        return false;
+    }
 }
 
 

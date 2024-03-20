@@ -91,7 +91,7 @@
                     case 2: setUpChannel(response);
                     break;
 
-                    case 3: addMessage(response.data);
+                    case 3: createNewMessage(response.data);
                     break;
 
                     case 4: edit(response.data);
@@ -100,10 +100,10 @@
                     case 5: deleteMsg(response.data.id);
                     break;
 
-                    case 6: createChannelLink(response.data.channelName, response.data.serverId, response.data.cid, response.data.isOwner); console.log("NEW CHANNEL HERE: "); console.log(response.data);
+                    case 6: addChannel(response.data);
                     break;
 
-                    case 7: console.log("CHANNEL DELETED: "); console.log(response.data);
+                    case 7: remChannel(response.data);
                     break;
 
                     case 8: editServer(response.data);

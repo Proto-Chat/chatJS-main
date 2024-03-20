@@ -418,21 +418,31 @@ async function getChannel(ws, connectionMap, mongoconnection, data) {
 }
 
 
-async function changeChannelRoles(dbo, role, ws) {
+async function changeChannelRoles(dbo, role, client, connectionMap, db, toSend) {
 	// get role
-	const rDoc = (await dbo.findOne({_id: 'channelConfigs'})).permissions.roles;
+	const cdoc = (await dbo.findOne({_id: 'channelConfigs'}));
+	const rDoc = cdoc.permissions.roles;
+	const roles = (await db.collection('settings').findOne({_id: 'classifications'})).roles;
+	const sCol = await db.collection('settings').findOne({_id: 'serverConfigs'});
+
+	toSend['data']['channelName'] = cdoc.name;
+	toSend['data']['isOwner'] = (sCol?.owner == toSend.data.creator.uid);
+
 	if (!role.isAdding) {
 		if (!rDoc.includes(role.roleToChange)) return;
-		dbo.updateOne({ _id: 'channelConfigs' }, { $pull: { "permissions.roles": role.roleToChange } });
-		console.log(`removed ${role.roleToChange}`);
+		await dbo.updateOne({ _id: 'channelConfigs' }, { $pull: { "permissions.roles": role.roleToChange } });
+		// console.log(`removed ${role.roleToChange}`);
+		toSend['op'] = 7;
 	}
 	else {
 		if (rDoc.includes(role.roleToChange)) return;
-		dbo.updateOne({ _id: 'channelConfigs' }, { $push: { "permissions.roles": role.roleToChange } });
-		console.log(`added ${role.roleToChange}`);
+		await dbo.updateOne({ _id: 'channelConfigs' }, { $push: { "permissions.roles": role.roleToChange } });
+		// console.log(`added ${role.roleToChange}`);
 	}
 
-	ws.send(JSON.stringify({code: 6, op: 13, actioncode: 2, data: {roleId: role.roleToChange, adding: role.isAdding}}));
+	// get the users for who the role would change
+	const usersInRole = roles.find(r => r.id == role.roleToChange).users;
+	broadcastToSessions(client, connectionMap, usersInRole, toSend);
 }
 
 
@@ -457,7 +467,6 @@ async function updateChannel(ws, connectionMap, mongoconnection, data, op) {
 
 		// ping everyone in the server
 		const uDoc = await db.collection('settings').findOne({ _id: 'classifications' });
-
 		const toSend = { serverId: data.serverId, channelId: data.channelId, changer: { username: getUsernameFromUID(client, uid), uid: uid } };
 
 		// edit (3 is needed for the legacy version)
@@ -471,7 +480,15 @@ async function updateChannel(ws, connectionMap, mongoconnection, data, op) {
 				});
 
 				if (canNotChange) return ws.send(JSON.stringify({type: 1, code: 409}));
-				await changeChannelRoles(dbo, data, ws);
+
+				const toSend = {code: 6, op: 6, actioncode: 2, data: {
+					serverId: data.serverId,
+					channelId: data.channelId,
+					creator: { username: await getUsernameFromUID(client, uid), uid: uid }
+				}};
+
+				await changeChannelRoles(dbo, data, client, connectionMap, db, toSend);
+				return ws.send(JSON.stringify({code: 6, op: 13, actioncode: 2, data: {roleId: data.roleToChange, adding: data.isAdding}}));
 			}
 			else {
 				await dbo.updateOne({ _id: "channelConfigs" }, { $set: { name: data.newName } });
@@ -504,11 +521,12 @@ async function updateChannel(ws, connectionMap, mongoconnection, data, op) {
 
 
 export async function handleChatServer(ws, connectionMap, mongoconnection, data) {
-	if (!(await validateSession(mongoconnection, data.data.sid))) return {type: 1, code: 404, msg: "session not found!"};
-	
+	const sid = data.sid || data.data.sid;
+	if (!(await validateSession(mongoconnection, sid))) return {type: 1, code: 404, msg: "session not found!"};
+
 	switch (data.op) {
 		case MACROS.SERVER.OPS.CREATE_SERVER:
-			const response = await createServer(mongoconnection, connectionMap, data.sid, data.data);
+			const response = await createServer(mongoconnection, connectionMap, sid, data.data);
 			if (!response) return ws.send(JSON.stringify({
 				code: 500
 			}));
@@ -525,7 +543,7 @@ export async function handleChatServer(ws, connectionMap, mongoconnection, data)
 			break;
 
 		case MACROS.SERVER.OPS.CREATE_CHANNEL:
-			createChannel(mongoconnection, connectionMap, data.data.sid, data.data.serverId, data.data.channelName);
+			createChannel(mongoconnection, connectionMap, sid, data.data.serverId, data.data.channelName);
 			// ws.send(501);
 			break;
 

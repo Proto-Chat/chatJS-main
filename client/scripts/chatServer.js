@@ -340,6 +340,26 @@ function createServerSideBar(data) {
 }
 
 
+function addChannel(data) {
+    const sidebar = document.getElementById('channels');
+    const { serverId, channelId, channelName, isOwner } = data;
+    if (document.getElementById(channelId)) return;
+
+    const cLink = createChannelLink(channelName, serverId, channelId, isOwner);
+    sidebar.appendChild(cLink);
+}
+
+function remChannel(data) {
+    const el = document.getElementById(data.channelId);
+    el?.remove();
+    
+    // check current chat
+    if (localStorage.getItem('currentChatID') == data.channelId) {
+        window.location.reload();
+    }
+}
+
+
 function createServerConfMain(serverInfo) {
     const rootElement = document.getElementById('serverInfoContainer');
     const header = document.createElement('h1');

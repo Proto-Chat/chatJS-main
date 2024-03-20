@@ -153,6 +153,7 @@ async function createContextMenu(e, editable = true) {
                     id: target.id,
                     channelId: localStorage.getItem('currentChatID'),
                     serverId: serverId,
+                    sid: localStorage.getItem('sessionid')
                 }
             }));
         }
@@ -164,7 +165,8 @@ async function createContextMenu(e, editable = true) {
                 data: {
                     user: JSON.parse(userRaw),
                     chatid: localStorage.getItem('currentChatID'),
-                    id: target.id
+                    id: target.id,
+                    sid: localStorage.getItem('sessionid')
                 }
             }));
         }
@@ -216,7 +218,8 @@ async function createContextMenu(e, editable = true) {
                                 id: target.id,
                                 channelId: localStorage.getItem('currentChatID'),
                                 serverId: serverId,
-                                content: newinpdiv.value  // UNENCRYPTED FOR NOW
+                                content: newinpdiv.value,  // UNENCRYPTED FOR NOW
+                                sid: localStorage.getItem('sessionid')
                             }
                         }));
                     }
@@ -228,7 +231,8 @@ async function createContextMenu(e, editable = true) {
                                 content: newinpdiv.value, //await encryptMsg(symmEncKey, newinpdiv.value),
                                 user: JSON.parse(userRaw),
                                 chatid: localStorage.getItem('currentChatID'),
-                                id: target.id
+                                id: target.id,
+                                sid: localStorage.getItem('sessionid')
                             }
                         }));
                     }

@@ -719,7 +719,6 @@ function setUpChannel(response) {
         memsidebar.querySelectorAll('.user-card').forEach((el) => el.remove());
     }
     
-    
     // add the users asynchronously
     fillUSideBar(channelConfigs).then((res) => console.log((res) ? 'added all users to sidebar!' : 'failed to add all users to sidebar!'));
 
