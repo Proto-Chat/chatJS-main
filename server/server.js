@@ -287,6 +287,7 @@ app.get('/server/:sid', (req, res) => {
         const serverId = req.params.sid; //req.path.replace('/server/', '');
         if (!serverId) return res.sendStatus(404);
         const {sessionid} = req.params;
+        if (serverId.includes('.')) return res.sendStatus(409);
 
         createMetaTags.createServerMeta(mongoconnection, serverId, sessionid, res);
         // return res.sendFile('server.html', {root: './client/'});
