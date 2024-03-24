@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <script src="/scripts/send.js"></script>
+    <script src="/scripts/chatServer.js"></script>
+    <script src="/scripts/chatServerChannel.js"></script>
+    <script src="/scripts/chatServerUserActions.js"></script>
+    <script src="/scripts/initialize.js"></script>
+    <script src="/scripts/profile.js"></script>
+    <script src="/scripts/gifs.js"></script>
+    <script src="/scripts/images.js"></script>
+    <script src="/scripts/playNotification.js"></script>
+    <script src="/scripts/messages.js"></script>
+    <script src="/scripts/encryption.js"></script>
+
+    <link rel="stylesheet" type="text/css" href="/CSS/index.css">
+    <link rel="stylesheet" type="text/css" href="/CSS/chatServer.css">
+    <link rel="stylesheet" type="text/css" href="/CSS/profile.css">
+    <link rel="stylesheet" type="text/css" href="/CSS/utils.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css" integrity="sha512-+4zCK9k+qNFUR5X+cKL9EIR+ZOhtIloNl9GIKS57V1MyNsYpYcUrUeQc9vNfzsWfV28IaLL3i96P9sdNyeRssA==" crossorigin="anonymous" />
+    <script src="https://kit.fontawesome.com/728e740903.js" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/js/all.min.js" integrity="sha512-F5QTlBqZlvuBEs9LQPqc1iZv2UMxcVXezbHzomzS6Df4MZMClge/8+gXrKw2fl5ysdk4rWjR0vKS7NNkfymaBQ==" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/idb@8/build/umd.js"></script>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:400,400i,500,500i,700,700i&display=swap">
+
+    <script>
+        const getUidFromSid = (sid) => atob(sid.split("?")[1], 'base64');
+        
+        function requestDM(uid) {
+            ws.send(JSON.stringify({sid: localStorage.getItem('sessionid'), code: 3, op: 0, uid: uid}));
+        }
+    </script>
+
+    <script>
+        var ws;
+        function connectSocket() {
+            ws = new WebSocket(createWSPath());
+            setInterval(() => { ws.send(JSON.stringify({code: 10})); }, 30000);
+
+            ws.addEventListener('open', () => {
+                console.log("websocket connection established!");
+                document.getElementById('loadingstatus').innerText = `Connected!`;
+
+                if (localStorage.getItem('sessionid') && localStorage.getItem('sessionid') != "undefined") {
+                    const serverId = window.location.href.substr(window.location.href.lastIndexOf('/') + 1);
+                    if (!serverId) window.location.href = '/';
+                    
+                    ws.send(JSON.stringify({ code: 1, op: 0, serverId: serverId, sid: localStorage.getItem('sessionid') }));
+                    getPFP();
+                }
+                else window.location.href = '/';
+            });
+
+            var inChannel = [];
+            ws.addEventListener('message', (message) => {
+                const response = JSON.parse(message.data);
+                if (response.code != 10) console.log(response);
+
+                if (response.code != 6) {
+                    switch(response.code) {
+                        case 10: break;
+
+                        case 409: alert("you can not remove the admin role!");
+                        break;
+
+                        case 500: window.location.href = '/';
+                        break;
+
+                        case 503: {
+                            document.getElementById('loadingstatus').innerText = "Server is still booting up!";
+                            setTimeout(connectSocket, 1000);
+                            ws.close(1006);
+                        }
+                        break;
+
+                        default: console.log("UNKNOWN RESPONSE ", response);
+                    }
+
+                    return;
+                }
+
+                switch (response.op) {
+                    // 0 reserved for creating servers
+                    case 1: initializeServersPage(response);
+                    break;
+
+                    // recieve channel info
+                    case 2: setUpChannel(response);
+                    break;
+
+                    case 3: document.getElementById('messages').appendChild(createNewMessage(response.data));
+                    break;
+
+                    case 4: edit(response.data);
+                    break;
+                    
+                    case 5: deleteMsg(response.data.id);
+                    break;
+
+                    case 6: addChannel(response.data);
+                    break;
+
+                    case 7: remChannel(response.data);
+                    break;
+
+                    case 8: editServer(response.data);
+                    break;
+                    
+                    case 9: console.log("SERVER DELETED: "); console.log(response.data);
+                    break;
+
+                    case 10: handleActionCode(response);
+                    break;
+
+                    case 11: (document.getElementsByClassName('profileoutlinediv').length > 0) ? createRolePopup(response) : displayRoles(response);
+                    break;
+
+                    case 12: dispChannelRoles(response.data);
+                    break;
+
+                    case 13: {
+                        const {roleId, creator: user, serverInfo} = response.data;
+                        const userList = document.querySelector(`[data-roleid="${roleId}"]`)?.querySelector('.user-list');
+
+                        if (response.actioncode == 0) userList.querySelector(`[data-uid="${user.uid}"]`)?.remove();
+                        else if (response.actioncode == 1) addUcardToRole(roleId, user, userList, serverInfo);
+                        else if (response.actioncode == 2) {
+                            const {roleId, adding} = response.data;
+                            alert(`${(adding) ? 'Added role to' : 'Removed role from'} channel!`);
+                            document.getElementById(`changeRoleInChannel${roleId}`)
+                                    .replaceWith(createRoleChangeBtn({id: roleId, isInChannel: adding}));
+                        }
+                    }
+                    break;
+                    
+                    default: console.log("UNKNOWN RESPONSE ", response);
+                }
+            });
+
+            ws.addEventListener('close', (ev) => {
+                console.log(ev);
+                console.log(`WEBSOCKET CLOSED WITH CODE ${ev.code}`);
+
+                const bar = document.getElementById('reconnectingbar');
+                bar.style.display = 'block';
+
+                // try reconnecting
+                var inter = 1000;
+                const timer = setInterval(() => {
+                    connectSocket();
+
+                    ws.addEventListener('open', () => {
+                        clearInterval(timer);
+                        window.location.reload();
+                    });
+
+                    if (inter < 5000) inter += 1000;
+                    const el = document.getElementById('loadingstatus');
+                    el.innerText = `Retrying...`;
+                }, inter);
+            });
+        }
+
+        //MUST BE DECLAIRED GLOBALLY!
+        const loadingAnimInterval = setInterval(() => {
+            const newCol = '#' + (0x1000000 + Math.random() * 0xffffff).toString(16).substr(1, 6);
+            const loadingTXT = document.getElementById('loadingdiv');
+            loadingTXT.style.color = newCol;
+
+            const loadingSpinner = document.getElementById('loader');
+            loadingSpinner.style.borderTop = `5px solid ${newCol}`;
+        }, 1000);
+        
+
+        localStorage.removeItem('currentChatID');
+        connectSocket();
+    </script>
+
+    <title>proto-chat</title>
+</head>
+<body>
+    <span id="bodyWrapper">
+        <div id="loadingdiv">
+            <div id="loader"></div>
+            <h1>L O A D I N G . . .</h1>
+
+            <h2 style="margin: auto; color: white !important; text-align: center; display: block;" id="loadingstatus"></h2>
+        </div>
+        <div id="maincontent" style="display: none">
+            <div id="reconnectingbar" class="reconnectingbar">R E C O N N E C T I N G . . .</div>
+            
+            <div id="channels" class="channelMenu">
+                <!-- <a href="#about">About</a> -->
+            </div>
+            <div class="main">
+                <div id="chatMain" style="display: none;">
+                    <div id="messages"></div>
+                </div>
+
+                <div id="serverInfoContainer"></div>
+            </div>
+            <div class="backBtn" onclick="window.location.href = '/'">
+                <h1>Home</h1>
+            </div>       
+        </div>
+
+        <div id="rolepopup" class="rolepopup">
+            <div class="rolepopup-content">
+                <span class="close-btn">&times;</span>
+                <div id="dataContainer"></div>
+            </div>
+        </div>
+    </span>
+    <span id="errWrapper">
+        <h1>This site is not yet available on screens smaller than 500px!</h1>
+        <h2>In the meantime, feel free to check out my other stuff at <br> <a href="https://www.itamarorenn.com/projects">www.itamarorenn.com</a></h2>
+    </span>
+</body>
+</html>

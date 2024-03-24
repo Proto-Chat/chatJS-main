@@ -16,22 +16,36 @@ import {
     bodyParser,
     createUConf,
     processUConf,
+    sendEmail,
     toggleDM,
     systemMsgAll,
     validateGDM, getDMID,
-    createMetaTags
+    initCallSockets,
+    createMetaTags,
+    recieveKeysInit,
+    favicon
 } from './imports.js';
 import { broadcastToSessions } from './database/newMessage.js';
+import { addToServer, getServerInfo, handleChatServer } from './guilds/chatServer.js';
+
+// MACROS
+import { SERVERMACROS as MACROS } from './macros.js';
 
 const config = (configImp) ? configImp : process.env;
 
 //Stores clients by userId
 const webSocketClients = new Map();
-
+var mongoConnected;
 
 const client = new MongoClient(config.mongouri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 client.on('error', (err) => { console.log(err); throw "N O" });
+
 const mongoconnection = client.connect();
+mongoconnection.then(() => { mongoConnected = true; console.log("MongoDB Connected") }).catch((err) => {
+    console.error(err);
+    mongoConnected = false;
+    sendEmail(config.emailPass, config.devEmail, 'ChatJS Error!', `ERROR:\n${JSON.stringify(err)}`);
+});
 
 const port = process.env.PORT || 3000;
 // const wss = new WebSocketServer({ port: port, path: '/websocket' });
@@ -44,6 +58,7 @@ app.use(bodyParser.raw({type: 'application/octet-stream', limit: '10mb'}));
 app.use('/assets', express.static('../assets'));
 app.use('/CSS', express.static('../CSS'));
 app.use('/scripts', express.static('../scripts'));
+app.use(favicon('./client/assets/favicon.ico'));
 const wsInstance = expressWs(app);
 
 
@@ -95,8 +110,8 @@ app.put('/msgImg', async (req, res) => {
     
         const buf = Buffer.from(req.body, 'base64');
         const filename = Math.random().toString(36).slice(2);
-    
-        const response = await handleMessage(mongoconnection, webSocketClients, {files: req.body, sid: sid, username: username, channelid: channelid, filename: `${filename}.${fext}`, buf: buf}, 3, CDNManager);
+
+        const response = await handleMessage(mongoconnection, webSocketClients, {files: req.body, sid: sid, username: username, channelid: channelid, filename: `${filename}.${fext}`, buf: buf}, MACROS.MESSAGE.OPS.IMAGE, CDNManager);
         if (!response) return res.sendStatus(500);
         res.sendStatus(200);
     }
@@ -201,14 +216,55 @@ app.get('/msgImg', async (req, res) => {
         console.error(err);
         res.sendStatus(500);
     }
-}); 
+});
+
+// for convenience
+app.get('/getUser', async (req, res) => {
+    try {
+        const { uid } = req.headers;
+        if (!uid) return res.sendStatus(404);
+
+        const uConf = await client.db(uid).collection('configs').findOne({_id: 'myprofile'});
+        if (!uConf) return res.sendStatus(404);
+
+        delete uConf['_id'];
+        return res.send(JSON.stringify(uConf));
+    }
+    catch (err) {
+        res.sendStatus(500);
+    }
+});
+
+
+app.post('/serverroles', async (req, res) => {
+    try {
+        const {sessionid, serverid, getroles} = req.headers;
+        if (!sessionid || !serverid || !(await validateSession(mongoconnection, sessionid))) return res.sendStatus(404);
+        
+        if (!getroles) {
+            const users = await getServerInfo(mongoconnection, sessionid, serverid, true);
+            if (!users) res.sendStatus(401);
+            else res.send(JSON.stringify(users));
+        }
+        else {
+            const sInf = await getServerInfo(mongoconnection, sessionid, serverid);
+            if (!sInf) res.sendStatus(401);
+            else if (!sInf.roles) res.send(JSON.stringify(sInf));
+            else res.send(JSON.stringify({roles: sInf.roles}));
+        }
+    }
+    catch(err) {
+        console.error(err);
+        res.sendStatus(500);
+    }
+});
 
 /* THIS WILL BREAK THE WS SERVER
 app.get('/*', async (req, res) => {   
     if (req.path == '/favicon.ico') {
         res.sendFile('favicon.ico', {root: './client/assets'});
     } else {
-        res.sendFile(`${req.path}`, {root: './client'});
+        res.sendFile(`${req.path}`, {root: './client/'});
     }
 });
 */
@@ -220,46 +276,70 @@ app.post('/systemmsgall', async (req, res) => {
     systemMsgAll(mongoconnection, webSocketClients, res, token, content);
 });
 
-app.get('/favicon.ico', (req, res) => {
-    res.sendFile('favicon.ico', {root: './client/assets'});
-});
-
 
 app.get('/', (req, res) => {
     createMetaTags.createBaseMeta(res);
-    // res.sendFile(`index.html`, {root: './client'});
+    // res.sendFile(`index.html`, {root: './client/'});
 });
 
 app.get('/server/:sid', (req, res) => {
-    const serverId = req.path.replace('/server/', '');
-    if (!serverId) return res.sendStatus(404);
+    try {
+        const serverId = req.params.sid; //req.path.replace('/server/', '');
+        if (!serverId) return res.sendStatus(404);
+        const {sessionid} = req.params;
 
-    return res.sendFile('server.html', {root: './client'});
+        createMetaTags.createServerMeta(mongoconnection, serverId, sessionid, res);
+        // return res.sendFile('server.html', {root: './client/'});
+    }
+    catch(err) {
+        console.error(err);
+        res.sendStatus(500);
+    }
+});
+
+app.get('/invite/:sid', async (req, res) => {
+    res.sendFile(`invite.html`, {root: './client/'});
+});
+
+app.post('/invite', async (req, res) => {
+    const {serverid, sessionid} = req.headers;
+    if (!serverid || !sessionid) return res.sendStatus(404);
+    
+    const uid = getUidFromSid(sessionid);
+    if (!uid) return res.sendStatus(404);
+
+    const ret = await addToServer(mongoconnection, uid, serverid);
+    if (ret.code == 200) res.sendStatus(200);
+    else res.send(ret.msg).status(ret.code);
+});
+
+app.get('/server', async (req, res) => {
+    res.sendStatus(404);
 });
 
 app.get('/social', (req, res) => {
-    res.sendFile(`social.html`, {root: './client'});
+    res.sendFile(`social.html`, {root: './client/'});
 });
 
 app.get('/join', (req, res) => {
     createMetaTags.createJoinMeta(res);
-    // res.sendFile(`join.html`, {root: './client'});
+    // res.sendFile(`join.html`, {root: './client/'});
 });
 
 app.get('/call', (req, res) => {
-    res.sendFile(`call.html`, {root: './client'});
+    res.sendFile(`call.html`, {root: './client/'});
 });
 
 app.get('/scripts/*', (req, res) => {
-    res.sendFile(`${req.path}`, {root: './client'});
+    res.sendFile(`${req.path}`, {root: './client/'});
 });
 
 app.get('/CSS/*', (req, res) => {
-    res.sendFile(`${req.path}`, {root: './client'});
+    res.sendFile(`${req.path}`, {root: './client/'});
 });
 
 app.get('/assets/*', (req, res) => {
-    res.sendFile(`${req.path}`, {root: './client'});
+    res.sendFile(`${req.path}`, {root: './client/'});
 });
 
 
@@ -287,13 +367,22 @@ app.ws('/call', async (ws, req) => {
 });
 */
 
+const blockWSConnection = (ws) => {
+    if (mongoConnected == undefined) { ws.send(JSON.stringify({type: 1, code: 503, err: "server is still booting up!"})); return true; }
+    else if (mongoConnected == false) { ws.send(JSON.stringify({type: 1, code: 503, err: "server is down!"})); return true; }
+    return false;
+}
 
 app.ws('/websocket', async (ws, req) => {
+    // if (blockWSConnection(ws)) return;
+
 	// console.log("CONNECTION RECIEVED");
     ws.on('error', console.error);
 
     ws.on('message', async (dataRaw) => {
         try {
+            if (blockWSConnection(ws)) return console.log("BLOCKED");
+
             try {
                 JSON.parse(dataRaw);
             }
@@ -304,58 +393,79 @@ app.ws('/websocket', async (ws, req) => {
             const data = JSON.parse(dataRaw);
             const code = data['code'];
 
+            // if (data.code != 10) console.log(data);
+
             switch (code) {
-                case 0:
-                    if (data.op == 0) {
+                case MACROS.NEW_CONNECTION.CODE:
+                    if (data.op == MACROS.NEW_CONNECTION.OPS.INITIAL_LOGIN) {
                         const toSend = await createSession(ws, mongoconnection, data);
                         if (toSend.sid) webSocketClients.set(toSend.sid, ws);
                         ws.send(JSON.stringify(toSend));
                     }
-                    else if (data.op == 1) createUConf(ws, mongoconnection, config.emailPass, data);
-                    else if (data.op == 2) processUConf(ws, mongoconnection, data);
+                    else if (data.op == MACROS.NEW_CONNECTION.OPS.ACCOUNT_CREATION) createUConf(ws, mongoconnection, config.emailPass, data);
+                    else if (data.op == MACROS.NEW_CONNECTION.OPS.CONFIRMATION_CODE) processUConf(ws, mongoconnection, data);
                 break;
 
-                case 1:
+
+                case MACROS.RESUME_SESSION.CODE:
                     const response = await resumeSesion(ws, mongoconnection, data, getUidFromSid(data.sid));
                     if (response) webSocketClients.set(data.sid, ws);
                 break;
 
-                case 2:
+
+                case MACROS.LOGOUT.CODE:
                     if (!data.data || !data.data.sid) return ws.send(JSON.stringify({type: 1, code: 400}));
                     
-                    if (data.op == 0) logoutAllSessions(webSocketClients, ws, mongoconnection, data.data.sid);
-                    else if (data.op == 1) logout(webSocketClients, ws, mongoconnection, data.data.sid);
+                    if (data.op == MACROS.LOGOUT.OPS.ALL_SESSIONS) logoutAllSessions(webSocketClients, ws, mongoconnection, data.data.sid);
+                    else if (data.op == MACROS.LOGOUT.OPS.THIS_SESSION) logout(webSocketClients, ws, mongoconnection, data.data.sid);
                 break;
                 
-                case 3:
-                    if (data.op == 0) {
-                        const messages = await getMessages(mongoconnection, data.sid, data.uid);
+
+                case MACROS.MESSAGES_WITH_USER.CODE:
+                    if (data.op == MACROS.MESSAGES_WITH_USER.OPS.GET_MESSAGES) {
+                        const messages = await getMessages(mongoconnection, ws, data.sid, data.uid);
                         ws.send(JSON.stringify({code: 3, op: 0, data: messages}));
                     }
-                    else if (data.op == 1 || data.op == 2) {
-                        const isClosing = (data.op == 2);
+                    else if (data.op == MACROS.MESSAGES_WITH_USER.OPS.CLOSED_DM || data.op == MACROS.MESSAGES_WITH_USER.OPS.OPEN_DM) {
+                        const isClosing = (data.op == MACROS.MESSAGES_WITH_USER.OPS.OPEN_DM);
+
                         const response = await toggleDM(mongoconnection, data.data.sid, data.data.other_id, isClosing);
                         if (response) ws.send(JSON.stringify({code: 3, op: 1, data: {other_id: data.data.other_id}}));
                         else ws.send(JSON.stringify({type: 1, code: 500, op: 3}));
                     }
-                    else if (data.op == 3) {
+                    else if (data.op == MACROS.MESSAGES_WITH_USER.OPS.DM_READ) {
                         markDMAsRead(mongoconnection, webSocketClients, data);
                     }
                 break;
 
-                case 4:
+
+                case MACROS.SOCIALS.CODE:
                     handleSocials(ws, mongoconnection, data, webSocketClients);
                     webSocketClients.set(data.sid, ws);
                 break;
+                
 
-                case 5:
+                case MACROS.MESSAGE.CODE:
                     handleMessage(mongoconnection, webSocketClients, data.data, data.op);
                 break;
 
-                case 10:
+
+                case MACROS.SERVER.CODE:
+                    handleChatServer(ws, webSocketClients, mongoconnection, data);
+                    break;
+
+
+                case MACROS.SECURITY.CODE:
+                    if (data.op == MACROS.SECURITY.OPS.NEW_KEYS_CREATED) recieveKeysInit(mongoconnection, ws, data);
+                    else console.log(`unknown op for code 7 (op == ${data.op})`);
+                    break;
+
+
+                case MACROS.PING:
                     ws.send(JSON.stringify({code: 10}));
                 break;
-
+                    
+                
                 default: ws.send(403);
             }
         } catch (err) {
@@ -364,6 +474,12 @@ app.ws('/websocket', async (ws, req) => {
         }
     });
 });
+
+
+app.get('*', async (req, res) => {
+    console.error(`UNKNOWN URL: ${req.url}`);
+    res.sendStatus(404);
+})
 
 
 app.listen(port, () => console.log(`App listening on port ${port}`));

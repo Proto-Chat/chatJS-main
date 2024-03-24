@@ -18,7 +18,7 @@ export async function systemMsgAll(mongconnection, connectionMap, res, token, co
             const channelid = `0|${doc.uid}`;
             const data = {
                 id: crypto.randomUUID(),
-                channelID: channelid,
+                channelId: channelid,
                 author: { username: configs.username, uid: '0' },
                 content: content,
                 timestamp: (new Date()).toISOString()

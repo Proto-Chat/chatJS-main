@@ -17,6 +17,7 @@ body {
     overflow-x: hidden;
     padding-top: 20px;
     color: white;
+    transition: width 0.3s;
 }
 
 .sidenav a {
@@ -294,6 +295,7 @@ body {
     font-size: 20px;
     padding: 20px;
     margin-top: -10px;
+    z-index: 9999999;
 }
 
 
@@ -303,7 +305,7 @@ body {
 
 
 .addGroupDmBtn {
-    text-align: center;
+    /* text-align: center; */
     font-size: 30px;
     padding: 5px;
 }
@@ -324,6 +326,123 @@ body {
 .gdmUnameBtn:hover {
     color: #ffffff;
     background-color: #6c6081;
+}
+
+
+.serverNameInp {
+    border: none;
+    width: 80%;
+    margin: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 20px;
+    background-color: #f5f5f5;
+    border: 2px solid #ccc;
+    border-radius: 4px;
+    padding: 8px;
+}
+
+.serverPrivacyInp {
+    position: relative;
+}
+
+
+.serverSelectForm {
+    max-width: 400px;
+    margin: 20px auto;
+    border: none;
+}
+
+
+.serverSelectForm label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+.serverSelectForm input, select {
+    width: 100%;
+    padding: 10px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }
+
+
+.serverNameInp input[type="text"] {
+    flex: 1;
+    border: none;
+    outline: none;
+    font-size: 16px;
+    padding: 0 8px;
+    background-color: transparent;
+  }
+
+
+
+.backBtn {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    height: 80px;
+    width: 200px;
+    background-color: rgb(52, 52, 53);
+    cursor: pointer;
+    border-right: black;
+}
+
+.backBtn h1 {
+    color: white;
+    margin: auto;
+    margin-right: 5px;
+    margin-left: 5px;
+    margin-top: 10px;
+    margin-bottom: 0px;
+    width: 190px;
+    
+    white-space: nowrap;
+    overflow: hidden; 
+    text-overflow: ellipsis;
+}
+  
+
+/* Collapsed State */
+.sidebar-collapsed {
+    width: 0;
+    transition: width 0.3s;
+}
+
+.collapseSidebarBtn {
+    height: calc(100% - 80px);
+    top: 0;
+    width: 20px;
+    margin-left: 170px;
+    z-index: 999999;
+    position: absolute;
+    opacity: 0; /* Make the button transparent instead of not displaying it */
+    transition: opacity 0.3s; /* Smooth transition for opacity change */
+    transition: width 0.3s;
+    transition: height 0.3s;
+    background-color: #7770709f;
+    border-style: none;
+}
+
+.collapseSidebarBtn:hover {
+    opacity: 1; /* Make the button fully visible on hover */
+}
+
+
+.msgcontentlink {
+    color: #BB86FC; /* A light purple, visible against the dark background */
+    text-decoration: none; /* Removes underline */
+    transition: color 0.3s ease-in-out; /* Smooth transition for hover effect */
+}
+  
+
+.msgcontentlink:hover, .msgcontentlink:focus {
+    color: #3700B3; /* Darker shade of purple on hover/focus */
+    text-decoration: underline; /* Adds underline on hover/focus */
 }
 
 

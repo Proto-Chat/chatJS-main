@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" type="text/css" href="/CSS/login.css">
+    <script src="/scripts/encryption.js"></script>
+    
+    <title>proto-chat</title>
+    <script>
+        window.onload = (e) => {
+            var req = new XMLHttpRequest();
+            req.open('POST', `${window.location.origin}/invite`, true);
+            // req.responseType = 'text';
+            const serverId = window.location.pathname.replace("/invite/", "");
+            if (!serverId) window.location.pathname = '/';
+        
+            req.onloadend = () => {
+                try {
+                    if (req.response == 'OK') window.location.pathname = `/server/${serverId}`;
+                    else alert("ERROR!");
+                    console.log(req.response);
+                }
+                catch(err) {
+                    console.error(err);
+                    console.log(req.response);
+                    alert("ERROR!");
+                }
+            }
+        
+            req.setRequestHeader('sessionid', localStorage.getItem('sessionid'));
+            req.setRequestHeader('serverid', serverId);
+            req.send();
+        }
+    </script>
+</head>
+<body style="color:whitesmoke">
+    <h1 style="text-align: center;">Processing Request...</h1>
+</body>
+</html>

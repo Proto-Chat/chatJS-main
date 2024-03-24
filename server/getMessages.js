@@ -36,7 +36,7 @@ async function getGroupDMmsgs(client, uid, other_id) {
 }
 
 
-export async function getMessages(mongoconnection, sid, other_id) {
+export async function getMessages(mongoconnection, ws, sid, other_id) {
     try {
         const client = await mongoconnection;
         const userid = getUidFromSid(sid);
@@ -64,12 +64,19 @@ export async function getMessages(mongoconnection, sid, other_id) {
         const configs = await client.db(other_id).collection('configs').findOne({_id: 'myprofile'});
         configs.uid = other_id;
 
+        // get the chat encryption details
+        const encDoc = await dbo.findOne({_id: 'configs'});
+        if (!encDoc) return ws.send(JSON.stringify({type: 1, code: 404, dmId: dmId}));
+
         const doc = await dbo.find({$or: [{deleted : { $exists : false }}, {deleted: false}], _id: {$ne: 'configs'}}).toArray();
         doc.map((document) => {
             delete document._id;
             return document;
         });
-        return {other: configs, messages: doc, chatID: dmId};
+
+        if (configs.tokens) delete configs.tokens;
+
+        return {other: configs, messages: doc, chatID: dmId, symmKeyEnc: encDoc.keyObj[userid]};
     }
     catch (err) {
         console.error(err);

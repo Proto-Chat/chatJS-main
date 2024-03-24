@@ -46,7 +46,7 @@
         }
 
 
-        window.onload = () => {
+        function socialWindowOnload() {
             divs.friends = document.getElementById('friends');
             divs.connect = document.getElementById('connect');
             divs.accept = document.getElementById('accept');
@@ -56,6 +56,11 @@
                 alert('Uh oh!\nAn error occured!');
                 console.error(err);
                 window.location.href = '/';
+            });
+
+            ws.addEventListener('close', (ev) => {
+                console.log(ev);
+                console.log(`WEBSOCKET CLOSED WITH CODE ${ev.code}`);
             });
 
             ws.addEventListener('message', (message) => {
@@ -96,6 +101,9 @@
                 }
             });
         }
+
+        setTimeout(socialWindowOnload, 1000);
+        // socialWindowOnload();
     </script>
 </head>
 <body class="unselectable">

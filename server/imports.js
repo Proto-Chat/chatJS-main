@@ -15,11 +15,15 @@ import cors from 'cors';
 import { getConnection, validateSession } from './database/getConnection.js';
 import { getPFP, uploadPFP } from './database/media/upload.js';
 import bodyParser from 'body-parser';
-import { createUConf, processUConf } from './database/uConf.js';
+import { createUConf, processUConf, recieveKeysInit, sendEmail } from './database/uConf.js';
 import enableWs from 'express-ws';
 import { toggleDM } from './database/logout.js';
 import { systemMsgAll } from './admin/systemmsgall.js';
 import { validateGDM, getDMID } from './groupDM.js';
+import favicon from 'serve-favicon';
+
+// call stuff
+import { initCallSockets } from './call.js'
 import * as createMetaTags from './createMetaTags.js';
 
 // import configImp from '../config.json' assert { type: 'json' };
@@ -44,9 +48,13 @@ export {
     bodyParser,
     createUConf,
     processUConf,
+    sendEmail,
     enableWs,
     toggleDM,
     validateGDM, getDMID,
     systemMsgAll,
-    createMetaTags
+    initCallSockets,
+    createMetaTags,
+    recieveKeysInit,
+    favicon
 }

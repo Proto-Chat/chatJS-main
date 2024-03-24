@@ -8,16 +8,24 @@ import { getUidFromSid } from "../utils/decodesid.js";
  * @returns 
  */
 export async function validateSession(connection, sid) {
-    const uid = getUidFromSid(sid);
-    const client = await connection;
+    try {
+        const uid = getUidFromSid(sid);
+        if (!uid || uid.type == 1) return false;
+        
+        const client = await connection;
 
-    //Validate session
-    const db = client.db(uid);
-    const sbo = await db.collection('sessions');
-
-    const sessionObj = await sbo.findOne({sid: sid});
-    if (!sessionObj) return false;
-    return true;
+        //Validate session
+        const db = client.db(uid);
+        const sbo = await db.collection('sessions');
+    
+        const sessionObj = await sbo.findOne({sid: sid});
+        if (!sessionObj) return false;
+        return true;
+    }
+    catch(err) {
+        console.error(err);
+        return false;
+    }
 }
 
 
@@ -40,7 +48,8 @@ export async function getConnection(connection, sid, all = false, validateOnly =
         sbo.updateOne({sid: sid}, {$set: {lastAccessed: new Date()}});
 
         const dms = await db.collection('dm_keys');
-        // const servers = await client.db(uid).collection('servers');
+        const servers = await client.db(uid).collection('servers');
+
         // const nottoself = await dms.findOne({uid: getUidFromSid(sid)});
         const invites = await db.collection('social').find({type: 0}).toArray();
 
@@ -48,7 +57,12 @@ export async function getConnection(connection, sid, all = false, validateOnly =
 
         var obj;
         if (all) obj = {friends: await dms.find().toArray(), invites: invites};
-        else obj = {dms: await dms.find({open: true}).toArray(), invites: invites, configs: configs};
+        else obj = {
+            dms: await dms.find({open: true}).toArray(),
+            servers: (await servers.find().toArray()).map((s) => {delete s._id; return s;}),
+            invites: invites,
+            configs: configs
+        };
 
         return obj;
     } catch (err) {

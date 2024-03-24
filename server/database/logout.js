@@ -8,9 +8,13 @@ export async function logout(clients, ws, mongoconnection, sid) {
     const dbo = client.db(uid).collection('sessions');
     await dbo.deleteOne({sid: sid});
 
+    const abo = client.db('main').collection('accounts');
+    await abo.updateOne({uid: uid}, {$pull: {sids: sid}});
+
     ws.send(JSON.stringify({type: 0, code: 2}));
     clients.delete(sid);
 }
+
 
 export async function logoutAllSessions(clients, ws, mongoconnection, sid) {
     try {
@@ -21,7 +25,10 @@ export async function logoutAllSessions(clients, ws, mongoconnection, sid) {
         if (!sdoc) return;
 
         // delete all sessions
-        dbo.deleteMany({});
+        await dbo.deleteMany({});
+
+        const abo = client.db('main').collection('accounts');
+        await abo.updateOne({uid: uid}, {$set: {sids: []}})
 
         if (!clients.has(sid)) return;
         ws.send(JSON.stringify({type: 0, code: 2}));

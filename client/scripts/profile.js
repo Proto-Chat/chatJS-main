@@ -119,7 +119,14 @@ function handleEnter(e, oldmsg) {
 const pfpCloseFnct = () => {
     const outlineDiv = document.getElementsByClassName('profileoutlinediv')[0];
     const udivCorner = document.getElementsByClassName('userprofile')[0];
-    if (!outlineDiv.matches(":hover") && !udivCorner.matches(":hover")) {
+
+    const btnHovering = Array.from(outlineDiv.querySelectorAll('button')).find(e => e.matches(":hover"));
+    if (btnHovering) return;
+
+    if (!udivCorner) {
+        closeUserPopup(outlineDiv);
+    }
+    else if (!outlineDiv.matches(":hover") && !udivCorner.matches(":hover") && !btnHovering) {
         // window.location.reload();
         closeUserPopup(outlineDiv, udivCorner);
         const uClickable = document.getElementsByClassName('userprofile')[0];
@@ -243,10 +250,11 @@ async function createProfilePopup(udata) {
         outlineDiv.appendChild(unamesDiv);
     }
 
-
+// BROKEN
     if (!udata.me) {
         const cid = localStorage.getItem('currentChatID');
         const uid = JSON.parse(localStorage.getItem('user')).uid;
+        
         if (cid != `${uid}|${uid}` && !cid.split('|').includes('0')) {
             const removeFriendBtn = document.createElement('button');
             removeFriendBtn.className = 'removeFriendBtn';
@@ -325,9 +333,13 @@ async function createProfilePopup(udata) {
 
     if (maincontent) maincontent.style.color = "rgba(0,0,0)";
     if (msgs) msgs.style.color = "rgba(0,0,0)";
-    udivCorner.style.width = (udivCorner.offsetWidth - 1) + 'px'
-    udivCorner.style.borderRight = "solid";
-    udivCorner.style.borderWidth = "1px";
+
+    if (udivCorner) {
+        udivCorner.style.width = (udivCorner.offsetWidth - 1) + 'px'
+        udivCorner.style.borderRight = "solid";
+        udivCorner.style.borderWidth = "1px";
+    }
+
 }
 
 

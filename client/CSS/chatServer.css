@@ -1,0 +1,459 @@
+.channelMenu {
+    height: calc(100% - 75px);
+    width: 200px;
+    position: fixed;
+    z-index: 1;
+    top: 0;
+    left: 0;
+    background-color: #111;
+    overflow-x: hidden;
+    padding-top: 20px;
+    color: white;
+}
+
+.channelMenu a {
+    padding: 6px 8px 6px 16px;
+    text-decoration: none;
+    font-size: 25px;
+    color: #999898;
+    display: block;
+    cursor: pointer;
+    position: relative;
+
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.channelMenu a:hover {
+    color: #f1f1f1;
+}
+
+.backBtn {
+    transition: width 0.3s;
+}
+
+.backBtn h1 {
+    bottom: 10%;
+    position: absolute;
+    margin-left: 30%;
+}
+
+#serverInfoContainer {
+    background-color: #5c5c5c;
+    color: rgb(233, 233, 233);
+    font-family: monospace;
+    padding: 20px;
+    margin: 20px;
+}
+
+#serverInfoContainer h1,
+#serverInfoContainer h2 {
+    margin-bottom: 10px;
+}
+
+#serverInfoContainer a {
+    color: rgb(233, 233, 233);
+    text-decoration: none;
+    padding: 5px 10px;
+    border-radius: 4px;
+    background-color: rgba(255, 255, 255, 0.1);
+    transition: background-color 0.3s ease;
+}
+
+#serverInfoContainer a:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+    text-decoration: underline;
+}
+
+#serverInfoContainer ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+#serverInfoContainer li {
+    margin: 20px 0;
+}
+
+
+/* NEW CHANNEL POPUP */
+/* ... existing CSS ... */
+
+.popup-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.popup {
+    background-color: #5c5c5c;
+    padding: 20px;
+    border-radius: 8px;
+    text-align: center;
+    width: 100%;
+}
+
+.popup h2 {
+    color: rgb(233, 233, 233);
+}
+
+.popup input[type="text"] {
+    padding: 5px;
+    margin-bottom: 10px;
+}
+
+.popup button {
+    color: rgb(233, 233, 233);
+    background-color: transparent;
+    border: 1px solid rgb(233, 233, 233);
+    padding: 5px 10px;
+    margin: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.popup button:hover {
+    background-color: rgba(233, 233, 233, 0.2);
+}
+
+.member-sidebar {
+    position: fixed;
+    right: 0;
+    top: 0;
+    width: 200px;
+    /* Adjust as needed */
+    height: calc(100% - 75px);
+    /* margin-top: 75px; */
+    background-color: #1d1c1c9f;
+    /* Choose your color */
+    overflow-y: auto;
+    /* For scrolling */
+    transition: width 0.3s;
+    /* Smooth transition for opening/closing */
+    border-left: #000000;
+}
+
+
+/* user card stuff */
+.user-card {
+    display: flex;
+    align-items: center;
+    padding: 0px 10px;
+    border-bottom: 1px solid #444;
+    /* Darker border for visibility */
+    background-color: #2a2a2a;
+    /* Dark background */
+    color: white;
+    /* Light text for visibility */
+}
+
+.user-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 20px;
+    margin-right: 10px;
+    margin-top: 5px;
+    float: left;
+    cursor: pointer;
+}
+
+.user-info {
+    display: flex;
+    flex-direction: column;
+    cursor: pointer;
+}
+
+.username {
+    font-weight: bold;
+    color: #f1f1f1;
+    /* Lighter color for username */
+    float: right;
+}
+
+.status {
+    font-style: italic;
+    color: #999;
+    /* Greyish color for status */
+}
+
+.memTitle {
+    margin-top: 10px;
+    font-size: 20px;
+    text-align: center;
+    text-decoration: underline;
+}
+
+.ceditico {
+    /* display: inline-block;  // ignored due to loaf */
+    margin-left: 5px;
+    font-size: 28px;
+    text-decoration: none;
+    color: white;
+    float: right;
+    outline: none;
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 0px;
+    cursor: pointer;
+}
+
+
+.modal {
+    /* display: none; */
+    position: fixed;
+    z-index: 1;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.4);
+}
+
+.modal-content {
+    background-color: #5c5c5c;
+    color: white;
+    margin: 15% auto;
+    padding: 20px;
+    border: 1px solid #414040;
+    width: 30%;
+}
+
+.close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.close:hover,
+.close:focus {
+    color: black;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.viewBanned {
+    background-color: #E74C3C; /* Red background */
+}
+
+.viewBanned:hover, #viewBanned:focus {
+    background-color: #C0392B; /* Darker red background on hover/focus */
+}
+
+.viewBanned:active {
+    background-color: #922B21; /* Even darker red when button is clicked */
+}
+
+#viewRoles {
+    background-color: #FFD700; /* Yellow background */
+}
+
+#viewRoles:hover, #viewRoles:focus {
+    background-color: #FFC200; /* Darker yellow background on hover/focus */
+}
+
+#viewRoles:active {
+    background-color: #DAA520; /* Even darker yellow when button is clicked */
+}
+
+.viewBaseBtn {
+    color: white; /* White text */
+    margin-right: 10px;
+    /* padding: 10px; Padding around the text */
+    padding: 7px 20px;
+    border: none; /* No border */
+    border-radius: 4px; /* Rounded corners */
+    cursor: pointer; /* Pointer cursor on hover */
+    font-size: 16px; /* Font size */
+    transition: background-color 0.3s, box-shadow 0.3s; /* Smooth transition for hover and focus */
+}
+
+.viewBaseBtn:hover, .viewBaseBtn:focus {
+    box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2); /* Shadow effect for depth */
+    outline: none; /* Remove outline to avoid default browser styles */
+}
+
+.viewBaseBtn:active {
+    box-shadow: 0 2px 4px 0 rgba(0,0,0,0.2); /* Smaller shadow for a "pressed" effect */
+}
+
+#serverPrivacy {
+    width: 50%;
+    padding: 5px;
+}
+
+.serverSettingContainer {
+    margin-bottom: 10px;
+}
+
+.saveBtn {
+    background-color: #4CAF50; /* Green background */
+    color: white; /* White text */
+    padding: 10px; /* Padding around the text */
+    border: none; /* No border */
+    border-radius: 4px; /* Rounded corners */
+    cursor: pointer; /* Pointer cursor on hover */
+    font-size: 16px; /* Font size */
+    transition: background-color 0.3s, box-shadow 0.3s; /* Smooth transition for hover and focus */
+}
+
+.saveBtn:hover, .saveBtn:focus {
+    background-color: #45a049; /* Darker green background on hover/focus */
+    box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2); /* Shadow effect for depth */
+    outline: none; /* Remove outline to avoid default browser styles */
+}
+
+.saveBtn:active {
+    background-color: #3e8e41; /* Even darker green when button is clicked */
+    box-shadow: 0 2px 4px 0 rgba(0,0,0,0.2); /* Smaller shadow for a "pressed" effect */
+}
+
+
+/* BANNED USERS STUFF */
+.unban-button {
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-left: 10px;
+}
+
+.unban-button:hover {
+    background-color: #45a049;
+}
+
+
+@media screen and (max-height: 450px) {
+    .channelMenu {
+        padding-top: 15px;
+    }
+
+    .channelMenu a {
+        font-size: 18px;
+    }
+}
+
+
+.rolepopup {
+    display: none;
+    position: fixed;
+    z-index: 1;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.4);
+}
+
+.rolepopup-content {
+    background-color: #5c5c5c;
+    margin: 15% auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 80%;
+}
+
+.close-btn {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.close-btn:hover,
+.close-btn:focus {
+    color: black;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.newrolediv {
+    justify-content: center;
+    display: table;
+    width: fit-content;
+    border-collapse: separate;
+    border-spacing: 0 1em;
+}
+
+.newrolediv input, label, h2 {
+    display: table-cell;
+}
+
+.newrolediv label { text-align: right; padding-right: 10px; }
+
+
+#uSearchInp {
+    box-sizing: border-box;
+    font-size: 16px;
+    padding: 14px 20px 12px 45px;
+    border: 1px solid #ccc; /* Changed to a lighter border */
+    border-radius: 5px; /* Added for rounded corners */
+    outline: none; /* Removes the default outline to use custom focus style */
+}
+
+#uSearchInp:focus {
+    border: 2px solid #aaa; /* Custom focus style */
+}
+
+.dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.dropdown-content {
+    /* display: none; */
+    position: absolute;
+    background-color: #f9f9f9; /* Light grey background for dropdown */
+    min-width: 230px;
+    overflow: auto;
+    border: 1px solid #ccc; /* Lighter border */
+    border-radius: 5px; /* Rounded corners */
+    box-shadow: 0 8px 16px 0 rgba(0,0,0,0.2); /* Added shadow for depth */
+    z-index: 1;
+}
+
+.dropdown-content a {
+    color: black;
+    padding: 12px 16px;
+    text-decoration: none;
+    display: block;
+    transition: background-color 0.3s; /* Smooth transition for hover effect */
+}
+
+.dropdown-content a:hover {
+    background-color: #ddd; /* Lighter grey for hover */
+}
+
+
+.role-item h3 {
+    width: fit-content;
+    background-color: #ffffff5e;
+    padding: 5px;
+    border-radius: 10px;
+}
+
+
+.addubtn {
+    color: #ffffff;
+    background-color: #00379e;
+    font-size: 16px;
+    border: 1px solid #2d63c8;
+    border-radius: 10px;
+    padding: 7px 20px;
+    cursor: pointer;
+    margin-bottom: 10px;
+}
+
+.addubtn:hover {
+    color: #ffffff;
+    background-color: #001764;
+}

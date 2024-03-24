@@ -1,11 +1,21 @@
 import { getUidFromSid, wasabiManager } from "../imports.js";
 import { randomUUID } from 'crypto';
+import { SERVERMACROS as MACROS } from "../macros.js";
 
-export async function broadcastToSessions(client, connectionMap, others, toSend) {
+export async function broadcastToSessions(client, connectionMap, others, toSend, encDoc, checkPerms = undefined) {
     try {
         for (const k of others) {
             const dbo = client.db(k).collection('sessions');
             const docs = await dbo.find().toArray();
+
+            if (encDoc) {
+                const symmEncKeyEnc = encDoc[k];
+                toSend['data']['encSymmKey'] = symmEncKeyEnc;
+            }
+
+            if (checkPerms && checkPerms.includes(k)) {
+                toSend['hasPerms'] = hasPerms;
+            }
 
             for (const doc of docs) {
                 if (connectionMap.has(doc.sid)) {
@@ -23,15 +33,15 @@ export async function broadcastToSessions(client, connectionMap, others, toSend)
 }
 
 
-const splitByID = (channelID, client) => {
-    return channelID.split("|").filter((o) => (o && o.length > 0));
+const splitByID = (channelId, client) => {
+    return channelId.split("|").filter((o) => (o && o.length > 0));
 }
 
 
 export async function newMessage(mongoconnection, connectionMap, data, isSystemMessage = false) {
     try {
-        if (!data || !data.channelID) return false; //Maybe make it a "bad request"?
-        const channelId = data.channelID;
+        if (!data || !data.channelId) return false; //Maybe make it a "bad request"?
+        const channelId = data.channelId;
         const client = await mongoconnection;
         const keyId = await client.db(data.author.uid).collection('dm_keys').findOne({dmid: channelId});
 
@@ -47,13 +57,16 @@ export async function newMessage(mongoconnection, connectionMap, data, isSystemM
             other_dbo.updateOne({uid: data.author.uid}, {$set: {open: true, unread: true}});
         }
 
-        const dmsdbo = client.db((keyId.isGroupDM) ? 'gdms' : 'dms').collection(data.channelID);
-        delete data.channelID;
+        const dmsdbo = client.db((keyId.isGroupDM) ? 'gdms' : 'dms').collection(data.channelId);
+        delete data.channelId;
         
         dmsdbo.insertOne(data);
-        data.channelID = channelId;
+        data.channelId = channelId;
 
-        return await broadcastToSessions(client, connectionMap, others, { type: 0, code: 5, op: 0, data: data });
+        const encDoc = await dmsdbo.findOne({_id: 'configs'});
+        if (!encDoc) return ws.send({type: 1, code: 404, msg: "ENCRYPTION ERROR, KEY NOT FOUND!"});
+
+        return await broadcastToSessions(client, connectionMap, others, { type: 0, code: 5, op: 0, data: data }, encDoc.keyObj);
     }
     catch(err) {
         console.error(err);
@@ -71,19 +84,19 @@ async function deleteMessage(mongoconnection, connectionMap, data) {
         const others = (doc.isGroupDM) ? splitByID(doc.uid) : [data.user.uid, doc.uid];
 
         const mbo = client.db((doc.isGroupDM) ? 'gdms' : 'dms').collection(data.chatid);
-        doc = await mbo.findOne({id: data.msgid});
+        doc = await mbo.findOne({id: data.id});
         
         if (!doc || data.user.uid != doc.author.uid) return;
 
-        mbo.updateOne({id: data.msgid}, {$set: {deleted: true}});
+        mbo.updateOne({id: data.id}, {$set: {deleted: true}});
 
         broadcastToSessions(client, connectionMap, others, {
             type: 0,
             code: 5,
             op: 1,
             data: {
-                channelID: data.chatid,
-                msgid: data.msgid
+                channelId: data.chatid,
+                msgid: data.id
             }
         });
     } catch (err) {
@@ -102,24 +115,27 @@ async function editMessage(mongoconnection, connectionMap, data) {
     const others = (doc.isGroupDM) ? splitByID(doc.uid) : [data.user.uid, doc.uid];
 
     const mbo = client.db((doc.isGroupDM) ? 'gdms' : 'dms').collection(data.chatid);
-    doc = await mbo.findOne({id: data.msgid});
+    doc = await mbo.findOne({id: data.id});
 
     if (!doc || data.user.uid != doc.author.uid) return;
     // if (doc.content != data.content) return;
 
-    mbo.updateOne({id: data.msgid}, {$set: {content: data.content}});
+    mbo.updateOne({id: data.id}, {$set: {content: data.content}});
+
+    const encDoc = await mbo.findOne({_id: 'configs'});
+    if (!encDoc) return ws.send({type: 1, code: 404, msg: "ENCRYPTION ERROR, KEY NOT FOUND!"});
 
     broadcastToSessions(client, connectionMap, others, {
         type: 0,
         code: 5,
         op: 2,
         data: {
-            channelID: data.chatid,
-            msgid: data.msgid,
+            channelId: data.chatid,
+            msgid: data.id,
             content: data.content,
             author: data.user
-        }
-    });
+        },
+    }, encDoc.keyObj);
 }
 
 
@@ -144,8 +160,9 @@ export async function markDMAsRead(mongoconnection, connectionMap, data) {
 async function uploadMsgImg(mongoconnection, CDNManager, connectionMap, data) {
     try {
         if (!data || !data.buf || data.buf.byteLength/1000000 > 10) return false;
-        
+        const uploadPath = (data.serverId) ? `${data.serverId}/${data.channelid}` : data.channelid
         const response = await CDNManager.uploadFile(data.channelid, data.filename, data.buf);
+
         if (response && response.type && response.code) return response;
         const uid = getUidFromSid(data.sid);
 
@@ -154,7 +171,7 @@ async function uploadMsgImg(mongoconnection, CDNManager, connectionMap, data) {
                 uid: uid,
                 username: data.username
             },
-            channelID: data.channelid,
+            channelId: data.channelid,
             id: randomUUID(),
             timestamp: (new Date()).toISOString(),
             content: {
@@ -182,16 +199,16 @@ async function uploadMsgImg(mongoconnection, CDNManager, connectionMap, data) {
  */
 export function handleMessage(mongoconnection, connectionMap, data, op, CDNManager = null) {
     switch (op) {
-        case 0: newMessage(mongoconnection, connectionMap, data);
+        case MACROS.MESSAGE.OPS.RECEIVED: newMessage(mongoconnection, connectionMap, data);
         break;
 
-        case 1: deleteMessage(mongoconnection, connectionMap, data);
+        case MACROS.MESSAGE.OPS.DELETED: deleteMessage(mongoconnection, connectionMap, data);
         break;
 
-        case 2: editMessage(mongoconnection, connectionMap, data);
+        case MACROS.MESSAGE.OPS.EDITED: editMessage(mongoconnection, connectionMap, data);
         break;
 
-        case 3: return uploadMsgImg(mongoconnection, CDNManager, connectionMap, data);
+        case MACROS.MESSAGE.OPS.IMAGE: return uploadMsgImg(mongoconnection, CDNManager, connectionMap, data);
             // import('fs').then((o) => {
             //     o.writeFile(`./${data.filename}.avif`, data.buf, (err) => {
             //         console.log(err);

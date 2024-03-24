@@ -37,6 +37,34 @@ codes (server --> client):
         7: remove friend/group DM
         8: send friends
 5 - message sent
+
+6 - server
+    op:
+        0: create server response
+        1: view server page
+        2: view channel
+        3: recieve message
+        4: edit message
+        5: delete message
+        6: channel edited
+        7: channel deleted
+
+        // NOT DONE
+        8: server edited
+        9: server deleted
+
+        10: USER ACTION RESPONSE
+            actioncode:
+                0: kick
+                1: ban
+                2: unban
+                3: get all banned users
+                
+
+7 - encryption
+    op:
+        0: create new keys
+
 10 - pong
 
 
@@ -77,6 +105,30 @@ codes (client --> server):
         0: recieved
         1: deleted
         2: edited
+
+6 - server
+    op:
+        0: create server
+        1: edit server
+        2: create channel
+        3: NOTHING I GUESS
+        4: get channel
+        5: send message
+        6: edit message
+        7: delete message
+        8: edit channel
+        9: delete channel
+        10: user action
+            actioncode:
+                0: kick
+                1: ban
+                2: unban
+                3: get all banned users
+
+7 - security
+    op:
+        0: new keys created
+
 10 - ping
 
 DM FORMAT
@@ -111,3 +163,13 @@ USER
 USER NOTES:
 when first creating a user, open a DM with the user to
 itself with "notetoself = true";
+
+
+GUILD ROLES:
+    {
+        id: string,
+		name: string,
+		pos: number,
+        color: string,
+        users: [{name: string, uid: string}],
+    }

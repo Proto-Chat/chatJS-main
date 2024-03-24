@@ -1,8 +1,7 @@
 //This file contains code for either creating or resuming a session
 import { newConnection } from './database/newConnection.js';
 import { getConnection } from './database/getConnection.js';
-import { getUIDFromUsername, getUidFromSid, getUsernameFromUID } from './utils/decodesid.js';
-import { broadcastToSessions } from './database/newMessage.js';
+import { getServerInfo } from './guilds/chatServer.js';
 
 
 export async function getCurrentUsername(mongoconnection, uid) {
@@ -26,25 +25,47 @@ export async function createSession(ws, mongoconnection, data) {
 
 export async function resumeSesion(ws, mongoconnection, data, uid) {
     if (!data.sid) {
-            ws.send({type: 1, code: 0, op: 401});
-            return false;
-        }
-        const doc = await getConnection(mongoconnection, data.sid);
+        ws.send({type: 1, code: 0, op: 401});
+        return false;
+    }
+    const doc = await getConnection(mongoconnection, data.sid);
 
-        if (!doc) {
-            return ws.send(JSON.stringify({type: 1, code: 0, op: 403}));
-        }
-        if (doc.type == 1) {
-            ws.send(JSON.stringify(doc));
-            return false;
+    if (!doc) {
+        ws.send(JSON.stringify({type: 1, code: 0, op: 403}));
+        return false;
+    }
+    else if (doc.type == 1) {
+        ws.send(JSON.stringify(doc));
+        return false;
+    }
+    else {
+        const username = await getCurrentUsername(mongoconnection, uid);
+
+        //deal with server stuff
+        if (data.serverId) {
+            const serverInfo = await getServerInfo(mongoconnection, data.sid, data.serverId);
+            if (!serverInfo) return false;
+
+            ws.send(JSON.stringify({
+                type: 0,
+                code: 6,
+                op: 1,
+                data: {
+                    serverInfo: serverInfo,
+                    user: {username: username, uid: uid},
+                    configs: doc.configs
+                }
+            }));
+            return true;
         }
         else {
-            const username = await getCurrentUsername(mongoconnection, uid);
             ws.send(JSON.stringify({type: 0, code: 1, op: 0, data: {
                 dms: doc.dms,
+                servers: doc.servers,
                 user: {username: username, uid: uid},
                 configs: doc.configs
             }}));
             return true;
         }
+    }
 }
