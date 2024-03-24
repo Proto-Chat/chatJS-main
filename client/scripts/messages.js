@@ -205,8 +205,8 @@ async function createContextMenu(e, editable = true) {
                 if (isKeyDown && keys[13] && !keys[16]) {
                     if (newinpdiv.value == oldMsg.innerText) return switchBackFromInp();
 
-                    const symmEncKey = await getSymmKey();
-                    if (!symmEncKey) return alert("ENCRYPTION ERROR!");
+                    // const symmEncKey = await getSymmKey();
+                    // if (!symmEncKey) return alert("ENCRYPTION ERROR!");
 
                     if (serverId) {
                         ws.send(JSON.stringify({

@@ -91,7 +91,7 @@
                     case 2: setUpChannel(response);
                     break;
 
-                    case 3: createNewMessage(response.data);
+                    case 3: document.getElementById('messages').appendChild(createNewMessage(response.data));
                     break;
 
                     case 4: edit(response.data);

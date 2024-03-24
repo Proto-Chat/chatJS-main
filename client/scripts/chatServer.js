@@ -276,6 +276,7 @@ function createChannelLink(channelName, serverId, cid, hasPerms) {
     channelLink.id = cid;
 
     channelLink.onclick = (e) => {
+        if (channelLink.dataset.disabled) return;
         const openChannel = {
             code: 6,
             op: 4,
@@ -287,6 +288,7 @@ function createChannelLink(channelName, serverId, cid, hasPerms) {
         };
 
         ws.send(JSON.stringify(openChannel));
+        channelLink.dataset.disabled = 'true';
     }
 
     // edit the channel if has perms

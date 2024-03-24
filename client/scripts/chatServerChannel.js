@@ -372,7 +372,9 @@ function createCollapsable(toColl, collLeft = true) {
 
     const mainElement = document.querySelector('.main');
     const inpelement = document.querySelector('.msginp');
+    const bar = document.querySelector('.dmBar');
     const oldMainMarLeft = mainElement?.style.marginLeft;
+    const oldMainMarRight = mainElement?.style.marginRight;
     const oldInpWidth = inpelement?.style.width;
 
     if (!collLeft) {
@@ -389,6 +391,7 @@ function createCollapsable(toColl, collLeft = true) {
     }
 
     posBtn(false);
+    bar.style.width = `${mainElement.getBoundingClientRect().width - 20}px`;
 
     collapseBtn.onclick = () => {
         toColl.classList.toggle("sidebar-collapsed");
@@ -412,6 +415,17 @@ function createCollapsable(toColl, collLeft = true) {
                 inpelement.style.width = oldInpWidth;
             }
         }
+        else {
+            if (!isCollapsed) {
+                mainElement.style.marginRight = '0px';
+            }
+            else {
+                mainElement.style.marginRight = oldMainMarRight;
+            }
+        }
+
+        // account for the padding (-20px)
+        bar.style.width = `${mainElement.getBoundingClientRect().width - 20}px`;
 
         toColl.style.transition = 'width 0.3s';
         toColl.style.setProperty('width', newWidth, 'important');
@@ -441,7 +455,7 @@ async function createUCard(uObj, serverConfs, isOwner) {
         const i2 = await getFriendPFP(uObj.uid);
         icon.src = i2.src;
     }
-    console.log(uObj);
+    console.debug(uObj);
 
     userCard.onclick = async () => {
         const user = inChannel.find(m => (m.uid == userCard.id));
@@ -526,12 +540,38 @@ async function fillUSideBar(serverConfs) {
 }
 
 
+// modified `createDMTopBar`
+function createServerChannelTopBar(data) {
+    const bar = document.createElement('div');
+    bar.classList.add('dmBar');
+    bar.classList.add('unselectable');
+
+    const unamep = document.createElement('h4');
+    unamep.className = 'dmbaruname';
+    unamep.innerText = data.name;
+    bar.appendChild(unamep);
+
+    const ustatus = document.createElement('p');
+    ustatus.className = 'dmbarstat';
+    ustatus.innerText = `${inChannel.length} users in channel`;
+    bar.appendChild(ustatus);
+
+    bar.onclick = (e) => {
+        e.preventDefault();
+        console.log(data);
+    }
+
+    return bar;
+}
+
+
 // a modified setupDM
 function setUpChannel(response) {
     console.log("SETUPCHANNEL", response);
 
     if (!response.channelconfs || !response.messages) return alert("ERROR!");
     const channelConfigs = response.channelconfs.find(o => o._id == 'channelConfigs');
+    delete document.getElementById(channelConfigs.channelId).dataset.disabled;
 
     // global
     inChannel = response.channelconfs.find(o => o._id == 'inChannel').users;
@@ -567,8 +607,10 @@ function setUpChannel(response) {
     const element = document.getElementById('chatMain');
     element.innerHTML = "";
 
-    // IMPLEMENT LATER
-    // element.appendChild(createDMTopBar(data));
+    // account for user sidebar
+    document.getElementsByClassName('main')[0].style.marginRight = '200px';
+
+    element.appendChild(createServerChannelTopBar(channelConfigs));
 
     const messages = document.createElement('div');
     messages.id = 'messages';

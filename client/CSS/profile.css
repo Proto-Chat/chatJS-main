@@ -146,6 +146,7 @@ input[type="file"] {
     width: calc(100vw - 200px);
     padding: 3px 10px 3px 10px;
     cursor: pointer;
+    transition: width 0.3s ease 0s;
 }
 
 .dmbarpfp {
