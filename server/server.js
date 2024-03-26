@@ -211,7 +211,6 @@ app.get('/msgImg', async (req, res) => {
         if (!fname) return res.sendStatus(404);
 
         const channelIDFull = (serverid) ? `${serverid}/${channelid}` : channelid;
-        console.log(channelIDFull);
     
         const file = await CDNManager.getFile(channelIDFull, fname);
         return res.send(file);

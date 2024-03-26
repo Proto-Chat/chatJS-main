@@ -323,12 +323,45 @@ function createChannelLink(channelName, serverId, cid, hasPerms) {
 }
 
 
+const showInvite = (data) => {
+    const popup = document.createElement('div');
+    popup.setAttribute("class", "modal");
+    const contentContainer = document.createElement('p');
+
+    const link = document.createElement('span');
+    link.innerText = data;
+    link.addEventListener('click', (e) => {
+        navigator.clipboard.writeText(data);
+        alert("content copied!");
+    });
+
+    link.style = 'cursor: pointer; padding: 10px;';
+    contentContainer.appendChild(link);
+
+    contentContainer.innerHTML += '<br><br><i>(click outside the container to close)</i>';
+    contentContainer.setAttribute("class", "modal-content");
+    contentContainer.style.textAlign = 'center';
+
+    popup.appendChild(contentContainer);
+    const remf = (e) => {
+        if (contentContainer.matches(":hover")) return;
+        popup.remove();
+        document.removeEventListener('click', remf);
+    }
+
+    setTimeout(() => document.addEventListener('click', remf), 1000);
+    document.getElementById('maincontent').appendChild(popup);
+}
+
+
 function createServerSideBar(data) {
     const info = data.serverInfo;
     const sidebar = document.getElementById('channels');
     const serverId = data.serverInfo.configs.serverId;
 
     const isOwner = JSON.parse(localStorage.getItem('user')).uid == data.serverInfo.configs.owner;
+    sidebar.appendChild(createServerConfBtn(showInvite, "INVITE", `${window.location.origin}/invite/${serverId}`));
+
     if (isOwner) {
         // admin stuff
         sidebar.appendChild(createServerConfBtn(showNewChannelPopup, 'NEW CHANNEL'));

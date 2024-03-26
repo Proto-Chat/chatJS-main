@@ -34,8 +34,18 @@ export async function broadcastToSessions(client, connectionMap, others, toSend,
 }
 
 
-const splitByID = (channelId, client) => {
-    return channelId.split("|").filter((o) => (o && o.length > 0));
+// get the users in the DM
+const splitByID = async (channelId, client) => {
+    try {
+        if (!channelId || !client) return null;
+        const dbo = client.db('dms').collection(channelId);
+        const users = (await dbo.findOne({_id: 'configs'}))?.users;
+        return (users) ? users.split("|").filter((o) => (o && o.length > 0)) : null;
+    }
+    catch(err) {
+        console.error("SPLIT ERROR", err);
+        return null;
+    }
 }
 
 
@@ -82,7 +92,7 @@ async function deleteMessage(mongoconnection, connectionMap, data) {
 
         // get the key
         var doc = await client.db(data.user.uid).collection('dm_keys').findOne({dmid: data.chatid});
-        const others = (doc.isGroupDM) ? splitByID(doc.uid) : [data.user.uid, doc.uid];
+        const others = (doc.isGroupDM) ? await splitByID(doc.uid, client) : [data.user.uid, doc.uid];
 
         const mbo = client.db((doc.isGroupDM) ? 'gdms' : 'dms').collection(data.chatid);
         doc = await mbo.findOne({id: data.id});
@@ -113,7 +123,7 @@ async function editMessage(mongoconnection, connectionMap, data) {
     const client = await mongoconnection;
     
     var doc = await client.db(data.user.uid).collection('dm_keys').findOne({dmid: data.chatid});
-    const others = (doc.isGroupDM) ? splitByID(doc.uid) : [data.user.uid, doc.uid];
+    const others = (doc.isGroupDM) ? await splitByID(doc.uid, client) : [data.user.uid, doc.uid];
 
     const mbo = client.db((doc.isGroupDM) ? 'gdms' : 'dms').collection(data.chatid);
     doc = await mbo.findOne({id: data.id});
@@ -145,7 +155,9 @@ export async function markDMAsRead(mongoconnection, connectionMap, data) {
     const client = await mongoconnection;
     const dbo = client.db(uid).collection('dm_keys');
 
-    const ids = splitByID(data.data.dmid);
+    const ids = await splitByID(data.data.dmid, client);
+    if (!ids) return null;
+
     for (const oid of ids) {
         if (oid == uid) continue;
         dbo.updateOne({uid: oid}, {$set: {unread: false}});
