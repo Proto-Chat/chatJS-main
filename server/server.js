@@ -100,18 +100,19 @@ turnServer.start();
 
 app.put('/msgImg', async (req, res) => {
     try {
-        const sid = req.headers.sessionid;
-        const channelid = req.headers.channelid;
-        const fext = req.headers.fext;
-        const username = req.headers.username;
-        if (!sid) return res.sendStatus(401);
-        if (!channelid || !username) return res.sendStatus(404);
+        const {sessionid: sid, channelid: channelId, fext, username, serverid: serverId} = req.headers;
+
+        if (!sid || !(await validateSession(mongoconnection, sid))) return res.sendStatus(401);
+        if (!channelId || !username) return res.sendStatus(404);
         if (!fext) return res.sendStatus(409);
     
         const buf = Buffer.from(req.body, 'base64');
         const filename = Math.random().toString(36).slice(2);
 
-        const response = await handleMessage(mongoconnection, webSocketClients, {files: req.body, sid: sid, username: username, channelid: channelid, filename: `${filename}.${fext}`, buf: buf}, MACROS.MESSAGE.OPS.IMAGE, CDNManager);
+        const data = {files: req.body, sid, username, channelId, filename: `${filename}.${fext}`, buf};
+        if (serverId) data['serverId'] = serverId;
+
+        const response = await handleMessage(mongoconnection, webSocketClients, data, MACROS.MESSAGE.OPS.IMAGE, CDNManager);
         if (!response) return res.sendStatus(500);
         res.sendStatus(200);
     }
@@ -202,14 +203,17 @@ app.get('/getpfp', async (req, res) => {
 
 app.get('/msgImg', async (req, res) => {
     try {
-        const { sessionid, channelid, username } = req.headers;
-        if (!sessionid) return res.sendStatus(401);
+        const { sessionid, channelid, username, serverid } = req.headers;
+        if (!sessionid || !(await validateSession(mongoconnection, sessionid))) return res.sendStatus(401);
         if (!channelid || !username) return res.sendStatus(409);
     
         const fname = req.query.fname;
         if (!fname) return res.sendStatus(404);
+
+        const channelIDFull = (serverid) ? `${serverid}/${channelid}` : channelid;
+        console.log(channelIDFull);
     
-        const file = await CDNManager.getFile(channelid, fname);
+        const file = await CDNManager.getFile(channelIDFull, fname);
         return res.send(file);
     }
     catch (err) {
@@ -480,7 +484,7 @@ app.ws('/websocket', async (ws, req) => {
 app.get('*', async (req, res) => {
     console.error(`UNKNOWN URL: ${req.url}`);
     res.sendStatus(404);
-})
+});
 
 
 app.listen(port, () => console.log(`App listening on port ${port}`));

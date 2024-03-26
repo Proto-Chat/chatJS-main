@@ -3,7 +3,7 @@ function messageRecieved(response) {
     if (response.code == 6) return console.error("SERVER MESSAGES SHOULD NOT GO THROUGH HERE!");
 
     if (response.op != 0 && response.data.channelId != localStorage.getItem('currentChatID')) return;
-
+console.log("MSGRES", response);
     switch (response.op) {
         case 0: addMessage(response.data);
             break;
@@ -385,6 +385,10 @@ function createNewMessage(msg) {
             msgContentContainer.style.height = '200px';
         }
 
+        const isServer = window.location.pathname.includes('/server/');
+        const serverId = (isServer) ? window.location.pathname.replace('/server/', '').replace('/', '') : undefined;
+        if (serverId) { req.setRequestHeader('serverid', serverId); }
+        
         req.setRequestHeader('sessionid', localStorage.getItem('sessionid'));
         req.setRequestHeader('channelid', localStorage.getItem('currentChatID'));
         req.setRequestHeader('username', JSON.parse(localStorage.getItem('user')).username);
@@ -608,7 +612,10 @@ async function handlePastedImage(file) {
     req.responseType = 'text';
 
     req.onloadend = () => {
-        if (req.response != "OK") alert("request failed!");
+        if (req.response != "OK") {
+            alert("request failed!");
+            console.error(req.response);
+        }
     }
 
     var fname = file.name.split(".");
@@ -616,8 +623,11 @@ async function handlePastedImage(file) {
         return alert("please provide a valid file!");
     }
 
+    const isServer = window.location.pathname.includes('/server/');
+    const serverId = (isServer) ? window.location.pathname.replace('/server/', '').replace('/', '') : undefined;
     req.setRequestHeader('sessionid', localStorage.getItem('sessionid'));
     req.setRequestHeader('channelid', localStorage.getItem('currentChatID'));
+    if (serverId) { req.setRequestHeader('serverid', serverId); }
     req.setRequestHeader('fext', fname.pop());
     req.setRequestHeader('username', JSON.parse(localStorage.getItem('user')).username);
     req.setRequestHeader('Content-Type', 'application/octet-stream');

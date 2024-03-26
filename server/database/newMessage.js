@@ -1,6 +1,7 @@
 import { getUidFromSid, wasabiManager } from "../imports.js";
 import { randomUUID } from 'crypto';
 import { SERVERMACROS as MACROS } from "../macros.js";
+import { handleChatServer } from '../guilds/chatServer.js';
 
 export async function broadcastToSessions(client, connectionMap, others, toSend, encDoc, checkPerms = undefined) {
     try {
@@ -160,8 +161,8 @@ export async function markDMAsRead(mongoconnection, connectionMap, data) {
 async function uploadMsgImg(mongoconnection, CDNManager, connectionMap, data) {
     try {
         if (!data || !data.buf || data.buf.byteLength/1000000 > 10) return false;
-        const uploadPath = (data.serverId) ? `${data.serverId}/${data.channelid}` : data.channelid
-        const response = await CDNManager.uploadFile(data.channelid, data.filename, data.buf);
+        const uploadPath = (data.serverId) ? `${data.serverId}/${data.channelId}` : data.channelId;
+        const response = await CDNManager.uploadFile(uploadPath, data.filename, data.buf);
 
         if (response && response.type && response.code) return response;
         const uid = getUidFromSid(data.sid);
@@ -171,15 +172,21 @@ async function uploadMsgImg(mongoconnection, CDNManager, connectionMap, data) {
                 uid: uid,
                 username: data.username
             },
-            channelId: data.channelid,
+            channelId: data.channelId,
             id: randomUUID(),
             timestamp: (new Date()).toISOString(),
             content: {
                 filename: data.filename
-            }
+            },
+            sid: data.sid,
+            serverId: data.serverId
         }
 
-        return await newMessage(mongoconnection, connectionMap, msg);
+        if (data.serverId) {
+            await handleChatServer(null, connectionMap, mongoconnection, {op: MACROS.SERVER.OPS.SEND_MESSAGE, data: msg});
+            return true;
+        }
+        else return await newMessage(mongoconnection, connectionMap, msg);
     }
     catch (err) {
         console.error(err);

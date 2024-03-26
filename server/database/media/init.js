@@ -53,7 +53,6 @@ export class fileManager {
                 else resolve(data);
             });
         });
-
         return (res) ? res.Body : null;
     }
 

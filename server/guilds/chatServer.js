@@ -341,7 +341,7 @@ async function handleMessage(ws, connectionMap, mongoconnection, data, op) {
 	}
 	catch (err) {
 		console.error(err);
-		return ws.send(JSON.stringify({ msgId: data.id || null, serverId: data.serverId, channelId: data.channelId, code: 500, type: 1 }));
+		return ws?.send(JSON.stringify({ msgId: data.id || null, serverId: data.serverId, channelId: data.channelId, code: 500, type: 1 }));
 	}
 }
 
