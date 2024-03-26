@@ -5,7 +5,7 @@ ${\color{red}My}\hspace{0.2cm}{\color{orange}terrible}\hspace{0.2cm}{\color{yell
 https://ionchat.herokuapp.com
 <br><br>
 > [!NOTE]
-> due to some Github Markdown limitations, I can not embed it here but you can view the FOSSA report <a href="https://app.fossa.com/reports/b3632d00-46aa-4845-bfba-26a568cbf89a">here</a>
+> due to some Github Markdown limitations, I can not embed it here but you can view the FOSSA report <a href="https://app.fossa.com/reports/b3632d00-46aa-4845-bfba-26a568cbf89a" target="_blank">here</a>
 
 
 Created by ION606
